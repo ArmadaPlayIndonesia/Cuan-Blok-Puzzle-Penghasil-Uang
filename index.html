@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cuan Blok: Puzzle Penghasil Uang</title>
+  <!-- Supabase JS & Font Awesome (for icons) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: linear-gradient(145deg, #2A0808 0%, #110101 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      color: #f0e6e6;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(20, 5, 5, 0.75);
+      backdrop-filter: blur(6px);
+      border: 1px solid #8b1e1e;
+      border-radius: 32px;
+      padding: 18px 16px 22px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 2px #4a0a0a inset;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .logo h1 {
+      font-size: 1.7rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffb3b3, #ff4d4d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .logo p {
+      font-size: 0.6rem;
+      color: #c97e7e;
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #2e0a0a;
+      padding: 6px 12px;
+      border-radius: 40px;
+      border: 1px solid #a13e3e;
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #8b1e1e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #ffd9d9;
+      overflow: hidden;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      max-width: 90px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      background: #1e0505;
+      border-radius: 48px;
+      padding: 8px 16px;
+      margin: 12px 0 16px;
+      border: 1px solid #721010;
+      box-shadow: 0 0 10px #3f0000 inset;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .stat-item i {
+      color: #ffae42;
+    }
+
+    .lives i {
+      color: #ff4d6d;
+      margin-right: 2px;
+    }
+
+    .game-area {
+      background: #1b0303;
+      border-radius: 28px;
+      padding: 14px;
+      border: 2px solid #7a1f1f;
+      box-shadow: 0 0 20px #3a0000 inset;
+      margin-bottom: 18px;
+    }
+
+    .puzzle-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      aspect-ratio: 1 / 1;
+      margin-bottom: 16px;
+    }
+
+    .block {
+      background: #3f0a0a;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffe0e0;
+      box-shadow: 0 4px 0 #1e0000, 0 0 0 2px #aa4a4a inset;
+      transition: all 0.08s;
+      cursor: pointer;
+      transform: translateY(-1px);
+    }
+
+    .block:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1e0000, 0 0 0 2px #ff8a8a inset;
+    }
+
+    .block.selected {
+      box-shadow: 0 0 0 3px #ffb86b, 0 4px 0 #1e0000;
+      transform: scale(1.02);
+    }
+
+    .block[data-color="0"] { background: #b22222; }
+    .block[data-color="1"] { background: #cc5500; }
+    .block[data-color="2"] { background: #b8860b; }
+    .block[data-color="3"] { background: #8b1a1a; }
+    .block[data-color="4"] { background: #a0522d; }
+    .block[data-color="5"] { background: #c2185b; }
+    .block[data-color="6"] { background: #d32f2f; }
+    .block[data-color="7"] { background: #e65100; }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .btn {
+      flex: 1;
+      background: #5e1616;
+      border: none;
+      border-radius: 60px;
+      padding: 14px 0;
+      font-weight: 700;
+      color: #ffd9d9;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 6px 0 #2c0404, 0 0 0 2px #a14a4a inset;
+      transition: 0.1s;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+    }
+
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #2c0404, 0 0 0 2px #ff9e9e inset;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #2c0404;
+      pointer-events: none;
+    }
+
+    .btn-primary {
+      background: #a12424;
+      box-shadow: 0 6px 0 #4b0a0a, 0 0 0 2px #e06868 inset;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .menu-btn {
+      background: #2e0808;
+      border-radius: 24px;
+      padding: 12px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #e6b3b3;
+      border: 1px solid #983232;
+      box-shadow: 0 4px 0 #1a0101;
+      cursor: pointer;
+      transition: 0.08s;
+    }
+
+    .menu-btn i {
+      font-size: 1.3rem;
+      color: #ffa07a;
+    }
+
+    .menu-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1a0101;
+    }
+
+    /* Modal / Overlay */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.2s;
+    }
+
+    .overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal-card {
+      background: linear-gradient(145deg, #2c0a0a, #1c0202);
+      border: 2px solid #b33e3e;
+      border-radius: 36px;
+      padding: 24px 20px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px #000;
+      text-align: center;
+    }
+
+    .modal-card h2 {
+      color: #ffb3b3;
+      margin-bottom: 14px;
+      font-size: 1.5rem;
+    }
+
+    .modal-card p {
+      color: #dbb5b5;
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .modal-card .btn {
+      margin-top: 8px;
+    }
+
+    .privacy-text {
+      text-align: left;
+      font-size: 0.8rem;
+      max-height: 340px;
+      overflow-y: auto;
+      background: #160202;
+      padding: 14px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      color: #c9a3a3;
+      border: 1px solid #732424;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #270707;
+      padding: 10px 16px;
+      border-radius: 50px;
+      margin-bottom: 8px;
+      border-left: 4px solid #d44;
+      font-size: 0.9rem;
+    }
+
+    .leaderboard-item .rank {
+      font-weight: 800;
+      color: #ffb86b;
+      width: 32px;
+    }
+
+    .leaderboard-item .name {
+      flex: 1;
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .leaderboard-item .score {
+      font-weight: 700;
+      color: #ffd966;
+    }
+
+    .offline-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #b71c1c;
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-weight: 700;
+      z-index: 2000;
+      display: none;
+      box-shadow: 0 4px 12px #000;
+    }
+
+    .offline-banner.show {
+      display: block;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f0303;
+      border: 2px solid #c44;
+      color: #ffd9d9;
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      z-index: 3000;
+      box-shadow: 0 8px 20px #000;
+      transition: 0.2s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .flex-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="offlineBanner" class="offline-banner">
+    <i class="fas fa-wifi"></i> KONEKSI TERPUTUS — Game dijeda. Harap online kembali.
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="overlay active">
+    <div class="modal-card">
+      <h2>Cuan Blok</h2>
+      <p style="font-size:0.9rem; margin-bottom:24px;">Game Asah Otak Paling Cuan: Main Santai, Saldo Cair Setiap Hari!</p>
+      <button id="googleLoginBtn" class="btn btn-primary" style="width:100%;">
+        <i class="fab fa-google"></i> Masuk dengan Google
+      </button>
+      <button id="showPrivacyFromLogin" class="btn" style="width:100%; margin-top:12px; background:#2a0a0a;">
+        <i class="fas fa-shield-alt"></i> Kebijakan Privasi
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" class="hidden">
+    <div class="header">
+      <div class="logo">
+        <h1>Cuan Blok</h1>
+        <p>Puzzle Penghasil Uang</p>
+      </div>
+      <div class="user-badge">
+        <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
+        <span class="user-name" id="userName">Player</span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item"><i class="fas fa-coins"></i> <span id="coinDisplay">0</span></div>
+      <div class="stat-item"><i class="fas fa-dollar-sign"></i> <span id="dollarDisplay">0.00</span></div>
+      <div class="stat-item lives" id="livesDisplay">
+        <i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i>
+      </div>
+    </div>
+
+    <div class="game-area">
+      <div class="puzzle-grid" id="puzzleGrid"></div>
+      <div class="action-buttons">
+        <button class="btn" id="newGameBtn"><i class="fas fa-rotate-right"></i> Acak</button>
+        <button class="btn btn-primary" id="checkMatchBtn"><i class="fas fa-check-circle"></i> Cocokkan</button>
+      </div>
+    </div>
+
+    <div class="menu-grid">
+      <div class="menu-btn" id="tournamentBtn"><i class="fas fa-trophy"></i> Turnamen</div>
+      <div class="menu-btn" id="convertBtn"><i class="fas fa-exchange-alt"></i> Konversi</div>
+      <div class="menu-btn" id="withdrawBtn"><i class="fas fa-wallet"></i> WD</div>
+      <div class="menu-btn" id="privacyBtn"><i class="fas fa-shield-alt"></i> Privasi</div>
+      <div class="menu-btn" id="watchAdBtn"><i class="fas fa-video"></i> Iklan</div>
+      <div class="menu-btn" id="resetGameBtn"><i class="fas fa-skull"></i> Reset</div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <div id="privacyModal" class="overlay">
+    <div class="modal-card">
+      <h2>Kebijakan Privasi</h2>
+      <div class="privacy-text">
+        <p><strong>1. Pengumpulan Data Google Login</strong><br>Kami mengumpulkan nama, email, dan foto profil dari Google Sign-In untuk identifikasi akun dan sinkronisasi progres.</p>
+        <p><strong>2. Penyimpanan Progress Game</strong><br>Data level, koin, dan status iklan disimpan di server Supabase untuk mencegah manipulasi offline.</p>
+        <p><strong>3. Iklan Pihak Ketiga</strong><br>Kami menampilkan iklan dari Google AdMob dan jaringan mitra (omg10). ID perangkat mungkin digunakan untuk penargetan iklan.</p>
+        <p><strong>4. Keamanan</strong><br>Data disimpan aman dan tidak dibagikan ke pihak ketiga tanpa izin, kecuali untuk keperluan iklan & legal.</p>
+        <p><strong>5. Penarikan Saldo (WD)</strong><br>Data dompet (DANA/OVO/GoPay) hanya digunakan untuk memproses withdrawal dan tidak disimpan permanen.</p>
+        <p>Dengan menggunakan game ini, Anda menyetujui kebijakan di atas.</p>
+      </div>
+      <button class="btn" id="closePrivacyBtn">Tutup</button>
+    </div>
+  </div>
+
+  <div id="tournamentModal" class="overlay">
+    <div class="modal-card" style="max-width:460px;">
+      <h2><i class="fas fa-trophy" style="color:gold;"></i> Peringkat Mingguan</h2>
+      <div id="leaderboardList" style="max-height:360px; overflow-y:auto; margin:16px 0;"></div>
+      <p style="font-size:0.7rem; color:#b57;">Reset otomatis setiap Senin 00:00 UTC</p>
+      <button class="btn" id="closeTournamentBtn">Tutup</button>
+    </div>
+  </div>
+
+  <div id="withdrawModal" class="overlay">
+    <div class="modal-card">
+      <h2>Withdrawal</h2>
+      <p>Minimal WD $1.00</p>
+      <div style="margin:20px 0;">
+        <button class="btn" style="background:#1e4a8b;" id="wdDana">DANA</button>
+        <button class="btn" style="background:#2e7d32; margin-top:8px;" id="wdOvo">OVO</button>
+        <button class="btn" style="background:#0b5e7a; margin-top:8px;" id="wdGopay">GoPay</button>
+      </div>
+      <p style="font-size:0.8rem;">Saldo Anda: $<span id="wdDollarDisplay">0.00</span></p>
+      <button class="btn" id="closeWithdrawBtn">Tutup</button>
+    </div>
+  </div>
+
+  <div id="adRewardModal" class="overlay">
+    <div class="modal-card">
+      <h2>Iklan Berhadiah</h2>
+      <p>Anda akan menonton iklan untuk mengisi nyawa.</p>
+      <button class="btn btn-primary" id="confirmWatchRewardAd">Tonton Sekarang</button>
+      <button class="btn" id="closeAdReward" style="margin-top:10px;">Batal</button>
+    </div>
+  </div>
+
+  <div id="adChainModal" class="overlay">
+    <div class="modal-card">
+      <h2>Iklan Wajib</h2>
+      <p>Selesaikan 3 iklan beruntun untuk lanjut ke level berikutnya.</p>
+      <p style="font-size:1.2rem;"><span id="adChainProgress">0</span>/3</p>
+      <button class="btn btn-primary" id="startAdChainBtn">Mulai Iklan</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    (function() {
+      // ==================== KONFIGURASI ====================
+      const SUPABASE_URL = 'https://xyzcompany.supabase.co'; // GANTI DENGAN URL SUPABASE ANDA
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // GANTI DENGAN ANON KEY
+      // Inisialisasi Supabase (dummy untuk demo, harus diganti dengan kredensial asli)
+      let supabaseClient = null;
+      try {
+        if (SUPABASE_URL.includes('xyzcompany')) {
+          console.warn('Supabase belum dikonfigurasi, menggunakan mode demo');
+        } else {
+          supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+      } catch (e) { console.warn('Supabase init error', e); }
+
+      // ==================== STATE ====================
+      let currentUser = null;
+      let gameState = {
+        coins: 0,
+        dollars: 0.00,
+        lives: 3,
+        level: 1,
+        waitingForAd: false,
+        adChainCount: 0,
+        forceAdChain: false,
+        isPaused: false,
+        grid: [],
+        selectedBlocks: []
+      };
+
+      // ==================== DOM ELEMEN ====================
+      const loginScreen = document.getElementById('loginScreen');
+      const mainApp = document.getElementById('app');
+      const googleLoginBtn = document.getElementById('googleLoginBtn');
+      const coinDisplay = document.getElementById('coinDisplay');
+      const dollarDisplay = document.getElementById('dollarDisplay');
+      const livesDisplay = document.getElementById('livesDisplay');
+      const puzzleGrid = document.getElementById('puzzleGrid');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const checkMatchBtn = document.getElementById('checkMatchBtn');
+      const tournamentBtn = document.getElementById('tournamentBtn');
+      const convertBtn = document.getElementById('convertBtn');
+      const withdrawBtn = document.getElementById('withdrawBtn');
+      const privacyBtn = document.getElementById('privacyBtn');
+      const watchAdBtn = document.getElementById('watchAdBtn');
+      const resetGameBtn = document.getElementById('resetGameBtn');
+      const privacyModal = document.getElementById('privacyModal');
+      const closePrivacyBtn = document.getElementById('closePrivacyBtn');
+      const showPrivacyFromLogin = document.getElementById('showPrivacyFromLogin');
+      const tournamentModal = document.getElementById('tournamentModal');
+      const closeTournamentBtn = document.getElementById('closeTournamentBtn');
+      const leaderboardList = document.getElementById('leaderboardList');
+      const withdrawModal = document.getElementById('withdrawModal');
+      const closeWithdrawBtn = document.getElementById('closeWithdrawBtn');
+      const wdDollarDisplay = document.getElementById('wdDollarDisplay');
+      const adRewardModal = document.getElementById('adRewardModal');
+      const confirmWatchRewardAd = document.getElementById('confirmWatchRewardAd');
+      const closeAdReward = document.getElementById('closeAdReward');
+      const adChainModal = document.getElementById('adChainModal');
+      const adChainProgress = document.getElementById('adChainProgress');
+      const startAdChainBtn = document.getElementById('startAdChainBtn');
+      const offlineBanner = document.getElementById('offlineBanner');
+      const toastEl = document.getElementById('toast');
+      const userName = document.getElementById('userName');
+      const userAvatar = document.getElementById('userAvatar');
+
+      // ==================== UTIL ====================
+      function showToast(msg, duration = 2000) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        setTimeout(() => toastEl.classList.remove('show'), duration);
+      }
+
+      function checkOnline() {
+        const online = navigator.onLine;
+        if (!online) {
+          offlineBanner.classList.add('show');
+          gameState.isPaused = true;
+        } else {
+          offlineBanner.classList.remove('show');
+          if (gameState.isPaused && currentUser) {
+            gameState.isPaused = false;
+          }
+        }
+        return online;
+      }
+      window.addEventListener('online', () => { checkOnline(); showToast('Koneksi kembali online'); });
+      window.addEventListener('offline', () => { checkOnline(); showToast('Koneksi terputus! Game dijeda.'); });
+
+      // ==================== RANDOM BOT GENERATOR ====================
+      function getBotLeaderboard() {
+        const bots = [
+          { name: 'Sultan_Cuan', score: 99999999, level: 999 },
+          { name: 'DuitDeras', score: 88888888, level: 888 },
+          { name: 'HokiTerus', score: 77777777, level: 777 },
+          { name: 'BandarKoin', score: 66666666, level: 666 },
+          { name: 'AutoWD', score: 55555555, level: 555 },
+          { name: 'CuanMax', score: 44444444, level: 444 },
+          { name: 'PausMerah', score: 33333333, level: 333 }
+        ];
+        return bots.slice(0, 5).map((b, i) => ({ rank: i+1, name: b.name, score: b.score.toLocaleString() }));
+      }
+
+      function renderLeaderboard() {
+        const list = getBotLeaderboard();
+        leaderboardList.innerHTML = list.map(item => `
+          <div class="leaderboard-item">
+            <span class="rank">#${item.rank}</span>
+            <span class="name">${item.name}</span>
+            <span class="score">🪙 ${item.score}</span>
+          </div>
+        `).join('');
+      }
+
+      // ==================== GRID PUZZLE ====================
+      function generateGrid() {
+        const size = 4;
+        const colors = 6;
+        const grid = [];
+        for (let i = 0; i < size; i++) {
+          const row = [];
+          for (let j = 0; j < size; j++) {
+            row.push(Math.floor(Math.random() * colors));
+          }
+          grid.push(row);
+        }
+        gameState.grid = grid;
+        renderGrid();
+      }
+
+      function renderGrid() {
+        puzzleGrid.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            const val = gameState.grid[i][j];
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.dataset.color = val;
+            block.dataset.row = i;
+            block.dataset.col = j;
+            block.textContent = ['🔴','🟠','🟡','🔴','🟤','🩷','🔺','🟧'][val] || '🔴';
+            block.addEventListener('click', () => handleBlockClick(i, j, block));
+            puzzleGrid.appendChild(block);
+          }
+        }
+      }
+
+      function handleBlockClick(row, col, el) {
+        if (gameState.isPaused || gameState.waitingForAd) return;
+        if (!checkOnline()) return;
+
+        const key = `${row}-${col}`;
+        if (gameState.selectedBlocks.includes(key)) return;
+        if (gameState.selectedBlocks.length >= 2) {
+          gameState.selectedBlocks = [];
+          document.querySelectorAll('.block.selected').forEach(b => b.classList.remove('selected'));
+        }
+        gameState.selectedBlocks.push(key);
+        el.classList.add('selected');
+      }
+
+      function checkMatch() {
+        if (gameState.isPaused || gameState.waitingForAd) return;
+        if (!checkOnline()) return;
+        if (gameState.selectedBlocks.length !== 2) {
+          showToast('Pilih 2 blok terlebih dahulu!');
+          return;
+        }
+        const [a, b] = gameState.selectedBlocks;
+        const [r1, c1] = a.split('-').map(Number);
+        const [r2, c2] = b.split('-').map(Number);
+        const color1 = gameState.grid[r1][c1];
+        const color2 = gameState.grid[r2][c2];
+
+        if (color1 === color2) {
+          // Match success
+          gameState.coins += 10;
+          gameState.grid[r1][c1] = Math.floor(Math.random() * 6);
+          gameState.grid[r2][c2] = Math.floor(Math.random() * 6);
+          gameState.selectedBlocks = [];
+          renderGrid();
+          updateUI();
+          showToast('+10 koin!');
+          // Cek level naik setiap 100 koin
+          if (gameState.coins >= gameState.level * 100) {
+            triggerLevelUpAdChain();
+          }
+        } else {
+          // Match failed
+          gameState.lives--;
+          if (gameState.lives <= 0) {
+            gameState.lives = 0;
+            updateUI();
+            showToast('Nyawa habis! Tonton iklan untuk isi ulang.', 3000);
+            adRewardModal.classList.add('active');
+          } else {
+            showToast('Salah! Nyawa -1');
+          }
+          gameState.selectedBlocks = [];
+          document.querySelectorAll('.block.selected').forEach(b => b.classList.remove('selected'));
+          updateUI();
+        }
+      }
+
+      // ==================== AD WATERFALL & CHAIN ====================
+      function showInterstitialAd(callback) {
+        // Simulasi AdMob interstitial + waterfall ke omg10
+        if (!checkOnline()) {
+          showToast('Online diperlukan untuk iklan');
+          return;
+        }
+        const admobSuccess = Math.random() > 0.3; // 70% sukses admob
+        if (admobSuccess) {
+          showToast('Memutar iklan AdMob...');
+          setTimeout(() => {
+            showToast('Iklan selesai');
+            if (callback) callback(true);
+          }, 1200);
+        } else {
+          showToast('AdMob no-fill, beralih ke omg10...');
+          window.open('https://omg10.com/4/11785165', '_blank');
+          setTimeout(() => {
+            if (callback) callback(true);
+          }, 800);
+        }
+      }
+
+      function showRewardedAd(callback) {
+        if (!checkOnline()) {
+          showToast('Online diperlukan untuk iklan');
+          return;
+        }
+        const admobSuccess = Math.random() > 0.2;
+        if (admobSuccess) {
+          showToast('Rewarded AdMob diputar...');
+          setTimeout(() => {
+            showToast('Hadiah diberikan!');
+            if (callback) callback(true);
+          }, 1400);
+        } else {
+          showToast('Fallback ke omg10...');
+          window.open('https://omg10.com/4/11785165', '_blank');
+          setTimeout(() => {
+            if (callback) callback(true);
+          }, 800);
+        }
+      }
+
+      function triggerLevelUpAdChain() {
+        gameState.waitingForAd = true;
+        gameState.adChainCount = 0;
+        adChainProgress.textContent = '0';
+        adChainModal.classList.add('active');
+        // Simpan status ke database (simulasi)
+        if (supabaseClient && currentUser) {
+          supabaseClient.from('game_states').upsert({
+            user_id: currentUser.id,
+            status: 'waiting_for_ad',
+            level: gameState.level,
+            updated_at: new Date()
+          }).catch(e => console.warn(e));
+        }
+      }
+
+      function startAdChain() {
+        adChainModal.classList.remove('active');
+        let count = 0;
+        function playNext() {
+          if (count >= 3) {
+            gameState.waitingForAd = false;
+            gameState.level++;
+            gameState.coins = 0;
+            updateUI();
+            showToast('Level ' + gameState.level + '!');
+            generateGrid();
+            // Update database
+            if (supabaseClient && currentUser) {
+              supabaseClient.from('game_states').upsert({
+                user_id: currentUser.id,
+                status: 'idle',
+                level: gameState.level,
+                updated_at: new Date()
+              }).catch(e => console.warn(e));
+            }
+            return;
+          }
+          showInterstitialAd(() => {
+            count++;
+            adChainProgress.textContent = count;
+            setTimeout(playNext, 300);
+          });
+        }
+        playNext();
+      }
+
+      // ==================== KONVERSI & WITHDRAW ====================
+      function convertCoins() {
+        if (gameState.coins < 1000) {
+          showToast('Minimal 1000 koin untuk konversi');
+          return;
+        }
+        showInterstitialAd((success) => {
+          if (!success) return;
+          // Konversi: 1000 koin = $0.10 (dipotong diam-diam 10% jadi 0.09)
+          const rawDollar = gameState.coins / 10000; // 1000 koin = 0.1
+          const hiddenFee = 0.1;
+          const netDollar = rawDollar * (1 - hiddenFee);
+          gameState.dollars += netDollar;
+          gameState.coins = 0;
+          updateUI();
+          showToast(`+$${netDollar.toFixed(2)} (bersih)`);
+          // Simpan ke db
+          if (supabaseClient && currentUser) {
+            supabaseClient.from('profiles').update({ dollars: gameState.dollars, coins: 0 }).eq('id', currentUser.id).catch(e => console.warn(e));
+          }
+        });
+      }
+
+      function requestWithdraw(method) {
+        if (gameState.dollars < 1.00) {
+          showToast('Saldo minimal $1.00');
+          return;
+        }
+        // Cegah double request (simulasi)
+        showToast(`WD $${gameState.dollars.toFixed(2)} via ${method} diajukan`);
+        if (supabaseClient && currentUser) {
+          supabaseClient.from('withdrawals').insert({
+            user_id: currentUser.id,
+            amount: gameState.dollars,
+            method: method,
+            status: 'pending',
+            created_at: new Date()
+          }).catch(e => console.warn(e));
+        }
+        gameState.dollars = 0;
+        updateUI();
+        withdrawModal.classList.remove('active');
+      }
+
+      // ==================== UI UPDATE ====================
+      function updateUI() {
+        coinDisplay.textContent = gameState.coins;
+        dollarDisplay.textContent = gameState.dollars.toFixed(2);
+        wdDollarDisplay.textContent = gameState.dollars.toFixed(2);
+        const hearts = Math.max(0, gameState.lives);
+        livesDisplay.innerHTML = Array(3).fill(0).map((_, i) => i < hearts ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart" style="opacity:0.3;"></i>').join('');
+        // WD button state
+        withdrawBtn.style.opacity = gameState.dollars >= 1 ? '1' : '0.5';
+      }
+
+      // ==================== AUTENTIKASI ====================
+      async function handleGoogleLogin() {
+        if (supabaseClient) {
+          try {
+            const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+            if (error) throw error;
+          } catch (e) {
+            console.warn('Login error, fallback demo', e);
+            simulateLogin();
+          }
+        } else {
+          simulateLogin();
+        }
+      }
+
+      function simulateLogin() {
+        // Demo login
+        currentUser = {
+          id: 'demo-user-123',
+          email: 'demo@cuanblok.com',
+          user_metadata: { full_name: 'Sultan Cuan' }
+        };
+        finishLogin();
+      }
+
+      function finishLogin() {
+        loginScreen.classList.remove('active');
+        mainApp.classList.remove('hidden');
+        userName.textContent = currentUser.user_metadata?.full_name || 'Player';
+        userAvatar.innerHTML = `<i class="fas fa-user"></i>`;
+        // Load game state
+        gameState.coins = 250;
+        gameState.dollars = 0.25;
+        gameState.lives = 3;
+        gameState.level = 1;
+        updateUI();
+        generateGrid();
+        checkOnline();
+
+        // Cek jika ada status waiting_for_ad dari database
+        if (supabaseClient && currentUser) {
+          supabaseClient.from('game_states').select('*').eq('user_id', currentUser.id).single()
+            .then(({ data }) => {
+              if (data && data.status === 'waiting_for_ad') {
+                gameState.waitingForAd = true;
+                triggerLevelUpAdChain();
+              }
+            }).catch(e => console.warn(e));
+        }
+      }
+
+      // ==================== EVENT LISTENERS ====================
+      googleLoginBtn.addEventListener('click', handleGoogleLogin);
+      showPrivacyFromLogin.addEventListener('click', () => privacyModal.classList.add('active'));
+      closePrivacyBtn.addEventListener('click', () => privacyModal.classList.remove('active'));
+      privacyBtn.addEventListener('click', () => privacyModal.classList.add('active'));
+      tournamentBtn.addEventListener('click', () => { renderLeaderboard(); tournamentModal.classList.add('active'); });
+      closeTournamentBtn.addEventListener('click', () => tournamentModal.classList.remove('active'));
+      withdrawBtn.addEventListener('click', () => { withdrawModal.classList.add('active'); updateUI(); });
+      closeWithdrawBtn.addEventListener('click', () => withdrawModal.classList.remove('active'));
+      convertBtn.addEventListener('click', convertCoins);
+      watchAdBtn.addEventListener('click', () => adRewardModal.classList.add('active'));
+      closeAdReward.addEventListener('click', () => adRewardModal.classList.remove('active'));
+      confirmWatchRewardAd.addEventListener('click', () => {
+        adRewardModal.classList.remove('active');
+        showRewardedAd((success) => {
+          if (success) {
+            gameState.lives = 3;
+            updateUI();
+            showToast('Nyawa penuh!');
+          }
+        });
+      });
+      startAdChainBtn.addEventListener('click', startAdChain);
+      newGameBtn.addEventListener('click', () => { if (!gameState.waitingForAd && !gameState.isPaused) generateGrid(); });
+      checkMatchBtn.addEventListener('click', checkMatch);
+      resetGameBtn.addEventListener('click', () => {
+        if (confirm('Reset game? Semua progress hilang.')) {
+          gameState.coins = 0;
+          gameState.dollars = 0;
+          gameState.lives = 3;
+          gameState.level = 1;
+          updateUI();
+          generateGrid();
+        }
+      });
+      wdDana.addEventListener('click', () => requestWithdraw('DANA'));
+      wdOvo.addEventListener('click', () => requestWithdraw('OVO'));
+      wdGopay.addEventListener('click', () => requestWithdraw('GoPay'));
+
+      // Cek koneksi awal
+      checkOnline();
+
+      // Force close simulation: saat offline, pause total
+      window.addEventListener('beforeunload', () => {
+        if (gameState.waitingForAd) {
+          // Simpan state force close
+          if (supabaseClient && currentUser) {
+            supabaseClient.from('game_states').upsert({
+              user_id: currentUser.id,
+              status: 'waiting_for_ad',
+              level: gameState.level,
+              updated_at: new Date()
+            }).catch(e => console.warn(e));
+          }
+        }
+      });
+
+      // Expose ke global untuk demo
+      window._gameState = gameState;
+    })();
+  </script>
+</body>
+</html>
