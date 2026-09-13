@@ -2,1443 +2,1066 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cuan Blok: Puzzle Penghasil Uang</title>
+  <!-- Supabase JS SDK (latest) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* ========== RESET & GLOBAL ========== */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
-      background: #0a0a0a;
       min-height: 100vh;
+      background: radial-gradient(circle at 20% 30%, #2A0808, #1A0000 50%, #0a0a0a 100%);
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       overflow: hidden;
       position: relative;
-      color: #f5e6d3;
     }
 
-    /* ========== DARK RED PREMIUM BACKGROUND + ANIMASI ========== */
-    .bg-gradient {
+    /* floating bokeh / gold dust */
+    .bokeh {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 20% 30%, #2A0808 0%, #1A0000 50%, #0a0a0a 100%);
-      z-index: 0;
-      animation: bgPulse 12s infinite alternate ease-in-out;
-    }
-
-    @keyframes bgPulse {
-      0% { background: radial-gradient(circle at 20% 30%, #2A0808 0%, #1A0000 50%, #0a0a0a 100%); }
-      50% { background: radial-gradient(circle at 80% 70%, #3d0e0e 0%, #1f0202 50%, #0a0a0a 100%); }
-      100% { background: radial-gradient(circle at 40% 60%, #2A0808 0%, #1A0000 50%, #0a0a0a 100%); }
-    }
-
-    /* Floating bokeh / gold dust */
-    .bokeh {
-      position: fixed;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, rgba(255, 200, 0, 0) 70%);
       pointer-events: none;
-      z-index: 1;
-      animation: floatBokeh linear infinite;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bokeh span {
+      position: absolute;
+      display: block;
+      background: radial-gradient(circle, rgba(255, 215, 0, 0.25) 0%, rgba(255, 100, 100, 0.1) 70%, transparent 100%);
+      border-radius: 50%;
+      animation: floatUp 15s infinite linear;
+      bottom: -100px;
+      filter: blur(2px);
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 0.3; }
+      100% { transform: translateY(-120vh) scale(1.5); opacity: 0; }
     }
 
-    @keyframes floatBokeh {
-      0% { transform: translateY(0) scale(1); opacity: 0.2; }
-      50% { opacity: 0.6; }
-      100% { transform: translateY(-110vh) scale(1.5); opacity: 0; }
-    }
-
-    /* ========== CONTAINER UTAMA ========== */
-    #app {
+    /* main game container */
+    .game-wrapper {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 480px;
+      max-width: 440px;
       height: 100vh;
-      max-height: 900px;
+      max-height: 820px;
+      background: rgba(15, 2, 2, 0.75);
+      backdrop-filter: blur(10px);
+      border-radius: 40px 40px 20px 20px;
+      box-shadow: 0 0 60px rgba(200, 30, 30, 0.6), 0 20px 40px black;
+      border: 2px solid rgba(255, 80, 80, 0.4);
       display: flex;
       flex-direction: column;
-      padding: 8px 12px 12px;
       overflow: hidden;
-      background: rgba(15, 2, 2, 0.4);
-      backdrop-filter: blur(2px);
-      border-radius: 32px;
-      box-shadow: 0 0 60px rgba(180, 20, 20, 0.3);
+      padding: 12px;
     }
 
-    /* ========== SCREEN SYSTEM ========== */
-    .screen {
-      display: none;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .screen.active {
-      display: flex;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.98); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    /* ========== HEADER & TOP BAR ========== */
+    /* header */
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 4px;
-      flex-wrap: wrap;
-      gap: 6px;
+      padding: 6px 10px;
+      color: #FFD966;
+      text-shadow: 0 0 10px #FF4D4D;
+      font-weight: 700;
     }
-
-    .logo-area h1 {
-      font-size: 1.25rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #ffd966, #ffb347, #ff8c00);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 20px rgba(255, 180, 0, 0.5);
-      letter-spacing: 0.5px;
-    }
-
-    .logo-area .tagline {
-      font-size: 0.6rem;
-      color: #c9a87c;
-      letter-spacing: 0.3px;
-      opacity: 0.9;
-      margin-top: -2px;
-    }
-
-    .stats {
+    .lives {
       display: flex;
-      gap: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      gap: 4px;
+      font-size: 1.6rem;
+      filter: drop-shadow(0 0 8px red);
     }
-
-    .stat-item {
-      background: rgba(0, 0, 0, 0.5);
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 200, 0, 0.3);
-      color: #ffd966;
+    .coin-balance {
+      background: #1e0a0a;
+      padding: 6px 16px;
+      border-radius: 50px;
+      border: 2px solid #FFD966;
+      box-shadow: 0 0 20px #FFD966;
+      font-size: 1.2rem;
+      color: #FFE68F;
       display: flex;
       align-items: center;
-      gap: 4px;
-      box-shadow: 0 0 10px rgba(255, 150, 0, 0.2);
+      gap: 6px;
+    }
+    .coin-balance span {
+      font-size: 1.4rem;
     }
 
-    /* ========== HEART NYAWA ========== */
-    .lives-area {
-      display: flex;
-      gap: 4px;
-      font-size: 1.2rem;
-      line-height: 1;
-      filter: drop-shadow(0 0 8px #ff3333);
-    }
-
-    /* ========== GRID PUZZLE ========== */
+    /* grid area */
     .grid-container {
       flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 6px 0;
-      min-height: 0;
-    }
-
-    #grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      width: 100%;
-      max-width: 400px;
-      aspect-ratio: 7 / 9;
-      background: rgba(30, 5, 5, 0.6);
-      padding: 10px;
-      border-radius: 24px;
-      border: 2px solid rgba(255, 180, 0, 0.25);
-      box-shadow: 0 0 30px rgba(200, 30, 30, 0.3), inset 0 0 30px rgba(0,0,0,0.5);
-    }
-
-    .block {
-      border-radius: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.8);
-      box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 0 12px rgba(255, 150, 0, 0.2);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      cursor: pointer;
-      will-change: transform;
+      padding: 8px;
       position: relative;
     }
-
-    .block:active {
+    .puzzle-grid {
+      display: grid;
+      gap: 6px;
+      width: 100%;
+      aspect-ratio: 1/1;
+      max-width: 380px;
+      margin: 0 auto;
+      transition: all 0.2s;
+    }
+    .cell {
+      background: #2f0f0f;
+      border-radius: 16px;
+      box-shadow: inset 0 -4px 0 #1a0000, 0 0 15px rgba(255, 80, 80, 0.5);
+      transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+      cursor: pointer;
+      aspect-ratio: 1/1;
+      border: 2px solid rgba(255, 215, 0, 0.15);
+    }
+    .cell.selected {
       transform: scale(0.92);
-      box-shadow: 0 0 20px rgba(255, 200, 0, 0.6);
+      box-shadow: 0 0 25px gold, inset 0 -4px 0 #b8860b;
+      border-color: #FFD966;
     }
+    /* different block colors — generated by JS with background */
+    .cell[data-color="0"] { background: #d93b3b; } /* red */
+    .cell[data-color="1"] { background: #3b9ed9; } /* blue */
+    .cell[data-color="2"] { background: #4cd964; } /* green */
+    .cell[data-color="3"] { background: #f9d71c; } /* yellow */
+    .cell[data-color="4"] { background: #b06ad9; } /* purple */
+    .cell[data-color="5"] { background: #ff8c42; } /* orange */
 
-    .block.selected {
-      box-shadow: 0 0 20px 4px #ffd700, 0 0 30px rgba(255, 215, 0, 0.8);
-      transform: scale(1.05);
-      z-index: 2;
-    }
-
-    .block.pop {
-      animation: popBlock 0.25s ease forwards;
-    }
-
-    @keyframes popBlock {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.8; }
-      100% { transform: scale(0); opacity: 0; }
-    }
-
-    /* Smooth fall animation */
-    .block.falling {
-      transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.64, 1);
-    }
-
-    /* ========== TOMBOL POWER-UP ========== */
-    .powerups {
+    /* bottom controls */
+    .action-bar {
       display: flex;
-      gap: 10px;
-      padding: 8px 0;
-      justify-content: center;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 6px;
+      gap: 8px;
     }
-
-    .btn-power {
-      flex: 1;
-      padding: 12px 0;
-      border-radius: 20px;
-      border: none;
+    .btn {
+      background: linear-gradient(145deg, #3d0f0f, #1f0505);
+      border: 2px solid #FFD966;
+      color: #FFE68F;
       font-weight: 700;
+      padding: 12px 0;
+      border-radius: 40px;
+      box-shadow: 0 8px 0 #5a1a1a, 0 10px 25px black;
+      flex: 1;
+      text-align: center;
       font-size: 0.9rem;
-      color: #1a0000;
-      background: linear-gradient(145deg, #ffd966, #f0b000);
-      box-shadow: 0 6px 0 #8b6000, 0 8px 20px rgba(255, 180, 0, 0.4);
-      transition: all 0.1s ease;
+      transition: all 0.08s linear;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 5px red;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    }
+    .btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #5a1a1a, 0 8px 20px black;
+    }
+    .btn-small {
+      font-size: 0.8rem;
+      padding: 8px 0;
+    }
+    .btn-icon {
+      font-size: 1.4rem;
+      filter: drop-shadow(0 0 6px gold);
     }
 
-    .btn-power:active {
-      transform: translateY(4px);
-      box-shadow: 0 2px 0 #8b6000, 0 4px 12px rgba(255, 180, 0, 0.4);
-    }
-
-    .btn-power:disabled {
-      opacity: 0.5;
-      filter: grayscale(0.6);
-      pointer-events: none;
-    }
-
-    .btn-power.ad-icon::after {
-      content: "📺";
-      font-size: 1rem;
-    }
-
-    /* ========== MENU / BUTTONS ========== */
-    .menu-buttons {
-      display: flex;
-      gap: 8px;
-      padding: 6px 0;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .btn-menu {
-      padding: 8px 16px;
-      border-radius: 30px;
-      border: 1px solid rgba(255, 200, 0, 0.4);
-      background: rgba(0, 0, 0, 0.5);
-      color: #ffd966;
-      font-weight: 600;
-      font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      backdrop-filter: blur(4px);
-    }
-
-    .btn-menu:active {
-      transform: scale(0.95);
-      background: rgba(255, 200, 0, 0.15);
-      box-shadow: 0 0 15px rgba(255, 200, 0, 0.3);
-    }
-
-    /* ========== MODAL / OVERLAY ========== */
+    /* overlays: login, settings, tournament, etc */
     .overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(6px);
-      display: none;
-      justify-content: center;
-      align-items: center;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(12px);
       z-index: 100;
-      padding: 20px;
-      animation: fadeIn 0.2s ease;
-    }
-
-    .overlay.active {
       display: flex;
-    }
-
-    .modal {
-      background: linear-gradient(160deg, #2A0808, #1A0000);
-      border: 2px solid rgba(255, 180, 0, 0.4);
-      border-radius: 28px;
-      padding: 24px 20px;
-      width: 100%;
-      max-width: 400px;
-      max-height: 85vh;
-      overflow-y: auto;
-      box-shadow: 0 0 60px rgba(200, 30, 30, 0.6);
-      color: #f5e6d3;
-      animation: modalPop 0.3s ease;
-    }
-
-    @keyframes modalPop {
-      0% { transform: scale(0.9); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .modal h2 {
-      font-size: 1.3rem;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
       text-align: center;
-      color: #ffd966;
+      color: #FFE68F;
+      border-radius: 40px;
+      transition: opacity 0.3s;
+    }
+    .overlay h2 {
+      font-size: 2rem;
       margin-bottom: 12px;
-      text-shadow: 0 0 15px rgba(255, 200, 0, 0.5);
+      text-shadow: 0 0 20px #FF4D4D;
+      color: #FFD966;
     }
-
-    .modal p, .modal label {
-      font-size: 0.85rem;
-      color: #c9a87c;
-      line-height: 1.5;
-    }
-
-    .modal input, .modal select {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 200, 0, 0.3);
-      background: rgba(0, 0, 0, 0.5);
-      color: #fff;
-      font-size: 0.9rem;
-      margin: 6px 0 12px;
-      outline: none;
-    }
-
-    .modal input:focus, .modal select:focus {
-      border-color: #ffd966;
-      box-shadow: 0 0 15px rgba(255, 200, 0, 0.3);
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 14px;
-      border-radius: 20px;
-      border: none;
-      background: linear-gradient(145deg, #ffd966, #f0b000);
-      color: #1a0000;
-      font-weight: 800;
+    .overlay p {
+      margin: 8px 0;
       font-size: 1rem;
-      cursor: pointer;
-      box-shadow: 0 6px 0 #8b6000, 0 8px 20px rgba(255, 180, 0, 0.4);
-      transition: all 0.1s ease;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 8px;
+      color: #ffb3b3;
     }
-
-    .btn-primary:active {
-      transform: translateY(4px);
-      box-shadow: 0 2px 0 #8b6000, 0 4px 12px rgba(255, 180, 0, 0.4);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.4;
-      filter: grayscale(0.8);
-      pointer-events: none;
-    }
-
-    .btn-secondary {
+    .overlay .btn {
+      margin-top: 16px;
+      padding: 14px 24px;
+      flex: none;
       width: 100%;
-      padding: 12px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 200, 0, 0.4);
-      background: rgba(0, 0, 0, 0.5);
-      color: #ffd966;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: all 0.15s ease;
+      max-width: 280px;
+      font-size: 1.1rem;
+    }
+    .hidden {
+      display: none !important;
     }
 
-    .btn-secondary:active {
-      background: rgba(255, 200, 0, 0.15);
-    }
-
-    /* Toggle Switch */
+    /* settings toggles */
     .toggle-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 200, 0, 0.1);
+      gap: 24px;
+      margin: 18px 0;
     }
-
-    .toggle-switch {
-      width: 52px;
-      height: 28px;
-      background: #3d0e0e;
-      border-radius: 30px;
+    .toggle-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #FFD966;
+    }
+    .toggle-btn {
+      background: #3d0f0f;
+      border: 3px solid #6b1a1a;
+      border-radius: 50px;
+      width: 70px;
+      height: 36px;
       position: relative;
       cursor: pointer;
-      transition: background 0.2s ease;
-      border: 1px solid rgba(255, 200, 0, 0.3);
+      box-shadow: inset 0 0 10px black;
     }
-
-    .toggle-switch.on {
-      background: #ffd966;
-    }
-
-    .toggle-switch::after {
-      content: "";
+    .toggle-btn::after {
+      content: '';
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 22px;
-      height: 22px;
+      width: 28px;
+      height: 28px;
+      background: #FFD966;
       border-radius: 50%;
-      background: #fff;
-      transition: transform 0.2s ease;
-      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+      top: 1px;
+      left: 4px;
+      transition: 0.2s;
+      box-shadow: 0 0 10px gold;
+    }
+    .toggle-btn.active::after {
+      left: 36px;
+      background: #4cd964;
     }
 
-    .toggle-switch.on::after {
-      transform: translateX(24px);
+    /* grid cell pop animation */
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .pop {
+      animation: pop 0.2s ease-out;
     }
 
-    /* Leaderboard */
-    .leaderboard-item {
+    /* floating coin text */
+    .coin-float {
+      position: absolute;
+      color: gold;
+      font-weight: 900;
+      font-size: 1.6rem;
+      text-shadow: 0 0 20px orange, 0 0 8px black;
+      pointer-events: none;
+      animation: coinUp 0.9s ease-out forwards;
+      z-index: 50;
+    }
+    @keyframes coinUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-70px) scale(1.4); }
+    }
+
+    /* offline warning */
+    #offlineWarning {
+      background: #5a0000ee;
+      backdrop-filter: blur(16px);
+      z-index: 999;
+    }
+
+    /* tournament list */
+    .leaderboard {
+      width: 100%;
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 12px 0;
+      padding: 4px;
+    }
+    .leader-item {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(255, 200, 0, 0.05);
-      border: 1px solid rgba(255, 200, 0, 0.15);
+      background: #2f0f0f;
+      padding: 10px 16px;
+      border-radius: 30px;
       margin-bottom: 8px;
-      font-size: 0.85rem;
-    }
-
-    .leaderboard-item.top1 {
-      background: linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 180, 0, 0.05));
-      border-color: #ffd700;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-    }
-
-    .leaderboard-item.top2 {
-      background: linear-gradient(90deg, rgba(192, 192, 192, 0.15), rgba(255, 255, 255, 0.03));
-      border-color: #c0c0c0;
-    }
-
-    .leaderboard-item.top3 {
-      background: linear-gradient(90deg, rgba(205, 127, 50, 0.15), rgba(255, 180, 0, 0.03));
-      border-color: #cd7f32;
-    }
-
-    .rank {
-      font-weight: 800;
-      font-size: 1rem;
-      width: 30px;
-      color: #ffd966;
-    }
-
-    .name {
-      flex: 1;
+      border-left: 6px solid #FFD966;
       font-weight: 600;
-      color: #f5e6d3;
     }
 
-    .score {
-      font-weight: 700;
-      color: #ffd966;
-      font-size: 0.8rem;
+    /* WD form */
+    .wd-form input, .wd-form select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 30px;
+      border: none;
+      background: #2f0f0f;
+      color: #FFE68F;
+      font-weight: 600;
+      margin: 6px 0;
+      border: 1px solid #ffaa33;
     }
-
-    /* Floating coin text */
-    .floating-coin {
-      position: fixed;
-      font-weight: 800;
-      font-size: 1.4rem;
-      color: #ffd700;
-      text-shadow: 0 0 15px #ff8c00, 0 0 30px #ff4500;
+    .wd-form button {
+      margin-top: 12px;
+      opacity: 0.6;
       pointer-events: none;
-      z-index: 999;
-      animation: floatUp 0.9s ease-out forwards;
     }
-
-    @keyframes floatUp {
-      0% { opacity: 1; transform: translateY(0) scale(1); }
-      100% { opacity: 0; transform: translateY(-80px) scale(1.6); }
-    }
-
-    /* Offline overlay */
-    #offlineOverlay .modal {
-      border-color: #ff3333;
-      box-shadow: 0 0 60px rgba(255, 0, 0, 0.5);
-    }
-
-    /* Win animation */
-    .win-burst {
-      animation: winBurst 0.8s ease infinite alternate;
-    }
-
-    @keyframes winBurst {
-      0% { box-shadow: 0 0 20px #ffd700; }
-      100% { box-shadow: 0 0 60px #ffd700, 0 0 100px #ff8c00; }
-    }
-
-    /* Responsive kecil */
-    @media (max-height: 700px) {
-      .logo-area h1 { font-size: 1rem; }
-      .logo-area .tagline { font-size: 0.5rem; }
-      .block { font-size: 0.9rem; }
-      .btn-power { padding: 8px 0; font-size: 0.8rem; }
-    }
-
-    /* Scrollbar */
-    .modal::-webkit-scrollbar {
-      width: 4px;
-    }
-    .modal::-webkit-scrollbar-thumb {
-      background: #ffd966;
-      border-radius: 10px;
+    .wd-form button.unlocked {
+      opacity: 1;
+      pointer-events: auto;
     }
   </style>
 </head>
 <body>
-  <!-- BACKGROUND & BOKEH -->
-  <div class="bg-gradient"></div>
-  <div id="bokehContainer"></div>
+  <div class="bokeh" id="bokehContainer"></div>
 
-  <!-- APP CONTAINER -->
-  <div id="app">
-
-    <!-- ========== SCREEN: LOGIN ========== -->
-    <div id="screen-login" class="screen active" style="justify-content: center; align-items: center; text-align: center; gap: 20px;">
-      <div class="logo-area" style="margin-bottom: 10px;">
-        <h1 style="font-size: 2rem;">💰 Cuan Blok</h1>
-        <p class="tagline" style="font-size: 0.85rem;">Game Asah Otak Paling Cuan:<br>Main Santai, Saldo Cair Setiap Hari!</p>
-      </div>
-      <div style="background: rgba(0,0,0,0.5); padding: 24px 20px; border-radius: 28px; border: 1px solid rgba(255,200,0,0.3); width: 100%; max-width: 340px;">
-        <p style="font-size: 0.85rem; color: #c9a87c; margin-bottom: 16px;">Login dengan Google untuk mulai menghasilkan cuan</p>
-        <button id="btnGoogleLogin" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-          <span style="font-size: 1.2rem;">🔐</span> Masuk dengan Google
-        </button>
-        <button id="btnPrivacyLogin" class="btn-secondary" style="margin-top: 12px; font-size: 0.7rem; padding: 8px;">Kebijakan Privasi</button>
+  <div class="game-wrapper" id="gameWrapper">
+    <!-- main UI -->
+    <div class="top-bar">
+      <div class="lives" id="livesDisplay">❤️❤️❤️</div>
+      <div class="coin-balance"><span>🪙</span> <span id="coinDisplay">0</span></div>
+      <div style="display: flex; gap: 6px;">
+        <div class="btn-small" style="width: 40px; padding: 6px;" id="settingsBtn">⚙️</div>
+        <div class="btn-small" style="width: 40px; padding: 6px;" id="tournamentBtn">🏆</div>
       </div>
     </div>
 
-    <!-- ========== SCREEN: GAME ========== -->
-    <div id="screen-game" class="screen">
-      <!-- Top bar -->
-      <div class="top-bar">
-        <div class="logo-area">
-          <h1 style="font-size: 1rem;">💰 Cuan Blok</h1>
-          <p class="tagline" style="font-size: 0.5rem;">Puzzle Penghasil Uang</p>
-        </div>
-        <div class="stats">
-          <div class="stat-item">🪙 <span id="coinDisplay">0</span></div>
-          <div class="stat-item">💵 $<span id="dollarDisplay">0.00</span></div>
-        </div>
-      </div>
-
-      <!-- Lives & Level -->
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
-        <div class="lives-area" id="livesDisplay">❤️❤️❤️</div>
-        <div style="font-size: 0.75rem; color: #ffd966; font-weight: 700;">Level <span id="levelDisplay">1</span></div>
-      </div>
-
-      <!-- GRID -->
-      <div class="grid-container">
-        <div id="grid"></div>
-      </div>
-
-      <!-- POWER UPS -->
-      <div class="powerups">
-        <button id="btnShuffle" class="btn-power ad-icon">Acak</button>
-        <button id="btnHint" class="btn-power ad-icon">Petunjuk</button>
-      </div>
-
-      <!-- MENU BUTTONS -->
-      <div class="menu-buttons">
-        <button id="btnLeaderboard" class="btn-menu">🏆 Turnamen</button>
-        <button id="btnWithdraw" class="btn-menu">💸 WD</button>
-        <button id="btnConvert" class="btn-menu">🔄 Konversi</button>
-        <button id="btnSettings" class="btn-menu">⚙️</button>
-      </div>
+    <div class="grid-container">
+      <div class="puzzle-grid" id="puzzleGrid"></div>
     </div>
 
-  </div>
-
-  <!-- ========== OVERLAYS ========== -->
-
-  <!-- Offline Overlay -->
-  <div id="offlineOverlay" class="overlay">
-    <div class="modal" style="text-align: center;">
-      <h2 style="color: #ff3333;">⚠️ KONEKSI TERPUTUS</h2>
-      <p>Game dijeda. Sambungkan kembali internet Anda untuk melanjutkan.</p>
-      <button id="btnRetryOnline" class="btn-primary" style="margin-top: 16px;">Coba Lagi</button>
+    <div class="action-bar">
+      <div class="btn" id="shuffleBtn"><span class="btn-icon">🔀</span> Acak</div>
+      <div class="btn" id="hintBtn"><span class="btn-icon">💡</span> Hint</div>
+      <div class="btn" id="convertBtn"><span class="btn-icon">💵</span> Konversi</div>
     </div>
-  </div>
+    <div class="action-bar" style="padding-top: 0;">
+      <div class="btn btn-small" id="withdrawBtn">💸 WD</div>
+    </div>
 
-  <!-- Settings Modal -->
-  <div id="settingsOverlay" class="overlay">
-    <div class="modal">
+    <!-- LOGIN OVERLAY -->
+    <div class="overlay" id="loginOverlay">
+      <h2 style="font-size: 2.2rem;">Cuan Blok</h2>
+      <p style="font-size: 1.2rem;">Puzzle Penghasil Uang</p>
+      <p style="margin: 20px 0; font-style: italic;">"Game Asah Otak Paling Cuan: Main Santai, Saldo Cair Setiap Hari!"</p>
+      <button class="btn" id="googleLoginBtn" style="background: #4285F4; border-color: white;">🔐 Login dengan Google</button>
+      <p style="font-size: 0.75rem; margin-top: 16px; opacity: 0.8;">Dengan login, Anda menyetujui <u>Kebijakan Privasi</u></p>
+    </div>
+
+    <!-- SETTINGS OVERLAY -->
+    <div class="overlay hidden" id="settingsOverlay">
       <h2>⚙️ Pengaturan</h2>
       <div class="toggle-row">
-        <span>🎵 Musik Latar (BGM)</span>
-        <div id="toggleBGM" class="toggle-switch on"></div>
+        <div class="toggle-item">
+          <span>BGM</span>
+          <div class="toggle-btn active" id="bgmToggle"></div>
+        </div>
+        <div class="toggle-item">
+          <span>SFX</span>
+          <div class="toggle-btn active" id="sfxToggle"></div>
+        </div>
       </div>
-      <div class="toggle-row">
-        <span>🔊 Efek Suara (SFX)</span>
-        <div id="toggleSFX" class="toggle-switch on"></div>
-      </div>
-      <button id="btnCloseSettings" class="btn-secondary" style="margin-top: 16px;">Tutup</button>
+      <button class="btn" id="closeSettingsBtn">Tutup</button>
+      <button class="btn" id="privacyBtn" style="background: #2a2a2a; font-size: 0.8rem;">Kebijakan Privasi</button>
     </div>
-  </div>
 
-  <!-- Privacy Policy Modal -->
-  <div id="privacyOverlay" class="overlay">
-    <div class="modal">
-      <h2>📜 Kebijakan Privasi</h2>
-      <p><strong>Cuan Blok</strong> menggunakan Google Sign-In untuk autentikasi. Kami menyimpan progress game (level, koin, dollar, nyawa) di server Supabase.</p>
-      <p>Kami menampilkan iklan dari AdMob dan jaringan mitra. Data yang dikumpulkan oleh SDK iklan diatur oleh kebijakan privasi masing-masing penyedia.</p>
-      <p>Dengan menggunakan game ini, Anda menyetujui pengumpulan data untuk keperluan autentikasi, penyimpanan progress, dan penayangan iklan.</p>
-      <button id="btnClosePrivacy" class="btn-secondary" style="margin-top: 16px;">Tutup</button>
-    </div>
-  </div>
-
-  <!-- Leaderboard Modal -->
-  <div id="leaderboardOverlay" class="overlay">
-    <div class="modal">
+    <!-- TOURNAMENT OVERLAY -->
+    <div class="overlay hidden" id="tournamentOverlay">
       <h2>🏆 Peringkat Mingguan</h2>
-      <div id="leaderboardList"></div>
-      <button id="btnCloseLeaderboard" class="btn-secondary" style="margin-top: 8px;">Tutup</button>
+      <div class="leaderboard" id="leaderboardList"></div>
+      <button class="btn" id="closeTournamentBtn">Tutup</button>
     </div>
-  </div>
 
-  <!-- Withdraw Modal -->
-  <div id="withdrawOverlay" class="overlay">
-    <div class="modal">
-      <h2>💸 Withdrawal (WD)</h2>
-      <p>Saldo Dollar: <strong>$<span id="wdDollarDisplay">0.00</span></strong></p>
-      <p style="font-size: 0.75rem; margin-bottom: 8px;">Minimal WD $1.00</p>
-      <label>Metode E-Wallet</label>
-      <select id="wdMethod">
-        <option value="DANA">DANA</option>
-        <option value="OVO">OVO</option>
-        <option value="GoPay">GoPay</option>
-      </select>
-      <label>Nama Pemilik Akun</label>
-      <input type="text" id="wdName" placeholder="Nama sesuai akun e-wallet">
-      <label>Nomor HP Tujuan</label>
-      <input type="tel" id="wdPhone" placeholder="08xxxxxxxxxx">
-      <button id="btnSubmitWD" class="btn-primary" disabled>Klaim WD</button>
-      <button id="btnCloseWD" class="btn-secondary" style="margin-top: 8px;">Tutup</button>
+    <!-- WITHDRAW OVERLAY -->
+    <div class="overlay hidden" id="withdrawOverlay">
+      <h2>💸 Withdrawal</h2>
+      <p>Saldo Dollar: <span id="dollarBalance">$0.00</span></p>
+      <div class="wd-form" style="width: 100%;">
+        <select id="wdMethod">
+          <option>DANA</option>
+          <option>OVO</option>
+          <option>GoPay</option>
+        </select>
+        <input type="text" id="wdName" placeholder="Nama Pemilik Akun">
+        <input type="tel" id="wdPhone" placeholder="Nomor HP tujuan">
+        <button class="btn" id="claimWdBtn">Klaim WD (min $1.00)</button>
+      </div>
+      <button class="btn" id="closeWithdrawBtn" style="margin-top: 8px;">Tutup</button>
     </div>
-  </div>
 
-  <!-- Ad Simulation Overlay -->
-  <div id="adOverlay" class="overlay">
-    <div class="modal" style="text-align: center;">
+    <!-- OFFLINE OVERLAY -->
+    <div class="overlay hidden" id="offlineWarning">
+      <h2>⚠️ Koneksi Terputus</h2>
+      <p>Game dijeda. Sambungkan internet untuk melanjutkan.</p>
+    </div>
+
+    <!-- AD SIMULATION OVERLAY -->
+    <div class="overlay hidden" id="adOverlay">
       <h2>📺 Iklan Berhadiah</h2>
-      <p id="adMessage">Menonton iklan...</p>
-      <div style="font-size: 3rem; margin: 16px 0;">🎬</div>
-      <p id="adCountdown" style="font-size: 0.85rem;">Mohon tunggu...</p>
-      <button id="btnCloseAd" class="btn-primary" style="display: none; margin-top: 12px;">Lanjutkan</button>
+      <p>Menonton iklan untuk melanjutkan...</p>
+      <div style="font-size: 3rem; margin: 20px;">⏳</div>
+      <button class="btn" id="adCompleteBtn" style="background: #4cd964; border-color: #FFD966;">Selesai (Simulasi)</button>
     </div>
   </div>
 
-  <!-- Force Close / Ad Pending Overlay -->
-  <div id="pendingAdOverlay" class="overlay">
-    <div class="modal" style="text-align: center;">
-      <h2>⚠️ Iklan Tertunda</h2>
-      <p>Anda harus menonton iklan terlebih dahulu untuk melanjutkan level.</p>
-      <button id="btnForceAd" class="btn-primary">Tonton Iklan Sekarang</button>
-    </div>
-  </div>
-
-  <!-- Win / Next Level Modal -->
-  <div id="winOverlay" class="overlay">
-    <div class="modal" style="text-align: center;">
-      <h2>🎉 LEVEL SELESAI!</h2>
-      <p>Anda mendapatkan <strong id="winCoins">100</strong> koin!</p>
-      <p style="font-size: 0.75rem;">Tonton 3 iklan untuk lanjut ke level berikutnya</p>
-      <button id="btnNextLevel" class="btn-primary">Lanjut Level</button>
-    </div>
-  </div>
-
-  <!-- ========== JAVASCRIPT ========== -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    (function() {
-      // ============================================================
-      // 1. INISIALISASI SUPABASE
-      // ============================================================
-      const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
-      const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    // ==================== SUPABASE INIT ====================
+    const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-      // ============================================================
-      // 2. STATE GLOBAL
-      // ============================================================
-      const state = {
-        user: null,
-        coins: 0,
-        dollars: 0.00,
-        lives: 3,
-        level: 1,
-        grid: [],
-        rows: 9,
-        cols: 7,
-        blockColors: ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e67e22', '#1abc9c'],
-        isProcessing: false,
-        isOnline: navigator.onLine,
-        bgmOn: true,
-        sfxOn: true,
-        waitingForAd: false,
-        adCallback: null,
-        pendingLevelReward: 0,
-        adChainCount: 0,
-      };
+    // ==================== GAME STATE ====================
+    const GameState = {
+      user: null,
+      coins: 0,
+      dollars: 0.00,
+      lives: 3,
+      level: 1,
+      grid: [],
+      gridSize: 6,
+      colors: 4,
+      selectedCell: null,
+      adPendingAction: null,
+      bgmOn: true,
+      sfxOn: true,
+      isOnline: navigator.onLine,
+      isGamePaused: false,
+      waitingForAd: false,
+      pendingLevelUp: false,
+      pendingLifeRefill: false,
+      lastWithdrawalTime: 0,
+    };
 
-      // ============================================================
-      // 3. DOM REFS
-      // ============================================================
-      const $ = (id) => document.getElementById(id);
-      const screens = {
-        login: $('screen-login'),
-        game: $('screen-game'),
-      };
-      const gridEl = $('grid');
-      const coinDisplay = $('coinDisplay');
-      const dollarDisplay = $('dollarDisplay');
-      const livesDisplay = $('livesDisplay');
-      const levelDisplay = $('levelDisplay');
-      const wdDollarDisplay = $('wdDollarDisplay');
+    // ==================== DOM ELEMENTS ====================
+    const puzzleGrid = document.getElementById('puzzleGrid');
+    const coinDisplay = document.getElementById('coinDisplay');
+    const dollarBalance = document.getElementById('dollarBalance');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const loginOverlay = document.getElementById('loginOverlay');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const tournamentOverlay = document.getElementById('tournamentOverlay');
+    const withdrawOverlay = document.getElementById('withdrawOverlay');
+    const offlineWarning = document.getElementById('offlineWarning');
+    const adOverlay = document.getElementById('adOverlay');
+    const leaderboardList = document.getElementById('leaderboardList');
+    const bgmToggle = document.getElementById('bgmToggle');
+    const sfxToggle = document.getElementById('sfxToggle');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const claimWdBtn = document.getElementById('claimWdBtn');
 
-      // ============================================================
-      // 4. AUDIO MANAGER (Web Audio API)
-      // ============================================================
-      const AudioManager = {
-        ctx: null,
-        bgmOsc: null,
-        bgmGain: null,
-        bgmPlaying: false,
-        init() {
-          if (this.ctx) return;
-          try {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-          } catch (e) {
-            console.warn('Web Audio not supported');
-          }
-        },
-        playTone(freq, duration, type = 'sine', volume = 0.1) {
-          if (!state.sfxOn || !this.ctx) return;
-          try {
+    // ==================== AUDIO MANAGER (Web Audio API) ====================
+    class AudioManager {
+      constructor() {
+        this.ctx = null;
+        this.bgmGain = null;
+        this.sfxGain = null;
+        this.bgmInterval = null;
+        this.init();
+      }
+      init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.bgmGain = this.ctx.createGain();
+        this.bgmGain.gain.value = 0.15;
+        this.bgmGain.connect(this.ctx.destination);
+        this.sfxGain = this.ctx.createGain();
+        this.sfxGain.gain.value = 0.4;
+        this.sfxGain.connect(this.ctx.destination);
+        this.startBGM();
+      }
+      startBGM() {
+        if (this.bgmInterval) clearInterval(this.bgmInterval);
+        if (!GameState.bgmOn) return;
+        this.bgmInterval = setInterval(() => {
+          if (!GameState.bgmOn || !this.ctx) return;
+          const now = this.ctx.currentTime;
+          const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+          notes.forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = type;
+            osc.type = 'triangle';
             osc.frequency.value = freq;
-            gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+            gain.gain.setValueAtTime(0.08, now + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.15);
             osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + duration);
-          } catch (e) {}
-        },
-        playPop() { this.playTone(600, 0.08, 'square', 0.08); },
-        playCoin() { this.playTone(1200, 0.15, 'sine', 0.1); setTimeout(() => this.playTone(1600, 0.12, 'sine', 0.08), 60); },
-        playClick() { this.playTone(400, 0.05, 'sine', 0.05); },
-        playLife() { this.playTone(300, 0.2, 'sawtooth', 0.08); },
-        playWin() {
-          [523, 659, 784, 1047].forEach((f, i) => {
-            setTimeout(() => this.playTone(f, 0.2, 'sine', 0.1), i * 100);
+            gain.connect(this.bgmGain);
+            osc.start(now + i * 0.1);
+            osc.stop(now + i * 0.1 + 0.15);
           });
-        },
-        startBGM() {
-          if (!state.bgmOn || !this.ctx || this.bgmPlaying) return;
-          this.bgmPlaying = true;
-          try {
-            this.bgmOsc = this.ctx.createOscillator();
-            this.bgmGain = this.ctx.createGain();
-            this.bgmOsc.type = 'sine';
-            this.bgmOsc.frequency.value = 220;
-            this.bgmGain.gain.value = 0.03;
-            this.bgmOsc.connect(this.bgmGain);
-            this.bgmGain.connect(this.ctx.destination);
-            this.bgmOsc.start();
-            // Melody sederhana
-            const notes = [220, 261, 293, 349, 392, 349, 293, 261];
-            let i = 0;
-            this.bgmInterval = setInterval(() => {
-              if (!state.bgmOn || !this.bgmOsc) return;
-              this.bgmOsc.frequency.setValueAtTime(notes[i % notes.length], this.ctx.currentTime);
-              i++;
-            }, 500);
-          } catch (e) {}
-        },
-        stopBGM() {
-          if (this.bgmOsc) {
-            try { this.bgmOsc.stop(); } catch (e) {}
-            this.bgmOsc = null;
-          }
-          if (this.bgmInterval) { clearInterval(this.bgmInterval); this.bgmInterval = null; }
-          this.bgmPlaying = false;
-        },
-      };
-
-      // ============================================================
-      // 5. BOKEH / FLOATING PARTICLES
-      // ============================================================
-      function createBokeh() {
-        const container = $('bokehContainer') || document.body;
-        for (let i = 0; i < 25; i++) {
-          const b = document.createElement('div');
-          b.className = 'bokeh';
-          const size = 20 + Math.random() * 80;
-          b.style.width = size + 'px';
-          b.style.height = size + 'px';
-          b.style.left = Math.random() * 100 + '%';
-          b.style.bottom = -10 + '%';
-          b.style.animationDuration = (15 + Math.random() * 25) + 's';
-          b.style.animationDelay = (Math.random() * 15) + 's';
-          b.style.opacity = 0.15 + Math.random() * 0.3;
-          container.appendChild(b);
-        }
+        }, 600);
       }
-
-      // ============================================================
-      // 6. GRID LOGIC
-      // ============================================================
-      function generateGrid() {
-        const g = [];
-        for (let r = 0; r < state.rows; r++) {
-          g[r] = [];
-          for (let c = 0; c < state.cols; c++) {
-            g[r][c] = Math.floor(Math.random() * state.blockColors.length);
-          }
-        }
-        // Pastikan ada minimal 1 grup 3 warna sama
-        if (!findAnyGroup(g)) {
-          g[0][0] = g[0][1] = g[0][2] = 0;
-        }
-        state.grid = g;
+      stopBGM() {
+        if (this.bgmInterval) clearInterval(this.bgmInterval);
+        this.bgmInterval = null;
       }
-
-      function renderGrid() {
-        gridEl.innerHTML = '';
-        gridEl.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
-        for (let r = 0; r < state.rows; r++) {
-          for (let c = 0; c < state.cols; c++) {
-            const block = document.createElement('div');
-            block.className = 'block';
-            block.dataset.row = r;
-            block.dataset.col = c;
-            const colorIdx = state.grid[r][c];
-            if (colorIdx !== null && colorIdx !== undefined) {
-              block.style.background = `linear-gradient(145deg, ${state.blockColors[colorIdx]}, ${adjustColor(state.blockColors[colorIdx], -30)})`;
-              block.style.boxShadow = `0 4px 0 ${adjustColor(state.blockColors[colorIdx], -60)}, 0 0 12px ${state.blockColors[colorIdx]}40`;
-            }
-            block.textContent = '';
-            block.addEventListener('click', () => onBlockClick(r, c));
-            gridEl.appendChild(block);
-          }
-        }
-      }
-
-      function adjustColor(hex, amount) {
-        const num = parseInt(hex.replace('#', ''), 16);
-        const r = Math.min(255, Math.max(0, (num >> 16) + amount));
-        const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
-        const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
-        return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-      }
-
-      function findAnyGroup(g) {
-        for (let r = 0; r < state.rows; r++) {
-          for (let c = 0; c < state.cols; c++) {
-            const group = getGroup(g, r, c);
-            if (group.length >= 3) return group;
-          }
-        }
-        return null;
-      }
-
-      function getGroup(g, r, c) {
-        const color = g[r][c];
-        if (color === null || color === undefined) return [];
-        const visited = new Set();
-        const group = [];
-        const stack = [[r, c]];
-        while (stack.length) {
-          const [cr, cc] = stack.pop();
-          const key = `${cr},${cc}`;
-          if (visited.has(key)) continue;
-          visited.add(key);
-          if (cr < 0 || cr >= state.rows || cc < 0 || cc >= state.cols) continue;
-          if (g[cr][cc] !== color) continue;
-          group.push([cr, cc]);
-          stack.push([cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]);
-        }
-        return group;
-      }
-
-      function onBlockClick(r, c) {
-        if (state.isProcessing || !state.isOnline) return;
-        if (state.grid[r][c] === null || state.grid[r][c] === undefined) return;
-
-        const group = getGroup(state.grid, r, c);
-        if (group.length >= 3) {
-          // Efek visual pop
-          group.forEach(([gr, gc]) => {
-            const idx = gr * state.cols + gc;
-            const block = gridEl.children[idx];
-            if (block) block.classList.add('pop');
-          });
-          AudioManager.playPop();
-
-          // Hitung skor
-          const points = group.length * 10;
-          addCoins(points);
-          showFloatingCoin(points);
-
-          // Hancurkan blok
-          group.forEach(([gr, gc]) => { state.grid[gr][gc] = null; });
-
-          // Proses gravity & refill
-          setTimeout(() => {
-            applyGravityAndRefill();
-          }, 250);
-        } else {
-          // Salah ketuk: nyawa berkurang
-          state.lives = Math.max(0, state.lives - 1);
-          updateLivesDisplay();
-          AudioManager.playLife();
-          if (state.lives <= 0) {
-            setTimeout(() => handleNoLives(), 300);
-          }
-        }
-      }
-
-      function applyGravityAndRefill() {
-        const g = state.grid;
-        // Untuk setiap kolom, geser blok ke bawah
-        for (let c = 0; c < state.cols; c++) {
-          const column = [];
-          for (let r = 0; r < state.rows; r++) {
-            if (g[r][c] !== null && g[r][c] !== undefined) {
-              column.push(g[r][c]);
-            }
-          }
-          // Isi ulang dari atas
-          const missing = state.rows - column.length;
-          for (let i = 0; i < missing; i++) {
-            column.unshift(Math.floor(Math.random() * state.blockColors.length));
-          }
-          for (let r = 0; r < state.rows; r++) {
-            g[r][c] = column[r];
-          }
-        }
-        state.grid = g;
-        renderGrid();
-        // Cek apakah ada grup lagi
-        if (!findAnyGroup(state.grid)) {
-          // Jika tidak ada, acak ulang otomatis (tanpa iklan, karena ini bukan tombol)
-          generateGrid();
-          renderGrid();
-        }
-        // Cek menang level (semua blok habis? Tidak mungkin karena refill. Kita pakai target skor)
-        // Level selesai jika skor mencapai target
-        checkLevelComplete();
-        state.isProcessing = false;
-      }
-
-      function checkLevelComplete() {
-        const target = state.level * 100;
-        if (state.coins >= target) {
-          // Level selesai
-          state.pendingLevelReward = state.level * 50;
-          addCoins(state.pendingLevelReward);
-          AudioManager.playWin();
-          showWinModal();
-        }
-      }
-
-      function showWinModal() {
-        $('winCoins').textContent = state.pendingLevelReward;
-        $('winOverlay').classList.add('active');
-      }
-
-      // ============================================================
-      // 7. COIN / DOLLAR / LIVES
-      // ============================================================
-      function addCoins(amount) {
-        state.coins += amount;
-        coinDisplay.textContent = state.coins;
-        AudioManager.playCoin();
-      }
-
-      function showFloatingCoin(amount) {
-        const el = document.createElement('div');
-        el.className = 'floating-coin';
-        el.textContent = '+' + amount;
-        el.style.left = (30 + Math.random() * 40) + '%';
-        el.style.top = (30 + Math.random() * 30) + '%';
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 1000);
-      }
-
-      function updateLivesDisplay() {
-        const hearts = '❤️'.repeat(state.lives) + '🖤'.repeat(3 - state.lives);
-        livesDisplay.innerHTML = hearts;
-      }
-
-      function handleNoLives() {
-        // Tampilkan modal untuk nonton iklan isi nyawa
-        showAdModal('Tonton iklan untuk mengisi nyawa', () => {
-          state.lives = 3;
-          updateLivesDisplay();
-          AudioManager.playCoin();
-        });
-      }
-
-      // ============================================================
-      // 8. AD SYSTEM (SIMULASI + WATERFALL)
-      // ============================================================
-      function showAdModal(message, onComplete) {
-        const overlay = $('adOverlay');
-        $('adMessage').textContent = message;
-        $('adCountdown').textContent = 'Iklan akan dimulai...';
-        $('btnCloseAd').style.display = 'none';
-        overlay.classList.add('active');
-        AudioManager.playClick();
-
-        // Simulasi durasi iklan 5 detik
-        let seconds = 5;
-        $('adCountdown').textContent = `Tersisa ${seconds} detik...`;
-        const interval = setInterval(() => {
-          seconds--;
-          if (seconds <= 0) {
-            clearInterval(interval);
-            $('adCountdown').textContent = 'Iklan selesai!';
-            $('btnCloseAd').style.display = 'block';
-            state.adCallback = onComplete;
-            // Fallback waterfall: cek jika AdMob kosong, gunakan link cadangan
-            if (Math.random() < 0.3) {
-              // Simulasi fallback ke link cadangan
-              console.log('Fallback to backup monetization link');
-              window.open('https://omg10.com/4/11785165', '_blank');
-            }
-          } else {
-            $('adCountdown').textContent = `Tersisa ${seconds} detik...`;
-          }
-        }, 1000);
-
-        $('btnCloseAd').onclick = () => {
-          overlay.classList.remove('active');
-          if (state.adCallback) {
-            const cb = state.adCallback;
-            state.adCallback = null;
-            cb();
-          }
-        };
-      }
-
-      // ============================================================
-      // 9. TOMBOL POWER-UP (WAJIB IKLAN)
-      // ============================================================
-      $('btnShuffle').addEventListener('click', () => {
-        if (state.isProcessing) return;
-        showAdModal('Tonton iklan untuk mengacak grid', () => {
-          // Setelah iklan sukses, acak grid
-          generateGrid();
-          renderGrid();
-          AudioManager.playClick();
-        });
-      });
-
-      $('btnHint').addEventListener('click', () => {
-        if (state.isProcessing) return;
-        showAdModal('Tonton iklan untuk petunjuk', () => {
-          // Tampilkan hint: cari grup dan highlight
-          const group = findAnyGroup(state.grid);
-          if (group) {
-            group.forEach(([r, c]) => {
-              const idx = r * state.cols + c;
-              const block = gridEl.children[idx];
-              if (block) {
-                block.classList.add('selected');
-                setTimeout(() => block.classList.remove('selected'), 2000);
-              }
+      playSFX(type) {
+        if (!GameState.sfxOn || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        switch (type) {
+          case 'click':
+            osc.frequency.value = 800;
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+            break;
+          case 'pop':
+            osc.frequency.value = 1200;
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            break;
+          case 'coin':
+            osc.frequency.value = 1568;
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            osc.start(now);
+            osc.stop(now + 0.25);
+            break;
+          case 'lose':
+            osc.frequency.value = 200;
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+            break;
+          case 'win':
+            [523, 659, 784].forEach((f, i) => {
+              const o = this.ctx.createOscillator();
+              const g = this.ctx.createGain();
+              o.connect(g);
+              g.connect(this.sfxGain);
+              o.frequency.value = f;
+              g.gain.setValueAtTime(0.2, now + i * 0.1);
+              g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.2);
+              o.start(now + i * 0.1);
+              o.stop(now + i * 0.1 + 0.2);
             });
-          }
-          AudioManager.playClick();
-        });
-      });
-
-      // ============================================================
-      // 10. TOMBOL MENU
-      // ============================================================
-      $('btnSettings').addEventListener('click', () => {
-        $('settingsOverlay').classList.add('active');
-        AudioManager.playClick();
-      });
-      $('btnCloseSettings').addEventListener('click', () => {
-        $('settingsOverlay').classList.remove('active');
-      });
-      $('btnPrivacyLogin').addEventListener('click', () => {
-        $('privacyOverlay').classList.add('active');
-      });
-      $('btnClosePrivacy').addEventListener('click', () => {
-        $('privacyOverlay').classList.remove('active');
-      });
-      $('btnLeaderboard').addEventListener('click', () => {
-        renderLeaderboard();
-        $('leaderboardOverlay').classList.add('active');
-      });
-      $('btnCloseLeaderboard').addEventListener('click', () => {
-        $('leaderboardOverlay').classList.remove('active');
-      });
-
-      // Withdraw
-      $('btnWithdraw').addEventListener('click', () => {
-        updateWDDisplay();
-        $('withdrawOverlay').classList.add('active');
-      });
-      $('btnCloseWD').addEventListener('click', () => {
-        $('withdrawOverlay').classList.remove('active');
-      });
-      function updateWDDisplay() {
-        $('wdDollarDisplay').textContent = state.dollars.toFixed(2);
-        const btn = $('btnSubmitWD');
-        btn.disabled = state.dollars < 1.00;
-      }
-      $('btnSubmitWD').addEventListener('click', async () => {
-        const name = $('wdName').value.trim();
-        const phone = $('wdPhone').value.trim();
-        const method = $('wdMethod').value;
-        if (!name || !phone) {
-          alert('Isi nama dan nomor HP');
-          return;
-        }
-        if (state.dollars < 1.00) {
-          alert('Saldo tidak mencukupi');
-          return;
-        }
-        // Simpan ke Supabase
-        try {
-          if (state.user) {
-            await supabase.from('withdrawals').insert({
-              user_id: state.user.id,
-              amount: state.dollars,
-              method: method,
-              name: name,
-              phone: phone,
-              status: 'pending',
-              created_at: new Date().toISOString(),
-            });
-          }
-          alert('Pengajuan WD berhasil!');
-          state.dollars = 0;
-          dollarDisplay.textContent = state.dollars.toFixed(2);
-          updateWDDisplay();
-          $('withdrawOverlay').classList.remove('active');
-        } catch (e) {
-          alert('Gagal mengajukan WD: ' + e.message);
-        }
-      });
-
-      // Convert
-      $('btnConvert').addEventListener('click', () => {
-        showAdModal('Tonton iklan untuk konversi koin ke dollar', () => {
-          const convertAmount = Math.floor(state.coins / 100);
-          if (convertAmount > 0) {
-            state.coins -= convertAmount * 100;
-            state.dollars += convertAmount * 0.01;
-            coinDisplay.textContent = state.coins;
-            dollarDisplay.textContent = state.dollars.toFixed(2);
-            AudioManager.playCoin();
-          }
-        });
-      });
-
-      // ============================================================
-      // 11. LEVEL / WIN FLOW (WAJIB 3 IKLAN)
-      // ============================================================
-      $('btnNextLevel').addEventListener('click', () => {
-        $('winOverlay').classList.remove('active');
-        state.adChainCount = 0;
-        // Wajib 3 iklan beruntun
-        showAdChain(3, () => {
-          state.level++;
-          levelDisplay.textContent = state.level;
-          state.coins = 0;
-          coinDisplay.textContent = state.coins;
-          generateGrid();
-          renderGrid();
-          state.isProcessing = false;
-        });
-      });
-
-      function showAdChain(count, onComplete) {
-        if (count <= 0) {
-          onComplete();
-          return;
-        }
-        showAdModal(`Iklan ${4 - count}/3 beruntun`, () => {
-          showAdChain(count - 1, onComplete);
-        });
-      }
-
-      // ============================================================
-      // 12. LEADERBOARD (BOT SULTAN)
-      // ============================================================
-      function renderLeaderboard() {
-        const list = $('leaderboardList');
-        list.innerHTML = '';
-        // Bot dengan nama panggilan Indonesia dan skor acak tinggi
-        const bots = [
-          { name: 'Rian_07', score: 9876543 },
-          { name: 'Putri Cantik', score: 8765432 },
-          { name: 'BayuGamer', score: 7654321 },
-          { name: 'Siska W', score: 6543210 },
-          { name: 'Fajar99', score: 5432109 },
-          { name: 'Dimas Kurniawan', score: 4321098 },
-          { name: 'Andini_aja', score: 3210987 },
-          { name: 'Rizky Pratama', score: 2109876 },
-        ];
-        // Acak urutan dan skor sedikit
-        const shuffled = bots.sort(() => Math.random() - 0.5);
-        shuffled.forEach((bot, i) => {
-          const div = document.createElement('div');
-          div.className = 'leaderboard-item';
-          if (i === 0) div.classList.add('top1');
-          else if (i === 1) div.classList.add('top2');
-          else if (i === 2) div.classList.add('top3');
-          const randomScore = bot.score + Math.floor(Math.random() * 100000);
-          div.innerHTML = `
-            <span class="rank">#${i + 1}</span>
-            <span class="name">${bot.name}</span>
-            <span class="score">🪙 ${randomScore.toLocaleString('id-ID')}</span>
-          `;
-          list.appendChild(div);
-        });
-        // Pemain asli
-        const playerDiv = document.createElement('div');
-        playerDiv.className = 'leaderboard-item';
-        playerDiv.style.marginTop = '12px';
-        playerDiv.style.borderColor = '#ffd966';
-        playerDiv.innerHTML = `
-          <span class="rank">#${shuffled.length + 1}</span>
-          <span class="name">${state.user?.email?.split('@')[0] || 'Anda'}</span>
-          <span class="score">🪙 ${state.coins.toLocaleString('id-ID')}</span>
-        `;
-        list.appendChild(playerDiv);
-      }
-
-      // ============================================================
-      // 13. OFFLINE DETECTION
-      // ============================================================
-      function checkOnline() {
-        state.isOnline = navigator.onLine;
-        if (!state.isOnline) {
-          $('offlineOverlay').classList.add('active');
-          if (state.isProcessing) state.isProcessing = true;
-        } else {
-          $('offlineOverlay').classList.remove('active');
+            break;
         }
       }
-      window.addEventListener('online', checkOnline);
-      window.addEventListener('offline', checkOnline);
-      $('btnRetryOnline').addEventListener('click', () => {
-        checkOnline();
-      });
+    }
+    const audio = new AudioManager();
 
-      // ============================================================
-      // 14. AUTENTIKASI GOOGLE
-      // ============================================================
-      $('btnGoogleLogin').addEventListener('click', async () => {
-        try {
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              queryParams: { prompt: 'select_account' },
-              redirectTo: window.location.origin + window.location.pathname,
-            },
-          });
-          if (error) throw error;
-        } catch (e) {
-          alert('Gagal login: ' + e.message);
-        }
-      });
-
-      // Cek session saat load
-      async function checkSession() {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          state.user = session.user;
-          showGameScreen();
-        } else {
-          screens.login.classList.add('active');
-          screens.game.classList.remove('active');
-        }
+    // ==================== BOKEH PARTICLES ====================
+    (function createBokeh() {
+      const container = document.getElementById('bokehContainer');
+      for (let i = 0; i < 30; i++) {
+        const span = document.createElement('span');
+        const size = Math.random() * 60 + 20;
+        span.style.width = size + 'px';
+        span.style.height = size + 'px';
+        span.style.left = Math.random() * 100 + '%';
+        span.style.animationDelay = Math.random() * 15 + 's';
+        span.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        container.appendChild(span);
       }
-
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session) {
-          state.user = session.user;
-          showGameScreen();
-        } else {
-          state.user = null;
-          screens.login.classList.add('active');
-          screens.game.classList.remove('active');
-        }
-      });
-
-      function showGameScreen() {
-        screens.login.classList.remove('active');
-        screens.game.classList.add('active');
-        // Init game
-        generateGrid();
-        renderGrid();
-        updateLivesDisplay();
-        state.coins = 0;
-        state.dollars = 0.00;
-        state.lives = 3;
-        state.level = 1;
-        coinDisplay.textContent = state.coins;
-        dollarDisplay.textContent = state.dollars.toFixed(2);
-        levelDisplay.textContent = state.level;
-        AudioManager.init();
-        if (state.bgmOn) AudioManager.startBGM();
-      }
-
-      // ============================================================
-      // 15. SETTINGS TOGGLE
-      // ============================================================
-      $('toggleBGM').addEventListener('click', function() {
-        this.classList.toggle('on');
-        state.bgmOn = this.classList.contains('on');
-        if (state.bgmOn) {
-          AudioManager.startBGM();
-        } else {
-          AudioManager.stopBGM();
-        }
-      });
-      $('toggleSFX').addEventListener('click', function() {
-        this.classList.toggle('on');
-        state.sfxOn = this.classList.contains('on');
-      });
-
-      // ============================================================
-      // 16. INISIALISASI
-      // ============================================================
-      createBokeh();
-      checkSession();
-      checkOnline();
-      updateLivesDisplay();
-
-      // Force close prevention: cek pending ad di Supabase
-      // Simulasi: jika state.waitingForAd dari database, tampilkan overlay
-      // Untuk demo, kita cek localStorage
-      if (localStorage.getItem('pending_ad') === 'true') {
-        $('pendingAdOverlay').classList.add('active');
-        $('btnForceAd').addEventListener('click', () => {
-          localStorage.removeItem('pending_ad');
-          $('pendingAdOverlay').classList.remove('active');
-          showAdModal('Iklan tertunda', () => {
-            // lanjut
-          });
-        });
-      }
-
-      // Save pending ad state saat level selesai
-      // (simulasi di localStorage, di produksi gunakan Supabase)
-      const originalShowWinModal = showWinModal;
-      showWinModal = function() {
-        localStorage.setItem('pending_ad', 'true');
-        originalShowWinModal();
-      };
-
-      // Override untuk membersihkan
-      $('btnNextLevel').addEventListener('click', () => {
-        localStorage.removeItem('pending_ad');
-      });
-
-      // ============================================================
-      // 17. JARINGAN IKLAN MULTI-AD WATERFALL (SIMULASI)
-      // ============================================================
-      // ID AdMob (digunakan sebagai referensi, dalam implementasi nyata pakai SDK)
-      const ADMOB_REWARDED = 'ca-app-pub-4310670917209711/3901057804';
-      const ADMOB_INTERSTITIAL = 'ca-app-pub-4310670917209711/8013719329';
-      const ADMOB_REWARDED_INTERSTITIAL = 'ca-app-pub-4310670917209711/4266046006';
-      const BACKUP_LINK = 'https://omg10.com/4/11785165';
-
-      // Fungsi simulasi iklan dengan waterfall
-      function loadRewardedAd(callback) {
-        // Coba AdMob dulu (simulasi)
-        if (Math.random() > 0.2) {
-          // Sukses AdMob
-          showAdModal('Iklan Berhadiah (AdMob)', callback);
-        } else {
-          // Fallback ke link cadangan
-          console.log('AdMob kosong, fallback ke backup link');
-          window.open(BACKUP_LINK, '_blank');
-          setTimeout(() => {
-            showAdModal('Iklan Cadangan', callback);
-          }, 1000);
-        }
-      }
-
-      // Override showAdModal untuk pakai waterfall
-      // (sudah cukup dengan simulasi di dalam showAdModal)
-
-      console.log('Cuan Blok siap!');
     })();
+
+    // ==================== GRID & GAMEPLAY ====================
+    function generateRandomGrid() {
+      const size = GameState.gridSize;
+      const colors = GameState.colors;
+      const grid = [];
+      for (let r = 0; r < size; r++) {
+        const row = [];
+        for (let c = 0; c < size; c++) {
+          row.push(Math.floor(Math.random() * colors));
+        }
+        grid.push(row);
+      }
+      GameState.grid = grid;
+      renderGrid();
+    }
+
+    function renderGrid() {
+      puzzleGrid.style.gridTemplateColumns = `repeat(${GameState.gridSize}, 1fr)`;
+      puzzleGrid.innerHTML = '';
+      for (let r = 0; r < GameState.gridSize; r++) {
+        for (let c = 0; c < GameState.gridSize; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.dataset.color = GameState.grid[r][c];
+          cell.addEventListener('click', () => handleCellClick(r, c));
+          puzzleGrid.appendChild(cell);
+        }
+      }
+    }
+
+    function handleCellClick(row, col) {
+      if (GameState.isGamePaused || GameState.waitingForAd || GameState.lives <= 0) return;
+      if (GameState.lives <= 0) return;
+      audio.playSFX('click');
+
+      const color = GameState.grid[row][col];
+      const connected = findConnectedBlocks(row, col, color);
+      if (connected.length >= 3) {
+        // valid move
+        audio.playSFX('pop');
+        // remove blocks
+        connected.forEach(([r, c]) => {
+          GameState.grid[r][c] = null;
+        });
+        // add score: coins based on count
+        const earned = connected.length * 10;
+        GameState.coins += earned;
+        updateUI();
+        showFloatingCoin(`+${earned}`, row, col);
+        // apply gravity per column
+        applyGravityAndRefill();
+        renderGrid();
+        // check level completion
+        checkLevelComplete();
+      } else {
+        // wrong move
+        GameState.lives--;
+        updateLivesUI();
+        audio.playSFX('lose');
+        if (GameState.lives <= 0) {
+          handleGameOver();
+        }
+      }
+    }
+
+    function findConnectedBlocks(row, col, color, visited = new Set()) {
+      const key = `${row},${col}`;
+      if (visited.has(key)) return [];
+      if (row < 0 || row >= GameState.gridSize || col < 0 || col >= GameState.gridSize) return [];
+      if (GameState.grid[row][col] !== color) return [];
+      visited.add(key);
+      let result = [[row, col]];
+      result = result.concat(findConnectedBlocks(row + 1, col, color, visited));
+      result = result.concat(findConnectedBlocks(row - 1, col, color, visited));
+      result = result.concat(findConnectedBlocks(row, col + 1, color, visited));
+      result = result.concat(findConnectedBlocks(row, col - 1, color, visited));
+      return result;
+    }
+
+    function applyGravityAndRefill() {
+      const size = GameState.gridSize;
+      for (let c = 0; c < size; c++) {
+        // collect non-null from top to bottom
+        const columnValues = [];
+        for (let r = 0; r < size; r++) {
+          if (GameState.grid[r][c] !== null) {
+            columnValues.push(GameState.grid[r][c]);
+          }
+        }
+        // fill from bottom
+        const missing = size - columnValues.length;
+        const newColumn = [];
+        for (let i = 0; i < missing; i++) {
+          newColumn.push(Math.floor(Math.random() * GameState.colors));
+        }
+        newColumn.push(...columnValues);
+        for (let r = 0; r < size; r++) {
+          GameState.grid[r][c] = newColumn[r];
+        }
+      }
+    }
+
+    function checkLevelComplete() {
+      const size = GameState.gridSize;
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (GameState.grid[r][c] !== null) return; // still blocks
+        }
+      }
+      // level complete
+      audio.playSFX('win');
+      GameState.level++;
+      GameState.coins += 200;
+      updateUI();
+      // trigger ad chain before next level
+      GameState.waitingForAd = true;
+      GameState.pendingLevelUp = true;
+      showAdOverlay(() => {
+        // after ad, increase difficulty slightly
+        GameState.colors = Math.min(6, GameState.colors + 1);
+        generateRandomGrid();
+        GameState.waitingForAd = false;
+        GameState.pendingLevelUp = false;
+        updateUI();
+      });
+    }
+
+    function handleGameOver() {
+      GameState.lives = 0;
+      updateLivesUI();
+      showAdOverlay(() => {
+        GameState.lives = 3;
+        updateLivesUI();
+        generateRandomGrid();
+      }, true); // rewarded ad for refill
+    }
+
+    function updateUI() {
+      coinDisplay.textContent = GameState.coins;
+      updateLivesUI();
+      // convert coins to dollars manually via button, so not auto
+    }
+
+    function updateLivesUI() {
+      livesDisplay.textContent = '❤️'.repeat(GameState.lives) + '🖤'.repeat(3 - GameState.lives);
+    }
+
+    function showFloatingCoin(text, row, col) {
+      const float = document.createElement('div');
+      float.className = 'coin-float';
+      float.textContent = text;
+      const cellSize = puzzleGrid.clientWidth / GameState.gridSize;
+      float.style.left = (col * cellSize + cellSize / 2) + 'px';
+      float.style.top = (row * cellSize + cellSize / 2) + 'px';
+      float.style.position = 'absolute';
+      puzzleGrid.parentElement.appendChild(float);
+      setTimeout(() => float.remove(), 900);
+    }
+
+    // ==================== AD SIMULATION (Waterfall) ====================
+    function showAdOverlay(callback, isRewarded = true) {
+      const adOverlay = document.getElementById('adOverlay');
+      adOverlay.classList.remove('hidden');
+      GameState.waitingForAd = true;
+      audio.playSFX('click');
+
+      // simulate ad waterfall: try admob, fallback to link
+      const adCompleteBtn = document.getElementById('adCompleteBtn');
+      const newBtn = adCompleteBtn.cloneNode(true);
+      adCompleteBtn.parentNode.replaceChild(newBtn, adCompleteBtn);
+      newBtn.addEventListener('click', () => {
+        adOverlay.classList.add('hidden');
+        GameState.waitingForAd = false;
+        audio.playSFX('coin');
+        if (callback) callback();
+      });
+
+      // anti-skip: no other way to close
+      adOverlay.querySelectorAll('button:not(#adCompleteBtn)').forEach(b => b.remove());
+    }
+
+    // ==================== SUPABASE AUTH & DATA ====================
+    async function signInWithGoogle() {
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            queryParams: { prompt: 'select_account' },
+            redirectTo: window.location.href,
+          },
+        });
+        if (error) throw error;
+      } catch (err) {
+        alert('Login gagal: ' + err.message);
+      }
+    }
+
+    // handle auth state
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        GameState.user = session.user;
+        loginOverlay.classList.add('hidden');
+        // load game state from supabase (simplified)
+        await loadPlayerData();
+        if (!GameState.grid.length) {
+          generateRandomGrid();
+        }
+      } else {
+        GameState.user = null;
+        loginOverlay.classList.remove('hidden');
+      }
+    });
+
+    async function loadPlayerData() {
+      if (!GameState.user) return;
+      try {
+        const { data, error } = await supabase
+          .from('player_state')
+          .select('*')
+          .eq('user_id', GameState.user.id)
+          .single();
+        if (data) {
+          GameState.coins = data.coins || 0;
+          GameState.dollars = data.dollars || 0.00;
+          GameState.level = data.level || 1;
+          GameState.lives = data.lives ?? 3;
+          GameState.colors = data.colors || 4;
+          if (data.grid) GameState.grid = data.grid;
+        } else {
+          // create new
+          await supabase.from('player_state').insert({
+            user_id: GameState.user.id,
+            coins: 0,
+            dollars: 0,
+            level: 1,
+            lives: 3,
+            colors: 4,
+          });
+        }
+        updateUI();
+        dollarBalance.textContent = `$${GameState.dollars.toFixed(2)}`;
+      } catch (e) { console.warn(e); }
+    }
+
+    // save on important events
+    async function savePlayerState() {
+      if (!GameState.user) return;
+      try {
+        await supabase.from('player_state').upsert({
+          user_id: GameState.user.id,
+          coins: GameState.coins,
+          dollars: GameState.dollars,
+          level: GameState.level,
+          lives: GameState.lives,
+          colors: GameState.colors,
+          grid: GameState.grid,
+        });
+      } catch (e) {}
+    }
+
+    // ==================== TOURNAMENT BOTS ====================
+    function generateBotLeaderboard() {
+      const names = ['Rian_07', 'Putri Cantik', 'BayuGamer', 'Siska W', 'Fajar99', 'Dimas Kurniawan', 'Ayu Lestari', 'Andi Pratama', 'Mega Sari', 'Reza Maulana'];
+      const shuffled = names.sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 8).map((name, i) => ({
+        name,
+        score: Math.floor(Math.random() * 50000) + 10000,
+        level: Math.floor(Math.random() * 50) + 10,
+      })).sort((a, b) => b.score - a.score);
+    }
+
+    function renderLeaderboard() {
+      const bots = generateBotLeaderboard();
+      leaderboardList.innerHTML = bots.map((bot, idx) => `
+        <div class="leader-item">
+          <span>${idx + 1}. ${bot.name}</span>
+          <span>🪙 ${bot.score.toLocaleString()} | Lv.${bot.level}</span>
+        </div>
+      `).join('');
+    }
+
+    // ==================== WITHDRAWAL ====================
+    async function submitWithdrawal() {
+      if (GameState.dollars < 1.00) return;
+      if (!GameState.user) return;
+      const method = document.getElementById('wdMethod').value;
+      const name = document.getElementById('wdName').value.trim();
+      const phone = document.getElementById('wdPhone').value.trim();
+      if (!name || !phone) { alert('Isi semua data'); return; }
+      // prevent double request      const { data: existing } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .eq('user_id', GameState.user.id)
+        .eq('status', 'pending');
+      if (existing && existing.length > 0) {
+        alert('Anda masih memiliki permintaan WD yang diproses.');
+        return;
+      }
+      await supabase.from('withdrawals').insert({
+        user_id: GameState.user.id,
+        method, name, phone,
+        amount: GameState.dollars,
+        status: 'pending',
+      });
+      GameState.dollars = 0;
+      dollarBalance.textContent = '$0.00';
+      updateUI();
+      alert('WD diajukan!');
+      await savePlayerState();
+    }
+
+    // ==================== CONVERSION ====================
+    function convertCoins() {
+      if (GameState.coins < 100) {
+        alert('Minimal 100 koin untuk konversi');
+        return;
+      }
+      showAdOverlay(() => {
+        const dollars = GameState.coins / 1000;
+        GameState.dollars += dollars;
+        GameState.coins = 0;
+        dollarBalance.textContent = `$${GameState.dollars.toFixed(2)}`;
+        updateUI();
+        savePlayerState();
+        audio.playSFX('coin');
+      });
+    }
+
+    // ==================== SHUFFLE & HINT (with rewarded ad) ====================
+    function shuffleGrid() {
+      showAdOverlay(() => {
+        // shuffle non-null values
+        const values = [];
+        for (let r = 0; r < GameState.gridSize; r++) {
+          for (let c = 0; c < GameState.gridSize; c++) {
+            if (GameState.grid[r][c] !== null) values.push(GameState.grid[r][c]);
+          }
+        }
+        for (let i = values.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [values[i], values[j]] = [values[j], values[i]];
+        }
+        let idx = 0;
+        for (let r = 0; r < GameState.gridSize; r++) {
+          for (let c = 0; c < GameState.gridSize; c++) {
+            if (GameState.grid[r][c] !== null) {
+              GameState.grid[r][c] = values[idx++];
+            }
+          }
+        }
+        renderGrid();
+        audio.playSFX('pop');
+      });
+    }
+
+    function showHint() {
+      showAdOverlay(() => {
+        // find first group of 3+
+        for (let r = 0; r < GameState.gridSize; r++) {
+          for (let c = 0; c < GameState.gridSize; c++) {
+            const color = GameState.grid[r][c];
+            if (color === null) continue;
+            const group = findConnectedBlocks(r, c, color);
+            if (group.length >= 3) {
+              // highlight
+              const cells = puzzleGrid.children;
+              group.forEach(([rr, cc]) => {
+                const idx = rr * GameState.gridSize + cc;
+                if (cells[idx]) {
+                  cells[idx].classList.add('selected');
+                  setTimeout(() => cells[idx].classList.remove('selected'), 800);
+                }
+              });
+              return;
+            }
+          }
+        }
+        alert('Tidak ada langkah valid, coba acak!');
+      });
+    }
+
+    // ==================== EVENT LISTENERS ====================
+    document.getElementById('googleLoginBtn').addEventListener('click', signInWithGoogle);
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      settingsOverlay.classList.remove('hidden');
+      audio.playSFX('click');
+    });
+    document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+      settingsOverlay.classList.add('hidden');
+      audio.playSFX('click');
+    });
+    document.getElementById('privacyBtn').addEventListener('click', () => {
+      alert('Kebijakan Privasi: Kami mengumpulkan data login Google, progress game, dan menampilkan iklan AdMob. Data Anda aman.');
+    });
+
+    bgmToggle.addEventListener('click', () => {
+      GameState.bgmOn = !GameState.bgmOn;
+      bgmToggle.classList.toggle('active', GameState.bgmOn);
+      if (GameState.bgmOn) audio.startBGM(); else audio.stopBGM();
+      audio.playSFX('click');
+    });
+    sfxToggle.addEventListener('click', () => {
+      GameState.sfxOn = !GameState.sfxOn;
+      sfxToggle.classList.toggle('active', GameState.sfxOn);
+      audio.playSFX('click');
+    });
+
+    document.getElementById('tournamentBtn').addEventListener('click', () => {
+      renderLeaderboard();
+      tournamentOverlay.classList.remove('hidden');
+      audio.playSFX('click');
+    });
+    document.getElementById('closeTournamentBtn').addEventListener('click', () => {
+      tournamentOverlay.classList.add('hidden');
+      audio.playSFX('click');
+    });
+
+    document.getElementById('withdrawBtn').addEventListener('click', () => {
+      dollarBalance.textContent = `$${GameState.dollars.toFixed(2)}`;
+      claimWdBtn.classList.toggle('unlocked', GameState.dollars >= 1.00);
+      withdrawOverlay.classList.remove('hidden');
+      audio.playSFX('click');
+    });
+    document.getElementById('closeWithdrawBtn').addEventListener('click', () => {
+      withdrawOverlay.classList.add('hidden');
+      audio.playSFX('click');
+    });
+
+    claimWdBtn.addEventListener('click', submitWithdrawal);
+
+    document.getElementById('shuffleBtn').addEventListener('click', shuffleGrid);
+    document.getElementById('hintBtn').addEventListener('click', showHint);
+    document.getElementById('convertBtn').addEventListener('click', convertCoins);
+
+    // online/offline detection
+    window.addEventListener('online', () => {
+      GameState.isOnline = true;
+      offlineWarning.classList.add('hidden');
+      GameState.isGamePaused = false;
+    });
+    window.addEventListener('offline', () => {
+      GameState.isOnline = false;
+      offlineWarning.classList.remove('hidden');
+      GameState.isGamePaused = true;
+    });
+
+    // ==================== INIT ====================
+    function initGame() {
+      // generate random grid for immediate play
+      GameState.gridSize = 6;
+      generateRandomGrid();
+      updateUI();
+      // check auth
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          loginOverlay.classList.remove('hidden');
+        } else {
+          GameState.user = session.user;
+          loginOverlay.classList.add('hidden');
+          loadPlayerData();
+        }
+      });
+      if (!navigator.onLine) {
+        offlineWarning.classList.remove('hidden');
+        GameState.isGamePaused = true;
+      }
+    }
+
+    initGame();
   </script>
 </body>
 </html>
