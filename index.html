@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Cuan Blok: Puzzle Penghasil Uang</title>
-    <meta name="description" content="Game Asah Otak Paling Cuan: Main Santai, Saldo Cair Setiap Hari!" />
+    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ==================== RESET & BASE ==================== */
+        /* ===== RESET & GLOBAL ===== */
         * {
             margin: 0;
             padding: 0;
@@ -16,609 +16,350 @@
             user-select: none;
         }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #fff;
-        }
-
         body {
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            background: radial-gradient(circle at 20% 20%, #2A0808, #1A0000 60%, #0a0a0a);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            background: radial-gradient(ellipse at 50% 0%, #2A0808 0%, #1A0000 45%, #0a0a0a 100%);
+            justify-content: center;
+            overflow: hidden;
+            color: #fff;
             position: relative;
         }
 
-        /* ==================== FLOATING GOLD DUST PARTICLES ==================== */
-        .particles {
+        /* ===== FLOATING GOLD DUST (PARTIKEL) ===== */
+        .gold-dust {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1;
+            z-index: 0;
             overflow: hidden;
         }
 
-        .particle {
+        .gold-dust span {
             position: absolute;
+            display: block;
             width: 6px;
             height: 6px;
-            background: radial-gradient(circle, #ffd700, #ff8c00);
+            background: radial-gradient(circle, #f5d742, #b8860b);
             border-radius: 50%;
-            opacity: 0.6;
-            box-shadow: 0 0 10px 2px rgba(255, 215, 0, 0.5);
-            animation: floatUp linear infinite;
+            opacity: 0.5;
+            box-shadow: 0 0 12px 4px rgba(245, 215, 66, 0.3);
+            animation: floatDust linear infinite;
         }
 
-        @keyframes floatUp {
+        @keyframes floatDust {
             0% {
-                transform: translateY(100vh) scale(0.5);
+                transform: translateY(110vh) scale(0.5) rotate(0deg);
                 opacity: 0;
             }
-            10% {
-                opacity: 0.8;
+            20% {
+                opacity: 0.7;
             }
-            90% {
-                opacity: 0.6;
+            80% {
+                opacity: 0.7;
             }
             100% {
-                transform: translateY(-10vh) scale(1.2);
+                transform: translateY(-10vh) scale(1.2) rotate(360deg);
                 opacity: 0;
             }
         }
 
-        /* ==================== APP CONTAINER ==================== */
-        #app {
+        /* ===== GAME CONTAINER ===== */
+        .game-container {
             position: relative;
-            z-index: 2;
+            z-index: 10;
             width: 100%;
             max-width: 480px;
-            height: 100%;
+            height: 100vh;
             max-height: 900px;
             display: flex;
             flex-direction: column;
-            padding: 8px;
-            gap: 8px;
+            background: rgba(20, 0, 0, 0.55);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            box-shadow: 0 0 40px rgba(200, 30, 30, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            padding: 12px 14px;
+            overflow: hidden;
         }
 
-        /* ==================== HEADER ==================== */
+        /* ===== HEADER ===== */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
-            background: rgba(42, 8, 8, 0.75);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            border-radius: 16px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.15);
+            padding: 6px 4px 12px;
+            flex-shrink: 0;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .logo-icon {
-            font-size: 24px;
-            filter: drop-shadow(0 0 6px #ffd700);
-        }
-
-        .game-title {
-            font-size: 16px;
+        .logo {
+            font-size: 1.3rem;
             font-weight: 800;
-            background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
+            background: linear-gradient(135deg, #f5d742, #e6a800, #ffdd55);
             -webkit-background-clip: text;
-            background-clip: text;
             -webkit-text-fill-color: transparent;
-            white-space: nowrap;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(245, 215, 66, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .logo small {
+            display: block;
+            font-size: 0.55rem;
+            font-weight: 400;
+            color: #cc9999;
+            -webkit-text-fill-color: #cc9999;
+            background: none;
+            letter-spacing: 0.3px;
         }
 
         .header-right {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
         }
 
         .icon-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            color: #f5d742;
             width: 38px;
             height: 38px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            background: rgba(60, 0, 0, 0.8);
-            color: #ffd700;
-            font-size: 18px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            border-radius: 50%;
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 0 12px rgba(200, 30, 30, 0.2);
         }
 
         .icon-btn:active {
-            transform: scale(0.9);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            transform: scale(0.88);
+            background: rgba(245, 215, 66, 0.15);
+            box-shadow: 0 0 25px rgba(245, 215, 66, 0.5);
         }
 
-        /* ==================== STATS BAR ==================== */
+        /* ===== STATS BAR ===== */
         .stats-bar {
             display: flex;
             justify-content: space-between;
-            gap: 6px;
-            padding: 8px 12px;
-            background: rgba(42, 8, 8, 0.75);
-            border: 1px solid rgba(255, 215, 0, 0.25);
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 16px;
-            backdrop-filter: blur(8px);
-            font-size: 13px;
-            font-weight: 700;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            flex-shrink: 0;
         }
 
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 4px;
-            color: #ffd700;
+            gap: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
-        .stat-item .value {
-            color: #fff;
-            font-size: 14px;
+        .stat-item .heart {
+            color: #ff3b3b;
+            font-size: 1rem;
+            text-shadow: 0 0 12px rgba(255, 59, 59, 0.8);
         }
 
-        .lives {
-            letter-spacing: 2px;
-            font-size: 14px;
+        .stat-item .coin {
+            color: #f5d742;
+            font-size: 1rem;
+            text-shadow: 0 0 12px rgba(245, 215, 66, 0.6);
         }
 
-        /* ==================== GAME BOARD ==================== */
+        .stat-item .dollar {
+            color: #6fcf97;
+            font-size: 1rem;
+        }
+
+        /* ===== BOARD GRID ===== */
         .board-wrapper {
             flex: 1;
-            position: relative;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            position: relative;
             min-height: 0;
         }
 
-        #board {
+        .board {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            grid-template-rows: repeat(9, 1fr);
+            grid-template-rows: repeat(7, 1fr);
             gap: 4px;
             width: 100%;
-            aspect-ratio: 7 / 9;
+            aspect-ratio: 1/1;
             max-height: 100%;
-            padding: 6px;
-            background: rgba(20, 0, 0, 0.7);
-            border: 2px solid rgba(255, 215, 0, 0.3);
+            background: rgba(0, 0, 0, 0.35);
             border-radius: 18px;
-            box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.15), 0 0 25px rgba(0, 0, 0, 0.6);
+            padding: 6px;
+            border: 1px solid rgba(255, 215, 0, 0.12);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+            touch-action: manipulation;
         }
 
         .cell {
-            border-radius: 8px;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-            will-change: transform, opacity;
+            border-radius: 10px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s, background 0.15s, opacity 0.2s;
+            position: relative;
+            will-change: transform;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
 
         .cell:active {
-            transform: scale(0.92);
+            transform: scale(0.88);
         }
 
-        .cell.pop {
-            animation: popOut 0.25s ease forwards;
-        }
-
-        @keyframes popOut {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.15);
-                opacity: 0.8;
-            }
-            100% {
-                transform: scale(0);
-                opacity: 0;
-            }
-        }
-
+        /* smooth falling transition */
         .cell.falling {
-            transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
         }
 
-        .cell.hint-glow {
-            animation: hintPulse 0.8s ease infinite;
+        /* Color palette */
+        .cell[data-color="0"] { background: linear-gradient(145deg, #ff4d4d, #b30000); box-shadow: 0 0 14px rgba(255, 77, 77, 0.4); }
+        .cell[data-color="1"] { background: linear-gradient(145deg, #4d9eff, #0047b3); box-shadow: 0 0 14px rgba(77, 158, 255, 0.4); }
+        .cell[data-color="2"] { background: linear-gradient(145deg, #6fcf97, #1e7a4a); box-shadow: 0 0 14px rgba(111, 207, 151, 0.4); }
+        .cell[data-color="3"] { background: linear-gradient(145deg, #f5d742, #b8860b); box-shadow: 0 0 14px rgba(245, 215, 66, 0.5); }
+        .cell[data-color="4"] { background: linear-gradient(145deg, #c97bff, #6a1b9a); box-shadow: 0 0 14px rgba(201, 123, 255, 0.4); }
+        .cell[data-color="5"] { background: linear-gradient(145deg, #ff8c42, #b34700); box-shadow: 0 0 14px rgba(255, 140, 66, 0.4); }
+
+        .cell.empty {
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: none;
+            cursor: default;
+            pointer-events: none;
         }
 
-        @keyframes hintPulse {
-            0%, 100% {
-                box-shadow: 0 0 5px 2px #fff, inset 0 -3px 0 rgba(0, 0, 0, 0.3);
-            }
-            50% {
-                box-shadow: 0 0 20px 6px #ffd700, inset 0 -3px 0 rgba(0, 0, 0, 0.3);
-            }
-        }
-
-        /* ==================== CONTROLS ==================== */
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .btn {
-            padding: 12px 8px;
-            border-radius: 14px;
-            border: none;
-            font-weight: 800;
-            font-size: 13px;
-            cursor: pointer;
+        /* ===== ACTION BUTTONS ===== */
+        .action-row {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            transition: transform 0.1s, box-shadow 0.2s, filter 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn:active {
-            transform: scale(0.94);
-        }
-
-        .btn:disabled {
-            filter: grayscale(0.8) brightness(0.6);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #d32f2f, #8b0000);
-            color: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.2);
-            border: 1px solid rgba(255, 215, 0, 0.5);
-        }
-
-        .btn-gold {
-            background: linear-gradient(135deg, #ffd700, #ff8c00);
-            color: #2A0808;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-        }
-
-        .btn-dark {
-            background: rgba(60, 0, 0, 0.9);
-            color: #ffd700;
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        /* ==================== MODALS ==================== */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 100;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: linear-gradient(160deg, #2A0808, #1A0000);
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            border-radius: 20px;
-            padding: 20px;
-            width: 100%;
-            max-width: 420px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
-            animation: modalIn 0.3s ease;
-        }
-
-        @keyframes modalIn {
-            from { transform: scale(0.85); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal h2 {
-            color: #ffd700;
-            font-size: 20px;
-            margin-bottom: 12px;
-            text-align: center;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        .modal p {
-            font-size: 13px;
-            color: #ddd;
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-
-        .modal .close-btn {
-            margin-top: 12px;
-            width: 100%;
-        }
-
-        /* ==================== TOGGLE SWITCH ==================== */
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 215, 0, 0.15);
-        }
-
-        .setting-row:last-child {
-            border-bottom: none;
-        }
-
-        .setting-label {
-            font-size: 14px;
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .switch {
-            position: relative;
-            width: 52px;
-            height: 28px;
-            display: inline-block;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background: #444;
-            border-radius: 34px;
-            transition: 0.3s;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 3px;
-            background: #fff;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-
-        input:checked + .slider {
-            background: linear-gradient(90deg, #d32f2f, #ff8c00);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(24px);
-            background: #ffd700;
-        }
-
-        /* ==================== LEADERBOARD ==================== */
-        .leaderboard-tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-
-        .leaderboard-tabs .tab {
-            flex: 1;
-            padding: 8px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            background: rgba(60, 0, 0, 0.6);
-            color: #ffd700;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .leaderboard-tabs .tab.active {
-            background: linear-gradient(135deg, #d32f2f, #8b0000);
-            box-shadow: 0 0 12px rgba(255, 0, 0, 0.5);
-        }
-
-        .lb-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .lb-item {
-            display: flex;
-            align-items: center;
             gap: 10px;
-            padding: 8px 10px;
-            background: rgba(60, 0, 0, 0.5);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.15);
-        }
-
-        .lb-item.me {
-            border-color: #ffd700;
-            box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
-        }
-
-        .lb-rank {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 800;
-            font-size: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            color: #ffd700;
+            padding: 10px 0 4px;
             flex-shrink: 0;
         }
 
-        .lb-rank.gold { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #2A0808; }
-        .lb-rank.silver { background: linear-gradient(135deg, #c0c0c0, #808080); color: #2A0808; }
-        .lb-rank.bronze { background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
-
-        .lb-name {
+        .btn {
             flex: 1;
-            font-size: 13px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .lb-score {
-            font-size: 12px;
-            color: #ffd700;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 14px;
             font-weight: 700;
-        }
-
-        /* ==================== FORM ==================== */
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            color: #ffd700;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            border-color: #ffd700;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        .form-group select option {
-            background: #1A0000;
-            color: #fff;
-        }
-
-        /* ==================== TOAST ==================== */
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: linear-gradient(135deg, #d32f2f, #8b0000);
-            color: #ffd700;
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.5);
-            font-size: 13px;
-            font-weight: 700;
-            z-index: 300;
-            transition: transform 0.3s ease;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
-            max-width: 90%;
-            text-align: center;
-        }
-
-        #toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* ==================== OFFLINE / AUTH SCREENS ==================== */
-        .full-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 500;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 24px;
-            text-align: center;
-            background: radial-gradient(ellipse at 50% 30%, #2A0808 0%, #1A0000 50%, #0a0a0a 100%);
-        }
-
-        .full-screen.active {
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(145deg, #3d0e0e, #2a0808);
+            color: #f5d742;
+            border: 1px solid rgba(245, 215, 66, 0.25);
         }
 
-        .full-screen h1 {
-            font-size: 26px;
-            background: linear-gradient(90deg, #ffd700, #ff8c00);
+        .btn:active {
+            transform: scale(0.93);
+            box-shadow: 0 0 28px rgba(245, 215, 66, 0.4);
+        }
+
+        .btn.primary {
+            background: linear-gradient(145deg, #b30000, #7a0000);
+            color: #fff;
+            border-color: rgba(255, 215, 0, 0.4);
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+        }
+
+        .btn.gold {
+            background: linear-gradient(145deg, #b8860b, #8b6508);
+            color: #1a0000;
+            border-color: #f5d742;
+            font-weight: 800;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: grayscale(0.5);
+        }
+
+        /* ===== MENU OVERLAY ===== */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 0, 0, 0.92);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            border-radius: 28px;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .overlay h2 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #f5d742, #e6a800);
             -webkit-background-clip: text;
-            background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            background-clip: text;
+            margin-bottom: 6px;
+            text-align: center;
         }
 
-        .full-screen p {
-            font-size: 14px;
-            color: #ccc;
+        .overlay p {
+            color: #cc9999;
+            font-size: 0.85rem;
+            text-align: center;
             margin-bottom: 20px;
-            max-width: 320px;
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
-        .full-screen .btn {
+        .overlay .btn {
             width: 100%;
             max-width: 300px;
-            margin-bottom: 10px;
             padding: 14px;
-            font-size: 14px;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .overlay .btn:last-child {
+            margin-bottom: 0;
         }
 
         .google-btn {
-            background: #fff;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
+            background: #fff !important;
+            color: #1a0000 !important;
+            border: none !important;
             font-weight: 700;
+            gap: 10px;
         }
 
         .google-btn img {
@@ -626,121 +367,368 @@
             height: 20px;
         }
 
-        .legal-links {
-            margin-top: 16px;
+        /* ===== SETTINGS MODAL ===== */
+        .modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 200;
             display: flex;
-            gap: 16px;
-            font-size: 12px;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-radius: 28px;
+            transition: opacity 0.25s, visibility 0.25s;
         }
 
-        .legal-links a {
-            color: #ffd700;
-            text-decoration: underline;
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #1f0505, #140000);
+            border: 1px solid rgba(245, 215, 66, 0.2);
+            border-radius: 22px;
+            padding: 22px 18px;
+            width: 100%;
+            max-width: 340px;
+            box-shadow: 0 0 40px rgba(200, 30, 30, 0.3);
+        }
+
+        .modal-content h3 {
+            color: #f5d742;
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .toggle-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .toggle-row label {
+            font-size: 0.9rem;
+            color: #e0c0c0;
+        }
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            background: #3d0e0e;
+            border-radius: 30px;
             cursor: pointer;
+            transition: background 0.25s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* ==================== RESPONSIVE ==================== */
-        @media (max-height: 700px) {
-            .game-title { font-size: 13px; }
-            .icon-btn { width: 34px; height: 34px; font-size: 16px; }
-            .stats-bar { font-size: 11px; padding: 6px 10px; }
-            .btn { padding: 10px 6px; font-size: 11px; }
+        .switch.active {
+            background: #b30000;
+            box-shadow: 0 0 16px rgba(255, 0, 0, 0.4);
         }
 
-        /* ==================== SCROLLBAR ==================== */
-        .modal::-webkit-scrollbar {
-            width: 6px;
+        .switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.25s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
-        .modal::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
+
+        .switch.active::after {
+            transform: translateX(22px);
         }
-        .modal::-webkit-scrollbar-thumb {
-            background: #ffd700;
-            border-radius: 3px;
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(20, 0, 0, 0.95);
+            color: #f5d742;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(245, 215, 66, 0.3);
+            box-shadow: 0 0 30px rgba(200, 30, 30, 0.4);
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 300;
+            white-space: nowrap;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== OFFLINE OVERLAY ===== */
+        .offline-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 0, 0, 0.96);
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            border-radius: 28px;
+            text-align: center;
+        }
+
+        .offline-overlay.hidden {
+            display: none;
+        }
+
+        .offline-overlay .icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .offline-overlay h2 {
+            color: #ff4d4d;
+            margin-bottom: 8px;
+        }
+
+        .offline-overlay p {
+            color: #cc9999;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        /* ===== LEADERBOARD ===== */
+        .leaderboard-list {
+            width: 100%;
+            max-width: 320px;
+            margin-top: 10px;
+        }
+
+        .lb-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            margin-bottom: 6px;
+            border: 1px solid rgba(255, 215, 0, 0.08);
+            font-size: 0.85rem;
+        }
+
+        .lb-row .rank {
+            font-weight: 800;
+            color: #f5d742;
+            min-width: 26px;
+        }
+
+        .lb-row .name {
+            flex: 1;
+            color: #e0d0d0;
+            font-weight: 500;
+        }
+
+        .lb-row .score {
+            color: #6fcf97;
+            font-weight: 700;
+        }
+
+        .lb-row.top1 { background: linear-gradient(90deg, rgba(245, 215, 66, 0.15), transparent); border-color: rgba(245, 215, 66, 0.4); }
+        .lb-row.top2 { background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent); border-color: rgba(192, 192, 192, 0.3); }
+        .lb-row.top3 { background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent); border-color: rgba(205, 127, 50, 0.3); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 400px) {
+            .game-container { padding: 8px 10px; border-radius: 20px; }
+            .logo { font-size: 1.05rem; }
+            .stat-item { font-size: 0.75rem; }
+            .btn { font-size: 0.75rem; padding: 10px 6px; }
+            .board { gap: 3px; padding: 4px; }
+            .cell { border-radius: 8px; }
+        }
+
+        /* ===== WITHDRAWAL FORM ===== */
+        .form-group {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: #cc9999;
+            margin-bottom: 4px;
+            text-align: left;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(245, 215, 66, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #f5d742;
+            box-shadow: 0 0 16px rgba(245, 215, 66, 0.2);
+        }
+
+        .form-group select option {
+            background: #1a0000;
+            color: #fff;
+        }
+
+        .wd-balance {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #6fcf97;
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: 0 0 20px rgba(111, 207, 151, 0.4);
+        }
+
+        .wd-note {
+            font-size: 0.7rem;
+            color: #996666;
+            text-align: center;
+            margin-top: 10px;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <!-- PARTICLES -->
-    <div class="particles" id="particles"></div>
+    <!-- Floating Gold Dust -->
+    <div class="gold-dust" id="goldDust"></div>
 
-    <!-- APP -->
-    <div id="app">
+    <!-- ===== MAIN GAME CONTAINER ===== -->
+    <div class="game-container" id="gameContainer">
+
         <!-- HEADER -->
         <div class="header">
-            <div class="header-left">
-                <span class="logo-icon">💰</span>
-                <span class="game-title">Cuan Blok</span>
+            <div class="logo">
+                CUAN BLOK
+                <small>Puzzle Penghasil Uang</small>
             </div>
             <div class="header-right">
+                <button class="icon-btn" id="btnLeaderboard" title="Turnamen">🏆</button>
                 <button class="icon-btn" id="btnSettings" title="Pengaturan">⚙️</button>
-                <button class="icon-btn" id="btnLeaderboard" title="Peringkat">🏆</button>
-                <button class="icon-btn" id="btnWithdraw" title="Withdraw">💳</button>
             </div>
         </div>
 
-        <!-- STATS -->
+        <!-- STATS BAR -->
         <div class="stats-bar">
-            <div class="stat-item">❤️ <span class="value lives" id="livesDisplay">❤️❤️❤️</span></div>
-            <div class="stat-item">🪙 <span class="value" id="coinDisplay">0</span></div>
-            <div class="stat-item">💵 <span class="value" id="dollarDisplay">$0.00</span></div>
-            <div class="stat-item">📊 <span class="value" id="levelDisplay">1</span></div>
+            <div class="stat-item">
+                <span class="heart" id="heartsDisplay">❤️❤️❤️</span>
+            </div>
+            <div class="stat-item">
+                <span class="coin">🪙</span>
+                <span id="coinDisplay">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="dollar">💵</span>
+                <span id="dollarDisplay">$0.00</span>
+            </div>
         </div>
 
         <!-- BOARD -->
         <div class="board-wrapper">
-            <div id="board"></div>
+            <div class="board" id="board"></div>
         </div>
 
-        <!-- CONTROLS -->
-        <div class="controls">
-            <button class="btn btn-primary" id="btnShuffle">🔀 Acak</button>
-            <button class="btn btn-gold" id="btnHint">💡 Bantuan</button>
+        <!-- ACTION BUTTONS -->
+        <div class="action-row">
+            <button class="btn" id="btnShuffle">🔀 Acak</button>
+            <button class="btn" id="btnHint">💡 Bantuan</button>
+            <button class="btn gold" id="btnConvert">💱 Konversi</button>
         </div>
-    </div>
+        <div class="action-row" style="padding-top:0;">
+            <button class="btn primary" id="btnWithdraw" style="flex:1;">💰 Tarik Saldo (WD)</button>
+        </div>
 
-    <!-- SETTINGS MODAL -->
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
-            <h2>⚙️ Pengaturan</h2>
-            <div class="setting-row">
-                <span class="setting-label">🎵 Musik Latar (BGM)</span>
-                <label class="switch">
-                    <input type="checkbox" id="toggleBGM" checked />
-                    <span class="slider"></span>
-                </label>
+        <!-- ===== LOGIN OVERLAY ===== -->
+        <div class="overlay" id="loginOverlay">
+            <h2>Cuan Blok</h2>
+            <p>Game Asah Otak Paling Cuan:<br>Main Santai, Saldo Cair Setiap Hari!</p>
+            <button class="btn google-btn" id="btnGoogleLogin">
+                <img src="https://www.google.com/favicon.ico" alt="Google" />
+                Masuk dengan Google
+            </button>
+            <button class="btn" id="btnPrivacyPolicy" style="background:transparent;border-color:rgba(255,255,255,0.1);color:#cc9999;font-size:0.75rem;">
+                📜 Kebijakan Privasi
+            </button>
+        </div>
+
+        <!-- ===== MAIN MENU OVERLAY ===== -->
+        <div class="overlay hidden" id="mainMenuOverlay">
+            <h2>Selamat Datang!</h2>
+            <p id="welcomeText">Main dan kumpulkan cuan sebanyak mungkin!</p>
+            <button class="btn primary" id="btnPlay">▶️ Mulai Bermain</button>
+            <button class="btn" id="btnLeaderboard2">🏆 Turnamen</button>
+            <button class="btn" id="btnWithdraw2">💰 Tarik Saldo</button>
+            <button class="btn" id="btnLogout" style="background:transparent;border-color:rgba(255,255,255,0.1);color:#cc9999;font-size:0.75rem;margin-top:6px;">
+                🚪 Keluar
+            </button>
+        </div>
+
+        <!-- ===== SETTINGS MODAL ===== -->
+        <div class="modal hidden" id="settingsModal">
+            <div class="modal-content">
+                <h3>⚙️ Pengaturan</h3>
+                <div class="toggle-row">
+                    <label>🎵 Musik Latar (BGM)</label>
+                    <div class="switch active" id="toggleBGM"></div>
+                </div>
+                <div class="toggle-row">
+                    <label>🔊 Efek Suara (SFX)</label>
+                    <div class="switch active" id="toggleSFX"></div>
+                </div>
+                <button class="btn primary" id="btnCloseSettings" style="margin-top:16px;width:100%;">Tutup</button>
             </div>
-            <div class="setting-row">
-                <span class="setting-label">🔊 Efek Suara (SFX)</span>
-                <label class="switch">
-                    <input type="checkbox" id="toggleSFX" checked />
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <button class="btn btn-primary close-btn" id="closeSettings">Tutup</button>
         </div>
-    </div>
 
-    <!-- LEADERBOARD MODAL -->
-    <div class="modal-overlay" id="leaderboardModal">
-        <div class="modal">
-            <h2>🏆 Peringkat Turnamen</h2>
-            <div class="leaderboard-tabs">
-                <div class="tab active" data-period="weekly">Mingguan</div>
-                <div class="tab" data-period="monthly">Bulanan</div>
-            </div>
-            <div class="lb-list" id="leaderboardList"></div>
-            <button class="btn btn-primary close-btn" id="closeLeaderboard">Tutup</button>
+        <!-- ===== LEADERBOARD OVERLAY ===== -->
+        <div class="overlay hidden" id="leaderboardOverlay">
+            <h2>🏆 Turnamen</h2>
+            <p>Peringkat Mingguan & Bulanan</p>
+            <div class="leaderboard-list" id="leaderboardList"></div>
+            <button class="btn primary" id="btnCloseLeaderboard" style="margin-top:16px;width:100%;max-width:300px;">Kembali</button>
         </div>
-    </div>
 
-    <!-- WITHDRAW MODAL -->
-    <div class="modal-overlay" id="withdrawModal">
-        <div class="modal">
-            <h2>💳 Withdraw Saldo</h2>
-            <p>Saldo Anda: <strong id="wdBalance" style="color:#ffd700;">$0.00</strong></p>
-            <p style="font-size:11px;color:#aaa;">Minimal WD: $1.00</p>
+        <!-- ===== WITHDRAWAL OVERLAY ===== -->
+        <div class="overlay hidden" id="withdrawOverlay">
+            <h2>💰 Tarik Saldo</h2>
+            <div class="wd-balance" id="wdBalance">$0.00</div>
             <div class="form-group">
                 <label>Metode E-Wallet</label>
                 <select id="wdMethod">
@@ -751,1088 +739,969 @@
             </div>
             <div class="form-group">
                 <label>Nama Pemilik</label>
-                <input type="text" id="wdName" placeholder="Nama lengkap" />
+                <input type="text" id="wdName" placeholder="Nama sesuai akun e-wallet" />
             </div>
             <div class="form-group">
                 <label>Nomor HP</label>
                 <input type="tel" id="wdPhone" placeholder="08xxxxxxxxxx" />
             </div>
-            <button class="btn btn-gold" id="btnSubmitWD" style="width:100%;">Klaim Withdraw</button>
-            <button class="btn btn-dark close-btn" id="closeWithdraw">Tutup</button>
+            <button class="btn gold" id="btnClaimWD" style="width:100%;max-width:300px;margin-top:6px;">Klaim Sekarang</button>
+            <p class="wd-note">Minimal WD $1.00. Proses 1-3 hari kerja.</p>
+            <button class="btn" id="btnCloseWD" style="margin-top:12px;width:100%;max-width:300px;background:transparent;border-color:rgba(255,255,255,0.1);color:#cc9999;">Kembali</button>
         </div>
-    </div>
 
-    <!-- CONVERT MODAL -->
-    <div class="modal-overlay" id="convertModal">
-        <div class="modal">
-            <h2>💱 Konversi Koin ke Dollar</h2>
-            <p>Koin Anda: <strong id="cvCoins" style="color:#ffd700;">0</strong></p>
-            <p style="font-size:12px;color:#aaa;">Rate: 1000 koin = $0.10</p>
-            <p style="font-size:12px;color:#ff8c00;">⚠️ Wajib menonton iklan sebelum konversi.</p>
-            <button class="btn btn-gold" id="btnConvert" style="width:100%;">🎬 Tonton Iklan & Konversi</button>
-            <button class="btn btn-dark close-btn" id="closeConvert">Tutup</button>
+        <!-- ===== OFFLINE OVERLAY ===== -->
+        <div class="offline-overlay hidden" id="offlineOverlay">
+            <div class="icon">📡</div>
+            <h2>Koneksi Terputus</h2>
+            <p>Game dijeda. Periksa koneksi internet Anda.</p>
+            <button class="btn primary" id="btnRetryConnection" style="max-width:200px;">🔄 Coba Lagi</button>
         </div>
+
+        <!-- ===== TOAST ===== -->
+        <div class="toast" id="toast"></div>
+
     </div>
 
-    <!-- OFFLINE SCREEN -->
-    <div class="full-screen" id="offlineScreen">
-        <h1>📡 Koneksi Terputus</h1>
-        <p>Game dijeda sementara. Periksa koneksi internet Anda untuk melanjutkan bermain.</p>
-        <button class="btn btn-primary" id="btnRetryConnection">🔄 Coba Lagi</button>
-    </div>
-
-    <!-- AUTH SCREEN -->
-    <div class="full-screen" id="authScreen">
-        <h1>💰 Cuan Blok</h1>
-        <p>Game Asah Otak Paling Cuan: Main Santai, Saldo Cair Setiap Hari!</p>
-        <button class="btn google-btn" id="btnGoogleLogin">
-            <img src="https://www.google.com/favicon.ico" alt="G" />
-            Masuk dengan Google
-        </button>
-        <div class="legal-links">
-            <a id="linkPrivacy">Kebijakan Privasi</a>
-            <a id="linkTerms">Syarat & Ketentuan</a>
-        </div>
-    </div>
-
-    <!-- PRIVACY MODAL -->
-    <div class="modal-overlay" id="privacyModal">
-        <div class="modal">
-            <h2>🔒 Kebijakan Privasi</h2>
-            <p style="font-size:12px;text-align:left;">
-                Kami menghargai privasi Anda. Data yang dikumpulkan hanya digunakan untuk keperluan autentikasi, penyimpanan progres game, dan proses withdraw. Kami tidak membagikan data Anda ke pihak ketiga tanpa izin.
-            </p>
-            <p style="font-size:12px;text-align:left;">
-                Dengan menggunakan aplikasi ini, Anda menyetujui pengumpulan data sesuai kebijakan ini.
-            </p>
-            <button class="btn btn-primary close-btn" id="closePrivacy">Tutup</button>
-        </div>
-    </div>
-
-    <!-- TOAST -->
-    <div id="toast"></div>
-
+    <!-- ===== MAIN SCRIPT ===== -->
     <script>
-    // ============================================================
-    // CUAN BLOK - MAIN GAME SCRIPT
-    // ============================================================
+        (function() {
+            'use strict';
 
-    (function () {
-        'use strict';
+            // ============================================================
+            // 1. SUPABASE INIT
+            // ============================================================
+            const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
+            const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-        // ==================== SUPABASE INIT ====================
-        const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
-        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
-        let supabaseClient = null;
-        try {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-        } catch (e) {
-            console.warn('Supabase init error:', e);
-        }
+            // ============================================================
+            // 2. GAME STATE
+            // ============================================================
+            const COLS = 7;
+            const ROWS = 7;
+            const NUM_COLORS = 6;
+            const MAX_HEARTS = 3;
+            const COIN_PER_BLOCK = 5;
+            const COIN_TO_DOLLAR_RATE = 1000; // 1000 koin = $0.01
+            const MIN_WD = 1.00;
 
-        // ==================== CONFIG ====================
-        const CONFIG = {
-            COLS: 7,
-            ROWS: 9,
-            MIN_MATCH: 3,
-            COLORS: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'],
-            COIN_PER_BLOCK: 10,
-            COIN_TO_DOLLAR_RATE: 1000,
-            DOLLAR_PER_1000_COINS: 0.10,
-            MIN_WITHDRAW: 1.00,
-            ADMOB_REWARDED: 'ca-app-pub-4310670917209711/3901057804',
-            ADMOB_INTERSTITIAL: 'ca-app-pub-4310670917209711/8013719329',
-            ADMOB_REWARDED_INTERSTITIAL: 'ca-app-pub-4310670917209711/4266046006',
-            FALLBACK_AD_URL: 'https://omg10.com/4/11785165'
-        };
+            const state = {
+                grid: [],
+                hearts: MAX_HEARTS,
+                coins: 0,
+                dollars: 0.00,
+                level: 1,
+                score: 0,
+                user: null,
+                session: null,
+                bgmOn: true,
+                sfxOn: true,
+                isProcessing: false,
+                gameActive: false,
+                adInProgress: false,
+                waitingForAd: false,
+                pendingLevelComplete: false,
+                audioCtx: null,
+                bgmOsc: null,
+                bgmGain: null,
+                bgmInterval: null,
+                particles: []
+            };
 
-        // ==================== STATE ====================
-        const state = {
-            grid: [],
-            lives: 3,
-            coins: 0,
-            dollars: 0.00,
-            level: 1,
-            user: null,
-            bgmOn: true,
-            sfxOn: true,
-            isProcessing: false,
-            isOnline: navigator.onLine,
-            adInProgress: false,
-            selectedCells: [],
-            leaderboardPeriod: 'weekly',
-            hintCells: [],
-            pendingLevelUp: false,
-            waitingForAd: false
-        };
+            // ============================================================
+            // 3. DOM REFS
+            // ============================================================
+            const $ = (id) => document.getElementById(id);
+            const boardEl = $('board');
+            const heartsDisplay = $('heartsDisplay');
+            const coinDisplay = $('coinDisplay');
+            const dollarDisplay = $('dollarDisplay');
+            const loginOverlay = $('loginOverlay');
+            const mainMenuOverlay = $('mainMenuOverlay');
+            const settingsModal = $('settingsModal');
+            const leaderboardOverlay = $('leaderboardOverlay');
+            const withdrawOverlay = $('withdrawOverlay');
+            const offlineOverlay = $('offlineOverlay');
+            const toastEl = $('toast');
+            const welcomeText = $('welcomeText');
+            const wdBalance = $('wdBalance');
+            const leaderboardList = $('leaderboardList');
 
-        // ==================== DOM REFS ====================
-        const dom = {
-            board: document.getElementById('board'),
-            livesDisplay: document.getElementById('livesDisplay'),
-            coinDisplay: document.getElementById('coinDisplay'),
-            dollarDisplay: document.getElementById('dollarDisplay'),
-            levelDisplay: document.getElementById('levelDisplay'),
-            btnShuffle: document.getElementById('btnShuffle'),
-            btnHint: document.getElementById('btnHint'),
-            btnSettings: document.getElementById('btnSettings'),
-            btnLeaderboard: document.getElementById('btnLeaderboard'),
-            btnWithdraw: document.getElementById('btnWithdraw'),
-            settingsModal: document.getElementById('settingsModal'),
-            leaderboardModal: document.getElementById('leaderboardModal'),
-            withdrawModal: document.getElementById('withdrawModal'),
-            convertModal: document.getElementById('convertModal'),
-            privacyModal: document.getElementById('privacyModal'),
-            offlineScreen: document.getElementById('offlineScreen'),
-            authScreen: document.getElementById('authScreen'),
-            toast: document.getElementById('toast'),
-            leaderboardList: document.getElementById('leaderboardList'),
-            wdBalance: document.getElementById('wdBalance'),
-            cvCoins: document.getElementById('cvCoins'),
-            toggleBGM: document.getElementById('toggleBGM'),
-            toggleSFX: document.getElementById('toggleSFX')
-        };
-
-        // ==================== AUDIO ENGINE ====================
-        const AudioEngine = {
-            ctx: null,
-            bgmNodes: [],
-            bgmPlaying: false,
-
-            init() {
-                if (this.ctx) return;
-                try {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {
-                    console.warn('AudioContext not supported', e);
+            // ============================================================
+            // 4. AUDIO ENGINE (Web Audio API)
+            // ============================================================
+            function initAudio() {
+                if (!state.audioCtx) {
+                    try {
+                        state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch (e) {
+                        console.warn('AudioContext not supported');
+                    }
                 }
-            },
-
-            ensure() {
-                this.init();
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume().catch(() => {});
+                if (state.audioCtx && state.audioCtx.state === 'suspended') {
+                    state.audioCtx.resume();
                 }
-            },
-
-            playTone(freq, duration, type, volume) {
-                if (!state.sfxOn || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type || 'sine';
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(volume || 0.1, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch (e) { /* silent */ }
-            },
-
-            sfxMatch() {
-                this.ensure();
-                this.playTone(880, 0.1, 'sine', 0.15);
-                setTimeout(() => this.playTone(1320, 0.15, 'sine', 0.12), 80);
-            },
-
-            sfxError() {
-                this.ensure();
-                this.playTone(200, 0.2, 'sawtooth', 0.15);
-            },
-
-            sfxClick() {
-                this.ensure();
-                this.playTone(600, 0.05, 'square', 0.08);
-            },
-
-            sfxWin() {
-                this.ensure();
-                const notes = [523, 659, 784, 1047];
-                notes.forEach((n, i) => {
-                    setTimeout(() => this.playTone(n, 0.2, 'sine', 0.15), i * 100);
-                });
-            },
-
-            startBGM() {
-                if (!state.bgmOn || !this.ctx || this.bgmPlaying) return;
-                this.bgmPlaying = true;
-                this._bgmLoop();
-            },
-
-            _bgmLoop() {
-                if (!this.bgmPlaying || !state.bgmOn) return;
-                try {
-                    const now = this.ctx.currentTime;
-                    const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
-                    notes.forEach((freq, i) => {
-                        const osc = this.ctx.createOscillator();
-                        const gain = this.ctx.createGain();
-                        osc.type = 'triangle';
-                        osc.frequency.value = freq;
-                        const start = now + i * 0.35;
-                        gain.gain.setValueAtTime(0.0, start);
-                        gain.gain.linearRampToValueAtTime(0.04, start + 0.05);
-                        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
-                        osc.connect(gain);
-                        gain.connect(this.ctx.destination);
-                        osc.start(start);
-                        osc.stop(start + 0.35);
-                    });
-                } catch (e) { /* silent */ }
-                setTimeout(() => this._bgmLoop(), 2200);
-            },
-
-            stopBGM() {
-                this.bgmPlaying = false;
             }
-        };
 
-        // ==================== AD MANAGER (WATERFALL) ====================
-        const AdManager = {
-            watchRewarded(callback, reason) {
-                if (state.adInProgress) {
-                    showToast('Iklan sedang berjalan...');
+            function playTone(freq, duration, type, volume) {
+                if (!state.sfxOn || !state.audioCtx) return;
+                try {
+                    const osc = state.audioCtx.createOscillator();
+                    const gain = state.audioCtx.createGain();
+                    osc.type = type || 'sine';
+                    osc.frequency.value = freq || 440;
+                    gain.gain.value = volume || 0.08;
+                    gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + (duration || 0.15));
+                    osc.connect(gain);
+                    gain.connect(state.audioCtx.destination);
+                    osc.start();
+                    osc.stop(state.audioCtx.currentTime + (duration || 0.15));
+                } catch (e) { /* ignore */ }
+            }
+
+            function sfxMatch() {
+                playTone(660, 0.1, 'sine', 0.06);
+                setTimeout(() => playTone(880, 0.12, 'sine', 0.06), 60);
+            }
+
+            function sfxError() {
+                playTone(180, 0.2, 'sawtooth', 0.05);
+            }
+
+            function sfxClick() {
+                playTone(520, 0.06, 'square', 0.03);
+            }
+
+            function sfxWin() {
+                playTone(523, 0.1, 'sine', 0.07);
+                setTimeout(() => playTone(659, 0.1, 'sine', 0.07), 100);
+                setTimeout(() => playTone(784, 0.15, 'sine', 0.07), 200);
+            }
+
+            function startBGM() {
+                if (!state.bgmOn || !state.audioCtx) return;
+                stopBGM();
+                try {
+                    const osc = state.audioCtx.createOscillator();
+                    const gain = state.audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 220;
+                    gain.gain.value = 0.02;
+                    osc.connect(gain);
+                    gain.connect(state.audioCtx.destination);
+                    osc.start();
+                    state.bgmOsc = osc;
+                    state.bgmGain = gain;
+
+                    // Simple arpeggio loop
+                    let step = 0;
+                    const notes = [220, 277, 330, 277, 220, 330, 392, 330];
+                    state.bgmInterval = setInterval(() => {
+                        if (!state.bgmOn || !state.audioCtx) return;
+                        try {
+                            if (state.bgmOsc) {
+                                state.bgmOsc.frequency.setValueAtTime(notes[step % notes.length], state.audioCtx.currentTime);
+                                step++;
+                            }
+                        } catch (e) { /* ignore */ }
+                    }, 400);
+                } catch (e) { /* ignore */ }
+            }
+
+            function stopBGM() {
+                if (state.bgmInterval) {
+                    clearInterval(state.bgmInterval);
+                    state.bgmInterval = null;
+                }
+                if (state.bgmOsc) {
+                    try { state.bgmOsc.stop(); } catch (e) { /* ignore */ }
+                    state.bgmOsc = null;
+                }
+                state.bgmGain = null;
+            }
+
+            // ============================================================
+            // 5. TOAST
+            // ============================================================
+            let toastTimeout = null;
+            function showToast(msg, duration) {
+                if (toastTimeout) clearTimeout(toastTimeout);
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                toastTimeout = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                }, duration || 2200);
+            }
+
+            // ============================================================
+            // 6. OFFLINE DETECTION
+            // ============================================================
+            function updateOnlineStatus() {
+                if (!navigator.onLine) {
+                    offlineOverlay.classList.remove('hidden');
+                    state.gameActive = false;
+                } else {
+                    offlineOverlay.classList.add('hidden');
+                }
+            }
+
+            window.addEventListener('online', () => {
+                updateOnlineStatus();
+                showToast('✅ Koneksi kembali!');
+            });
+
+            window.addEventListener('offline', () => {
+                updateOnlineStatus();
+                showToast('⚠️ Koneksi terputus!');
+            });
+
+            // ============================================================
+            // 7. GOLD DUST PARTICLES
+            // ============================================================
+            function createGoldDust() {
+                const container = $('goldDust');
+                const count = 25;
+                for (let i = 0; i < count; i++) {
+                    const span = document.createElement('span');
+                    const size = Math.random() * 5 + 2;
+                    span.style.width = size + 'px';
+                    span.style.height = size + 'px';
+                    span.style.left = Math.random() * 100 + '%';
+                    span.style.animationDuration = (Math.random() * 12 + 8) + 's';
+                    span.style.animationDelay = (Math.random() * 10) + 's';
+                    span.style.opacity = Math.random() * 0.4 + 0.15;
+                    container.appendChild(span);
+                }
+            }
+
+            // ============================================================
+            // 8. GRID LOGIC
+            // ============================================================
+            function createEmptyGrid() {
+                return Array.from({ length: ROWS }, () => Array(COLS).fill(-1));
+            }
+
+            function randomColor() {
+                return Math.floor(Math.random() * NUM_COLORS);
+            }
+
+            function fillGridRandom(grid) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (grid[r][c] === -1) {
+                            grid[r][c] = randomColor();
+                        }
+                    }
+                }
+            }
+
+            function ensurePlayable(grid) {
+                // Guarantee at least one group of 3 exists
+                let hasGroup = false;
+                const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (!visited[r][c] && grid[r][c] !== -1) {
+                            const color = grid[r][c];
+                            const stack = [[r, c]];
+                            let count = 0;
+                            while (stack.length) {
+                                const [cr, cc] = stack.pop();
+                                if (cr < 0 || cr >= ROWS || cc < 0 || cc >= COLS) continue;
+                                if (visited[cr][cc]) continue;
+                                if (grid[cr][cc] !== color) continue;
+                                visited[cr][cc] = true;
+                                count++;
+                                stack.push([cr + 1, cc], [cr - 1, cc], [cr, cc + 1], [cr, cc - 1]);
+                            }
+                            if (count >= 3) hasGroup = true;
+                        }
+                    }
+                }
+                if (!hasGroup) {
+                    // Force a group
+                    for (let r = 0; r < ROWS; r++) {
+                        for (let c = 0; c < COLS - 2; c++) {
+                            if (grid[r][c] !== -1 && grid[r][c + 1] !== -1 && grid[r][c + 2] !== -1) {
+                                const col = randomColor();
+                                grid[r][c] = col;
+                                grid[r][c + 1] = col;
+                                grid[r][c + 2] = col;
+                                hasGroup = true;
+                                break;
+                            }
+                        }
+                        if (hasGroup) break;
+                    }
+                }
+                return grid;
+            }
+
+            function initGrid() {
+                const grid = createEmptyGrid();
+                fillGridRandom(grid);
+                ensurePlayable(grid);
+                return grid;
+            }
+
+            function renderGrid(animate) {
+                boardEl.innerHTML = '';
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        const color = state.grid[r][c];
+                        if (color === -1) {
+                            cell.classList.add('empty');
+                            cell.dataset.color = '';
+                        } else {
+                            cell.dataset.color = color;
+                            cell.textContent = '';
+                        }
+                        if (animate) {
+                            cell.classList.add('falling');
+                            setTimeout(() => cell.classList.remove('falling'), 400);
+                        }
+                        boardEl.appendChild(cell);
+                    }
+                }
+            }
+
+            function updateCellVisual(r, c) {
+                const idx = r * COLS + c;
+                const cell = boardEl.children[idx];
+                if (!cell) return;
+                const color = state.grid[r][c];
+                if (color === -1) {
+                    cell.classList.add('empty');
+                    cell.dataset.color = '';
+                } else {
+                    cell.classList.remove('empty');
+                    cell.dataset.color = color;
+                    cell.textContent = '';
+                }
+            }
+
+            function updateAllCells(animate) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        updateCellVisual(r, c);
+                    }
+                }
+            }
+
+            // ============================================================
+            // 9. MATCH DETECTION & REMOVAL
+            // ============================================================
+            function getConnectedGroup(grid, r, c, visited) {
+                const color = grid[r][c];
+                if (color === -1) return [];
+                const stack = [[r, c]];
+                const group = [];
+                while (stack.length) {
+                    const [cr, cc] = stack.pop();
+                    if (cr < 0 || cr >= ROWS || cc < 0 || cc >= COLS) continue;
+                    if (visited[cr][cc]) continue;
+                    if (grid[cr][cc] !== color) continue;
+                    visited[cr][cc] = true;
+                    group.push([cr, cc]);
+                    stack.push([cr + 1, cc], [cr - 1, cc], [cr, cc + 1], [cr, cc - 1]);
+                }
+                return group;
+            }
+
+            function findHint() {
+                const grid = state.grid;
+                const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (!visited[r][c] && grid[r][c] !== -1) {
+                            const group = getConnectedGroup(grid, r, c, visited);
+                            if (group.length >= 3) return group[0];
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // ============================================================
+            // 10. GRAVITY & REFILL (SMOOTH)
+            // ============================================================
+            function applyGravity() {
+                // For each column, drop blocks down
+                for (let c = 0; c < COLS; c++) {
+                    const column = [];
+                    for (let r = 0; r < ROWS; r++) {
+                        if (state.grid[r][c] !== -1) {
+                            column.push(state.grid[r][c]);
+                        }
+                    }
+                    // Fill from bottom
+                    const emptyCount = ROWS - column.length;
+                    for (let r = 0; r < ROWS; r++) {
+                        if (r < emptyCount) {
+                            state.grid[r][c] = -1;
+                        } else {
+                            state.grid[r][c] = column[r - emptyCount];
+                        }
+                    }
+                }
+                // Refill empty cells at top with new random colors
+                for (let c = 0; c < COLS; c++) {
+                    for (let r = 0; r < ROWS; r++) {
+                        if (state.grid[r][c] === -1) {
+                            state.grid[r][c] = randomColor();
+                        }
+                    }
+                }
+                ensurePlayable(state.grid);
+            }
+
+            // ============================================================
+            // 11. CLICK HANDLER
+            // ============================================================
+            function handleCellClick(r, c) {
+                if (state.isProcessing || !state.gameActive) return;
+                if (state.grid[r][c] === -1) return;
+
+                const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+                const group = getConnectedGroup(state.grid, r, c, visited);
+
+                if (group.length < 3) {
+                    // Wrong tap: lose heart
+                    state.hearts = Math.max(0, state.hearts - 1);
+                    updateHeartsDisplay();
+                    sfxError();
+                    showToast('❌ Minimal 3 blok! Nyawa berkurang.');
+                    if (state.hearts <= 0) {
+                        showToast('💔 Nyawa habis! Tonton iklan untuk mengisi.');
+                        triggerRewardedAd(() => {
+                            state.hearts = MAX_HEARTS;
+                            updateHeartsDisplay();
+                            showToast('❤️ Nyawa terisi penuh!');
+                        });
+                    }
                     return;
                 }
+
+                // Valid group: process removal
+                state.isProcessing = true;
+                sfxMatch();
+
+                // Remove blocks
+                for (const [gr, gc] of group) {
+                    state.grid[gr][gc] = -1;
+                }
+
+                // Award coins
+                const earned = group.length * COIN_PER_BLOCK;
+                state.coins += earned;
+                state.score += group.length * 10;
+                updateStatsDisplay();
+
+                // Visual update
+                updateAllCells(false);
+                setTimeout(() => {
+                    applyGravity();
+                    updateAllCells(true);
+                    state.isProcessing = false;
+
+                    // Check for win condition (level complete)
+                    checkLevelComplete();
+                }, 200);
+            }
+
+            function checkLevelComplete() {
+                // Simple level goal: reach certain coin amount
+                const targetCoins = state.level * 500;
+                if (state.coins >= targetCoins) {
+                    state.pendingLevelComplete = true;
+                    showToast('🎉 Level ' + state.level + ' selesai!');
+                    sfxWin();
+                    setTimeout(() => {
+                        triggerInterstitialChain(() => {
+                            state.level++;
+                            state.coins = 0;
+                            updateStatsDisplay();
+                            showToast('🚀 Naik ke Level ' + state.level + '!');
+                            state.pendingLevelComplete = false;
+                        });
+                    }, 800);
+                }
+            }
+
+            // ============================================================
+            // 12. DISPLAY UPDATES
+            // ============================================================
+            function updateHeartsDisplay() {
+                let str = '';
+                for (let i = 0; i < MAX_HEARTS; i++) {
+                    str += (i < state.hearts) ? '❤️' : '🖤';
+                }
+                heartsDisplay.textContent = str;
+            }
+
+            function updateStatsDisplay() {
+                coinDisplay.textContent = state.coins.toLocaleString('id-ID');
+                dollarDisplay.textContent = '$' + state.dollars.toFixed(2);
+                wdBalance.textContent = '$' + state.dollars.toFixed(2);
+            }
+
+            // ============================================================
+            // 13. AD SIMULATION (Rewarded / Interstitial with Waterfall)
+            // ============================================================
+            const AD_IDS = {
+                rewarded: 'ca-app-pub-4310670917209711/3901057804',
+                interstitial: 'ca-app-pub-4310670917209711/8013719329',
+                rewardedInterstitial: 'ca-app-pub-4310670917209711/4266046006'
+            };
+            const FALLBACK_URL = 'https://omg10.com/4/11785165';
+
+            function simulateAd(type, callback) {
+                // In a real app, this would call AdMob SDK.
+                // Here we simulate with a delay and fallback logic.
                 state.adInProgress = true;
-                console.log('[AD] Rewarded requested:', reason);
+                showToast('📺 Menampilkan iklan ' + type + '...');
 
-                // Simulasi pemutaran iklan AdMob dengan waterfall ke link cadangan
-                this._playAd('rewarded', (success) => {
-                    state.adInProgress = false;
-                    if (success && typeof callback === 'function') {
-                        callback();
+                // Simulate ad loading
+                setTimeout(() => {
+                    // Simulate ad shown successfully
+                    const success = Math.random() > 0.15; // 85% success
+                    if (success) {
+                        showToast('✅ Iklan selesai. Hadiah diberikan!');
+                        state.adInProgress = false;
+                        if (callback) callback(true);
                     } else {
-                        showToast('Iklan gagal dimuat. Coba lagi.');
+                        // Fallback to link
+                        showToast('⚠️ Iklan utama kosong, membuka cadangan...');
+                        setTimeout(() => {
+                            // In a real web app, we'd open the fallback URL
+                            // For this simulation, we'll just proceed
+                            state.adInProgress = false;
+                            if (callback) callback(true);
+                        }, 1200);
                     }
-                });
-            },
+                }, 1800);
+            }
 
-            watchInterstitial(callback, reason) {
-                console.log('[AD] Interstitial requested:', reason);
-                this._playAd('interstitial', (success) => {
-                    if (success && typeof callback === 'function') {
-                        callback();
-                    }
-                });
-            },
+            function triggerRewardedAd(callback) {
+                if (state.adInProgress) {
+                    showToast('⏳ Iklan sedang berjalan...');
+                    return;
+                }
+                simulateAd('Rewarded', callback);
+            }
 
-            watchInterstitialChain(count, callback) {
-                let played = 0;
-                const playNext = () => {
-                    if (played >= count) {
-                        if (typeof callback === 'function') callback();
+            function triggerInterstitialChain(callback) {
+                if (state.adInProgress) {
+                    showToast('⏳ Iklan sedang berjalan...');
+                    return;
+                }
+                // Chain of 3 ads
+                let count = 0;
+                function next() {
+                    if (count >= 3) {
+                        if (callback) callback();
                         return;
                     }
-                    this.watchInterstitial(() => {
-                        played++;
-                        showToast('Iklan ' + played + '/' + count + ' selesai');
-                        setTimeout(playNext, 300);
-                    }, 'chain-' + played);
+                    count++;
+                    simulateAd('Interstitial ' + count + '/3', () => {
+                        setTimeout(next, 300);
+                    });
+                }
+                next();
+            }
+
+            // ============================================================
+            // 14. CONVERT COINS TO DOLLARS
+            // ============================================================
+            function convertCoins() {
+                if (state.isProcessing || state.adInProgress) return;
+                if (state.coins < COIN_TO_DOLLAR_RATE) {
+                    showToast('🪙 Koin tidak cukup! Minimal ' + COIN_TO_DOLLAR_RATE + ' koin.');
+                    return;
+                }
+                triggerRewardedAd(() => {
+                    const dollarsEarned = (state.coins / COIN_TO_DOLLAR_RATE) * 0.01;
+                    state.dollars += dollarsEarned;
+                    state.coins = 0;
+                    updateStatsDisplay();
+                    showToast('💵 Berhasil konversi! +$' + dollarsEarned.toFixed(4));
+                });
+            }
+
+            // ============================================================
+            // 15. WITHDRAWAL
+            // ============================================================
+            async function submitWithdrawal() {
+                const method = $('wdMethod').value;
+                const name = $('wdName').value.trim();
+                const phone = $('wdPhone').value.trim();
+
+                if (!name || !phone) {
+                    showToast('⚠️ Isi nama dan nomor HP!');
+                    return;
+                }
+                if (state.dollars < MIN_WD) {
+                    showToast('💰 Saldo kurang dari $' + MIN_WD.toFixed(2));
+                    return;
+                }
+
+                try {
+                    if (state.user) {
+                        const { error } = await supabase
+                            .from('withdrawals')
+                            .insert({
+                                user_id: state.user.id,
+                                method: method,
+                                owner_name: name,
+                                phone: phone,
+                                amount: state.dollars,
+                                status: 'pending'
+                            });
+                        if (error) throw error;
+                    }
+                    showToast('✅ Permintaan WD dikirim!');
+                    state.dollars = 0;
+                    updateStatsDisplay();
+                    withdrawOverlay.classList.add('hidden');
+                } catch (e) {
+                    console.error('WD error:', e);
+                    showToast('❌ Gagal mengirim WD. Coba lagi.');
+                }
+            }
+
+            // ============================================================
+            // 16. LEADERBOARD (BOT GENERATION)
+            // ============================================================
+            const BOT_NAMES = [
+                'Rian_07', 'Putri Cantik', 'BayuGamer', 'Siska W', 'Fajar99',
+                'Dimas Kurniawan', 'Andi Pratama', 'Mega Sari', 'Rizky Ananda',
+                'Dewi Lestari', 'Agus Setiawan', 'Nina Marlina', 'Eko Prasetyo',
+                'Fitri Handayani', 'Hendra Wijaya', 'Indah Permata', 'Joko Susilo',
+                'Kartika Sari', 'Lukman Hakim', 'Maya Anggraini', 'Nanda Saputra'
+            ];
+
+            function generateLeaderboard() {
+                const bots = [];
+                const usedNames = new Set();
+                for (let i = 0; i < 10; i++) {
+                    let name;
+                    let attempts = 0;
+                    do {
+                        name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+                        attempts++;
+                    } while (usedNames.has(name) && attempts < 50);
+                    usedNames.add(name);
+                    const score = Math.floor(Math.random() * 50000) + 15000;
+                    bots.push({ name, score });
+                }
+                bots.sort((a, b) => b.score - a.score);
+
+                // Add player
+                const playerEntry = {
+                    name: state.user ? (state.user.user_metadata?.full_name || 'Anda') : 'Anda',
+                    score: state.score || 0
                 };
-                playNext();
-            },
+                bots.push(playerEntry);
+                bots.sort((a, b) => b.score - a.score);
 
-            _playAd(type, done) {
-                // Simulasi: coba AdMob, jika kosong fallback ke link cadangan
-                const timeout = 1800 + Math.random() * 800;
+                return bots;
+            }
 
-                // Tampilkan overlay iklan sederhana
-                const overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-family:sans-serif;';
-                overlay.innerHTML = '<div style="font-size:48px;margin-bottom:16px;">📺</div><div style="font-size:16px;color:#ffd700;font-weight:700;">Memuat Iklan ' + (type === 'rewarded' ? 'Berhadiah' : 'Interstitial') + '...</div><div style="font-size:12px;color:#aaa;margin-top:12px;">Mohon tunggu sebentar</div>';
-                document.body.appendChild(overlay);
+            function renderLeaderboard() {
+                const list = generateLeaderboard();
+                leaderboardList.innerHTML = '';
+                list.slice(0, 8).forEach((entry, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'lb-row';
+                    if (idx === 0) row.classList.add('top1');
+                    else if (idx === 1) row.classList.add('top2');
+                    else if (idx === 2) row.classList.add('top3');
 
-                setTimeout(() => {
-                    // Waterfall: cek apakah AdMob tersedia (simulasi)
-                    const admobAvailable = Math.random() > 0.25; // 75% peluang
+                    const rank = document.createElement('span');
+                    rank.className = 'rank';
+                    rank.textContent = '#' + (idx + 1);
 
-                    if (admobAvailable) {
-                        console.log('[AD] AdMob loaded successfully');
-                        overlay.innerHTML = '<div style="font-size:48px;margin-bottom:16px;">✅</div><div style="font-size:16px;color:#2ecc71;font-weight:700;">Iklan Selesai</div>';
+                    const name = document.createElement('span');
+                    name.className = 'name';
+                    name.textContent = entry.name;
+
+                    const score = document.createElement('span');
+                    score.className = 'score';
+                    score.textContent = entry.score.toLocaleString('id-ID');
+
+                    row.appendChild(rank);
+                    row.appendChild(name);
+                    row.appendChild(score);
+                    leaderboardList.appendChild(row);
+                });
+            }
+
+            // ============================================================
+            // 17. AUTH
+            // ============================================================
+            async function handleGoogleLogin() {
+                try {
+                    const { error } = await supabase.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: {
+                            queryParams: {
+                                prompt: 'select_account'
+                            },
+                            redirectTo: window.location.origin + window.location.pathname
+                        }
+                    });
+                    if (error) throw error;
+                } catch (e) {
+                    console.error('Login error:', e);
+                    showToast('❌ Gagal login: ' + (e.message || 'Coba lagi'));
+                }
+            }
+
+            async function handleLogout() {
+                try {
+                    await supabase.auth.signOut();
+                    state.user = null;
+                    state.session = null;
+                    loginOverlay.classList.remove('hidden');
+                    mainMenuOverlay.classList.add('hidden');
+                    showToast('👋 Berhasil keluar');
+                } catch (e) {
+                    console.error('Logout error:', e);
+                }
+            }
+
+            async function checkSession() {
+                try {
+                    const { data, error } = await supabase.auth.getSession();
+                    if (error) throw error;
+                    if (data && data.session) {
+                        state.session = data.session;
+                        state.user = data.session.user;
+                        onLoggedIn();
                     } else {
-                        console.log('[AD] AdMob empty, falling back to:', CONFIG.FALLBACK_AD_URL);
-                        overlay.innerHTML = '<div style="font-size:48px;margin-bottom:16px;">🔗</div><div style="font-size:14px;color:#ff8c00;">Fallback iklan digunakan</div>';
-                        // Buka link cadangan di tab baru (hanya sekali)
-                        if (!window._fallbackOpened) {
-                            window._fallbackOpened = true;
+                        // Check URL hash for access_token (OAuth callback)
+                        const hash = window.location.hash;
+                        if (hash && hash.includes('access_token')) {
+                            // Supabase client handles this automatically via onAuthStateChange
+                            // But we also need to clean the URL
                             setTimeout(() => {
-                                window.open(CONFIG.FALLBACK_AD_URL, '_blank');
+                                window.history.replaceState({}, document.title, window.location.pathname);
                             }, 500);
                         }
                     }
-
-                    setTimeout(() => {
-                        overlay.remove();
-                        if (typeof done === 'function') done(true);
-                    }, 800);
-                }, timeout);
-            }
-        };
-
-        // ==================== UTILS ====================
-        function showToast(msg, duration) {
-            dom.toast.textContent = msg;
-            dom.toast.classList.add('show');
-            clearTimeout(dom.toast._timer);
-            dom.toast._timer = setTimeout(() => {
-                dom.toast.classList.remove('show');
-            }, duration || 2000);
-        }
-
-        function randomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function randomColor() {
-            return CONFIG.COLORS[randomInt(0, CONFIG.COLORS.length - 1)];
-        }
-
-        function formatDollar(v) {
-            return '$' + v.toFixed(2);
-        }
-
-        // ==================== GRID LOGIC ====================
-        function createGrid() {
-            const g = [];
-            for (let r = 0; r < CONFIG.ROWS; r++) {
-                const row = [];
-                for (let c = 0; c < CONFIG.COLS; c++) {
-                    row.push(randomColor());
-                }
-                g.push(row);
-            }
-            return g;
-        }
-
-        function findConnected(grid, r, c, visited) {
-            const color = grid[r][c];
-            if (!color) return [];
-            const stack = [[r, c]];
-            const result = [];
-            const seen = visited || new Set();
-
-            while (stack.length) {
-                const [cr, cc] = stack.pop();
-                const key = cr + ',' + cc;
-                if (seen.has(key)) continue;
-                if (cr < 0 || cr >= CONFIG.ROWS || cc < 0 || cc >= CONFIG.COLS) continue;
-                if (grid[cr][cc] !== color) continue;
-                seen.add(key);
-                result.push([cr, cc]);
-                stack.push([cr + 1, cc]);
-                stack.push([cr - 1, cc]);
-                stack.push([cr, cc + 1]);
-                stack.push([cr, cc - 1]);
-            }
-            return result;
-        }
-
-        function hasValidMoves(grid) {
-            for (let r = 0; r < CONFIG.ROWS; r++) {
-                for (let c = 0; c < CONFIG.COLS; c++) {
-                    if (!grid[r][c]) continue;
-                    const group = findConnected(grid, r, c);
-                    if (group.length >= CONFIG.MIN_MATCH) return true;
-                }
-            }
-            return false;
-        }
-
-        function findHint(grid) {
-            for (let r = 0; r < CONFIG.ROWS; r++) {
-                for (let c = 0; c < CONFIG.COLS; c++) {
-                    if (!grid[r][c]) continue;
-                    const group = findConnected(grid, r, c);
-                    if (group.length >= CONFIG.MIN_MATCH) {
-                        return group;
-                    }
-                }
-            }
-            return null;
-        }
-
-        // ==================== RENDER ====================
-        function renderBoard() {
-            dom.board.innerHTML = '';
-            const fragment = document.createDocumentFragment();
-            for (let r = 0; r < CONFIG.ROWS; r++) {
-                for (let c = 0; c < CONFIG.COLS; c++) {
-                    const color = state.grid[r][c];
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
-                    if (color) {
-                        cell.style.background = 'radial-gradient(circle at 30% 30%, ' + lighten(color, 20) + ', ' + color + ')';
-                        cell.style.boxShadow = 'inset 0 -3px 0 rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.2), 0 0 8px ' + color + '44';
-                    } else {
-                        cell.style.background = 'rgba(0,0,0,0.2)';
-                        cell.style.boxShadow = 'none';
-                        cell.style.pointerEvents = 'none';
-                    }
-                    fragment.appendChild(cell);
-                }
-            }
-            dom.board.appendChild(fragment);
-        }
-
-        function lighten(hex, percent) {
-            try {
-                const num = parseInt(hex.replace('#', ''), 16);
-                const amt = Math.round(2.55 * percent);
-                const R = Math.min(255, (num >> 16) + amt);
-                const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
-                const B = Math.min(255, (num & 0x0000FF) + amt);
-                return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
-            } catch (e) {
-                return hex;
-            }
-        }
-
-        function updateStats() {
-            dom.livesDisplay.textContent = '❤️'.repeat(state.lives) + '🖤'.repeat(Math.max(0, 3 - state.lives));
-            dom.coinDisplay.textContent = state.coins.toLocaleString('id-ID');
-            dom.dollarDisplay.textContent = formatDollar(state.dollars);
-            dom.levelDisplay.textContent = state.level;
-            dom.wdBalance.textContent = formatDollar(state.dollars);
-            dom.cvCoins.textContent = state.coins.toLocaleString('id-ID');
-            dom.btnShuffle.disabled = state.isProcessing;
-            dom.btnHint.disabled = state.isProcessing;
-        }
-
-        // ==================== GRAVITY & FILL ====================
-        function applyGravity() {
-            for (let c = 0; c < CONFIG.COLS; c++) {
-                let writeRow = CONFIG.ROWS - 1;
-                for (let r = CONFIG.ROWS - 1; r >= 0; r--) {
-                    if (state.grid[r][c]) {
-                        if (writeRow !== r) {
-                            state.grid[writeRow][c] = state.grid[r][c];
-                            state.grid[r][c] = null;
-                        }
-                        writeRow--;
-                    }
-                }
-                // Isi kekosongan di atas dengan warna baru
-                for (let r = writeRow; r >= 0; r--) {
-                    state.grid[r][c] = randomColor();
-                }
-            }
-        }
-
-        // ==================== MATCH & POP ====================
-        function processMatch(r, c) {
-            const group = findConnected(state.grid, r, c);
-            if (group.length < CONFIG.MIN_MATCH) {
-                // Salah ketuk
-                state.lives = Math.max(0, state.lives - 1);
-                AudioEngine.sfxError();
-                updateStats();
-                showToast('❌ Salah! Nyawa berkurang');
-
-                if (state.lives <= 0) {
-                    handleGameOver();
-                }
-                return false;
-            }
-
-            // Benar: hancurkan blok
-            state.isProcessing = true;
-            AudioEngine.sfxMatch();
-
-            // Tandai cell untuk animasi pop
-            group.forEach(([gr, gc]) => {
-                const idx = gr * CONFIG.COLS + gc;
-                const cell = dom.board.children[idx];
-                if (cell) {
-                    cell.classList.add('pop');
-                }
-            });
-
-            // Koin
-            const earned = group.length * CONFIG.COIN_PER_BLOCK;
-            state.coins += earned;
-            updateStats();
-
-            // Setelah animasi, update grid dan gravity
-            setTimeout(() => {
-                group.forEach(([gr, gc]) => {
-                    state.grid[gr][gc] = null;
-                });
-
-                applyGravity();
-                renderBoard();
-
-                // Cek apakah masih ada langkah valid
-                setTimeout(() => {
-                    state.isProcessing = false;
-                    updateStats();
-
-                    if (!hasValidMoves(state.grid)) {
-                        // Tidak ada langkah, tawarkan shuffle
-                        showToast('⚠️ Tidak ada langkah tersisa!');
-                        // Auto shuffle setelah iklan
-                        setTimeout(() => {
-                            autoShuffleAfterAd();
-                        }, 500);
-                    } else {
-                        // Cek level up berdasarkan koin
-                        checkLevelUp();
-                    }
-                }, 300);
-            }, 250);
-
-            return true;
-        }
-
-        function handleGameOver() {
-            showToast('💔 Nyawa habis! Tonton iklan untuk isi ulang.');
-            AdManager.watchRewarded(() => {
-                state.lives = 3;
-                updateStats();
-                showToast('❤️ Nyawa terisi ulang!');
-                AudioEngine.sfxWin();
-            }, 'refill-lives');
-        }
-
-        function checkLevelUp() {
-            const targetCoins = state.level * 500;
-            if (state.coins >= targetCoins && !state.pendingLevelUp) {
-                state.pendingLevelUp = true;
-                state.waitingForAd = true;
-                showToast('🎉 Level ' + state.level + ' selesai!');
-
-                // Simpan status ke Supabase
-                saveProgressToSupabase('waiting_for_ad');
-
-                // Chain 3 interstitial
-                AdManager.watchInterstitialChain(3, () => {
-                    state.level++;
-                    state.pendingLevelUp = false;
-                    state.waitingForAd = false;
-                    updateStats();
-                    showToast('⭐ Naik ke Level ' + state.level + '!');
-                    AudioEngine.sfxWin();
-                    saveProgressToSupabase('playing');
-                });
-            }
-        }
-
-        function autoShuffleAfterAd() {
-            AdManager.watchRewarded(() => {
-                shuffleGrid();
-                showToast('🔀 Grid diacak!');
-            }, 'auto-shuffle');
-        }
-
-        // ==================== ACTIONS ====================
-        function shuffleGrid() {
-            // Kumpulkan semua warna yang ada
-            const colors = [];
-            for (let r = 0; r < CONFIG.ROWS; r++) {
-                for (let c = 0; c < CONFIG.COLS; c++) {
-                    if (state.grid[r][c]) colors.push(state.grid[r][c]);
-                }
-            }
-            // Acak
-            for (let i = colors.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [colors[i], colors[j]] = [colors[j], colors[i]];
-            }
-            // Kembalikan
-            let idx = 0;
-            for (let r = 0; r < CONFIG.ROWS; r++) {
-                for (let c = 0; c < CONFIG.COLS; c++) {
-                    if (state.grid[r][c]) {
-                        state.grid[r][c] = colors[idx++];
-                    }
-                }
-            }
-            // Pastikan ada langkah valid
-            if (!hasValidMoves(state.grid)) {
-                state.grid = createGrid();
-            }
-            renderBoard();
-        }
-
-        function showHint() {
-            const group = findHint(state.grid);
-            if (!group) {
-                showToast('Tidak ada langkah!');
-                return;
-            }
-            // Hapus hint sebelumnya
-            clearHint();
-            // Tandai
-            state.hintCells = group;
-            group.forEach(([r, c]) => {
-                const idx = r * CONFIG.COLS + c;
-                const cell = dom.board.children[idx];
-                if (cell) {
-                    cell.classList.add('hint-glow');
-                }
-            });
-            setTimeout(clearHint, 2500);
-        }
-
-        function clearHint() {
-            dom.board.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
-            state.hintCells = [];
-        }
-
-        // ==================== SUPABASE SYNC ====================
-        async function saveProgressToSupabase(status) {
-            if (!supabaseClient || !state.user) return;
-            try {
-                const payload = {
-                    user_id: state.user.id,
-                    level: state.level,
-                    coins: state.coins,
-                    dollars: state.dollars,
-                    lives: state.lives,
-                    status: status || 'playing',
-                    updated_at: new Date().toISOString()
-                };
-                await supabaseClient
-                    .from('game_progress')
-                    .upsert(payload, { onConflict: 'user_id' });
-            } catch (e) {
-                console.warn('Supabase save error:', e);
-            }
-        }
-
-        async function loadProgressFromSupabase() {
-            if (!supabaseClient || !state.user) return;
-            try {
-                const { data, error } = await supabaseClient
-                    .from('game_progress')
-                    .select('*')
-                    .eq('user_id', state.user.id)
-                    .single();
-                if (error || !data) return;
-                state.level = data.level || 1;
-                state.coins = data.coins || 0;
-                state.dollars = data.dollars || 0.00;
-                state.lives = data.lives !== undefined ? data.lives : 3;
-
-                // Anti-skip: jika status waiting_for_ad, paksa tonton iklan
-                if (data.status === 'waiting_for_ad') {
-                    state.waitingForAd = true;
-                    showToast('⚠️ Anda memiliki reward tertunda. Tonton iklan untuk membuka.');
-                    AdManager.watchRewarded(() => {
-                        state.waitingForAd = false;
-                        saveProgressToSupabase('playing');
-                        showToast('✅ Reward terbuka!');
-                    }, 'anti-skip');
-                }
-                updateStats();
-            } catch (e) {
-                console.warn('Supabase load error:', e);
-            }
-        }
-
-        // ==================== LEADERBOARD BOT ====================
-        const BOT_NAMES = [
-            'Rian_07', 'Putri Cantik', 'BayuGamer', 'Siska W', 'Fajar99',
-            'Dimas Kurniawan', 'Andini', 'Rizky Pratama', 'Maya Sari',
-            'Budi Santoso', 'Lestari', 'Agus Salim', 'Nadia Putri',
-            'Eko Prasetyo', 'Fitriani', 'Hendra Wijaya', 'Indah Permata',
-            'Joko Susilo', 'Kartika Sari', 'Lukman Hakim'
-        ];
-
-        function generateBots(period) {
-            const bots = [];
-            const baseScore = period === 'weekly' ? 8000 : 35000;
-            const range = period === 'weekly' ? 5000 : 20000;
-            const shuffled = BOT_NAMES.slice().sort(() => Math.random() - 0.5);
-            for (let i = 0; i < 8; i++) {
-                bots.push({
-                    name: shuffled[i % shuffled.length],
-                    score: Math.floor(baseScore + Math.random() * range),
-                    level: Math.floor(5 + Math.random() * 20)
-                });
-            }
-            bots.sort((a, b) => b.score - a.score);
-            return bots;
-        }
-
-        function renderLeaderboard(period) {
-            const bots = generateBots(period);
-            const userScore = state.coins + (state.level * 100);
-            const userEntry = {
-                name: (state.user && state.user.email) ? state.user.email.split('@')[0] : 'Anda',
-                score: userScore,
-                level: state.level,
-                isMe: true
-            };
-            const all = bots.concat([userEntry]).sort((a, b) => b.score - a.score);
-
-            dom.leaderboardList.innerHTML = '';
-            all.slice(0, 10).forEach((entry, i) => {
-                const item = document.createElement('div');
-                item.className = 'lb-item' + (entry.isMe ? ' me' : '');
-                const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-                item.innerHTML =
-                    '<div class="lb-rank ' + rankClass + '">' + (i + 1) + '</div>' +
-                    '<div class="lb-name">' + escapeHtml(entry.name) + (entry.isMe ? ' (Anda)' : '') + '</div>' +
-                    '<div class="lb-score">' + entry.score.toLocaleString('id-ID') + ' 🪙</div>';
-                dom.leaderboardList.appendChild(item);
-            });
-        }
-
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        // ==================== AUTH ====================
-        async function signInWithGoogle() {
-            if (!supabaseClient) {
-                showToast('Layanan autentikasi tidak tersedia.');
-                return;
-            }
-            try {
-                const { error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        queryParams: {
-                            prompt: 'select_account'
-                        }
-                    }
-                });
-                if (error) throw error;
-            } catch (e) {
-                console.error('Google Sign-In error:', e);
-                showToast('❌ Gagal masuk: ' + (e.message || 'Coba lagi'));
-            }
-        }
-
-        async function checkAuth() {
-            if (!supabaseClient) return;
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    state.user = session.user;
-                    dom.authScreen.classList.remove('active');
-                    await loadProgressFromSupabase();
-                    startGame();
-                } else {
-                    dom.authScreen.classList.add('active');
-                }
-            } catch (e) {
-                console.warn('Auth check error:', e);
-                dom.authScreen.classList.add('active');
-            }
-        }
-
-        // ==================== CONVERT & WITHDRAW ====================
-        function openConvert() {
-            if (state.coins < CONFIG.COIN_TO_DOLLAR_RATE) {
-                showToast('Minimal ' + CONFIG.COIN_TO_DOLLAR_RATE + ' koin untuk konversi.');
-                return;
-            }
-            dom.convertModal.classList.add('active');
-            updateStats();
-        }
-
-        function doConvert() {
-            if (state.coins < CONFIG.COIN_TO_DOLLAR_RATE) {
-                showToast('Koin tidak cukup.');
-                return;
-            }
-            showToast('🎬 Memutar iklan wajib...');
-            AdManager.watchRewarded(() => {
-                const amount = Math.floor(state.coins / CONFIG.COIN_TO_DOLLAR_RATE) * CONFIG.COIN_TO_DOLLAR_RATE;
-                const dollarGain = (amount / CONFIG.COIN_TO_DOLLAR_RATE) * CONFIG.DOLLAR_PER_1000_COINS;
-                state.coins -= amount;
-                state.dollars += dollarGain;
-                updateStats();
-                showToast('✅ Konversi berhasil! +' + formatDollar(dollarGain));
-                AudioEngine.sfxWin();
-                saveProgressToSupabase('playing');
-                dom.convertModal.classList.remove('active');
-            }, 'convert');
-        }
-
-        async function submitWithdraw() {
-            const method = document.getElementById('wdMethod').value;
-            const name = document.getElementById('wdName').value.trim();
-            const phone = document.getElementById('wdPhone').value.trim();
-
-            if (!name || !phone) {
-                showToast('Isi nama dan nomor HP.');
-                return;
-            }
-            if (phone.length < 9) {
-                showToast('Nomor HP tidak valid.');
-                return;
-            }
-            if (state.dollars < CONFIG.MIN_WITHDRAW) {
-                showToast('Saldo kurang dari ' + formatDollar(CONFIG.MIN_WITHDRAW));
-                return;
-            }
-
-            const amount = state.dollars;
-
-            // Simpan ke Supabase
-            if (supabaseClient && state.user) {
-                try {
-                    await supabaseClient.from('withdrawals').insert({
-                        user_id: state.user.id,
-                        method: method,
-                        owner_name: name,
-                        phone: phone,
-                        amount: amount,
-                        status: 'pending',
-                        created_at: new Date().toISOString()
-                    });
                 } catch (e) {
-                    console.warn('Withdraw insert error:', e);
+                    console.error('Session check error:', e);
                 }
             }
 
-            state.dollars = 0;
-            updateStats();
-            saveProgressToSupabase('playing');
-            showToast('✅ Withdraw ' + formatDollar(amount) + ' diproses!');
-            dom.withdrawModal.classList.remove('active');
-            document.getElementById('wdName').value = '';
-            document.getElementById('wdPhone').value = '';
-        }
-
-        // ==================== CONNECTION ====================
-        function handleOnline() {
-            state.isOnline = true;
-            dom.offlineScreen.classList.remove('active');
-            showToast('📶 Koneksi kembali. Melanjutkan...');
-            if (state.user) {
-                loadProgressFromSupabase();
+            function onLoggedIn() {
+                loginOverlay.classList.add('hidden');
+                mainMenuOverlay.classList.remove('hidden');
+                const name = state.user?.user_metadata?.full_name || 'Pemain';
+                welcomeText.textContent = 'Halo, ' + name + '! Main dan kumpulkan cuan!';
+                updateStatsDisplay();
+                // Clean URL
+                try {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (e) { /* ignore */ }
             }
-        }
 
-        function handleOffline() {
-            state.isOnline = false;
-            dom.offlineScreen.classList.add('active');
-            // Pause game
-            state.isProcessing = true;
-            AudioEngine.stopBGM();
-        }
-
-        // ==================== GAME INIT ====================
-        function startGame() {
-            state.grid = createGrid();
-            // Pastikan ada langkah valid sejak awal
-            let attempts = 0;
-            while (!hasValidMoves(state.grid) && attempts < 50) {
-                state.grid = createGrid();
-                attempts++;
-            }
-            renderBoard();
-            updateStats();
-            AudioEngine.ensure();
-            if (state.bgmOn) {
-                AudioEngine.startBGM();
-            }
-        }
-
-        // ==================== EVENT BINDINGS ====================
-        function bindEvents() {
-            // Board click
-            dom.board.addEventListener('click', (e) => {
-                if (state.isProcessing || state.waitingForAd || !state.isOnline) return;
-                const cell = e.target.closest('.cell');
-                if (!cell) return;
-                const r = parseInt(cell.dataset.row, 10);
-                const c = parseInt(cell.dataset.col, 10);
-                if (!state.grid[r][c]) return;
-                AudioEngine.sfxClick();
-                processMatch(r, c);
-            });
-
-            // Shuffle
-            dom.btnShuffle.addEventListener('click', () => {
-                if (state.isProcessing || state.waitingForAd) return;
-                AudioEngine.sfxClick();
-                showToast('🎬 Tonton iklan untuk mengacak...');
-                AdManager.watchRewarded(() => {
-                    shuffleGrid();
-                    showToast('🔀 Grid diacak!');
-                }, 'shuffle');
-            });
-
-            // Hint
-            dom.btnHint.addEventListener('click', () => {
-                if (state.isProcessing || state.waitingForAd) return;
-                AudioEngine.sfxClick();
-                showToast('🎬 Tonton iklan untuk bantuan...');
-                AdManager.watchRewarded(() => {
-                    showHint();
-                }, 'hint');
-            });
-
-            // Settings
-            dom.btnSettings.addEventListener('click', () => {
-                dom.settingsModal.classList.add('active');
-            });
-            document.getElementById('closeSettings').addEventListener('click', () => {
-                dom.settingsModal.classList.remove('active');
-            });
-
-            // Toggle BGM
-            dom.toggleBGM.addEventListener('change', (e) => {
-                state.bgmOn = e.target.checked;
-                if (state.bgmOn) {
-                    AudioEngine.ensure();
-                    AudioEngine.startBGM();
-                } else {
-                    AudioEngine.stopBGM();
-                }
-                showToast(state.bgmOn ? '🎵 BGM ON' : '🎵 BGM OFF');
-            });
-
-            // Toggle SFX
-            dom.toggleSFX.addEventListener('change', (e) => {
-                state.sfxOn = e.target.checked;
-                showToast(state.sfxOn ? '🔊 SFX ON' : '🔇 SFX OFF');
-            });
-
-            // Leaderboard
-            dom.btnLeaderboard.addEventListener('click', () => {
-                dom.leaderboardModal.classList.add('active');
-                renderLeaderboard(state.leaderboardPeriod);
-            });
-            document.getElementById('closeLeaderboard').addEventListener('click', () => {
-                dom.leaderboardModal.classList.remove('active');
-            });
-            document.querySelectorAll('.leaderboard-tabs .tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.leaderboard-tabs .tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    state.leaderboardPeriod = tab.dataset.period;
-                    renderLeaderboard(state.leaderboardPeriod);
+            // ============================================================
+            // 18. EVENT BINDING
+            // ============================================================
+            function bindEvents() {
+                // Board click
+                boardEl.addEventListener('click', (e) => {
+                    const cell = e.target.closest('.cell');
+                    if (!cell) return;
+                    const r = parseInt(cell.dataset.row);
+                    const c = parseInt(cell.dataset.col);
+                    if (isNaN(r) || isNaN(c)) return;
+                    handleCellClick(r, c);
                 });
-            });
 
-            // Withdraw
-            dom.btnWithdraw.addEventListener('click', () => {
-                dom.withdrawModal.classList.add('active');
-                updateStats();
-                const btn = document.getElementById('btnSubmitWD');
-                if (state.dollars < CONFIG.MIN_WITHDRAW) {
-                    btn.disabled = true;
-                    btn.textContent = '🔒 Saldo Kurang (Min $1.00)';
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = 'Klaim Withdraw';
-                }
-            });
-            document.getElementById('closeWithdraw').addEventListener('click', () => {
-                dom.withdrawModal.classList.remove('active');
-            });
-            document.getElementById('btnSubmitWD').addEventListener('click', submitWithdraw);
+                // Shuffle button (with ad)
+                $('btnShuffle').addEventListener('click', () => {
+                    if (state.isProcessing || state.adInProgress) return;
+                    triggerRewardedAd(() => {
+                        state.grid = initGrid();
+                        renderGrid(true);
+                        showToast('🔀 Grid diacak!');
+                    });
+                });
 
-            // Convert (buka via tombol di stats? Kita tambahkan via double click dollar)
-            dom.dollarDisplay.style.cursor = 'pointer';
-            dom.dollarDisplay.addEventListener('click', openConvert);
-            document.getElementById('closeConvert').addEventListener('click', () => {
-                dom.convertModal.classList.remove('active');
-            });
-            document.getElementById('btnConvert').addEventListener('click', doConvert);
+                // Hint button (with ad)
+                $('btnHint').addEventListener('click', () => {
+                    if (state.isProcessing || state.adInProgress) return;
+                    triggerRewardedAd(() => {
+                        const hint = findHint();
+                        if (hint) {
+                            const [r, c] = hint;
+                            const idx = r * COLS + c;
+                            const cell = boardEl.children[idx];
+                            if (cell) {
+                                cell.style.boxShadow = '0 0 30px 10px #f5d742';
+                                setTimeout(() => {
+                                    cell.style.boxShadow = '';
+                                }, 1500);
+                            }
+                            showToast('💡 Petunjuk: blok di baris ' + (r + 1) + ', kolom ' + (c + 1));
+                        } else {
+                            showToast('😕 Tidak ada grup yang bisa dihancurkan. Acak grid!');
+                        }
+                    });
+                });
 
-            // Privacy
-            document.getElementById('linkPrivacy').addEventListener('click', () => {
-                dom.privacyModal.classList.add('active');
-            });
-            document.getElementById('linkTerms').addEventListener('click', () => {
-                showToast('Syarat & Ketentuan: Gunakan aplikasi dengan bijak.');
-            });
-            document.getElementById('closePrivacy').addEventListener('click', () => {
-                dom.privacyModal.classList.remove('active');
-            });
+                // Convert button (with ad)
+                $('btnConvert').addEventListener('click', () => {
+                    convertCoins();
+                });
 
-            // Auth
-            document.getElementById('btnGoogleLogin').addEventListener('click', signInWithGoogle);
+                // Withdraw
+                $('btnWithdraw').addEventListener('click', () => {
+                    withdrawOverlay.classList.remove('hidden');
+                    wdBalance.textContent = '$' + state.dollars.toFixed(2);
+                });
+                $('btnWithdraw2').addEventListener('click', () => {
+                    withdrawOverlay.classList.remove('hidden');
+                    wdBalance.textContent = '$' + state.dollars.toFixed(2);
+                });
+                $('btnCloseWD').addEventListener('click', () => {
+                    withdrawOverlay.classList.add('hidden');
+                });
+                $('btnClaimWD').addEventListener('click', () => {
+                    submitWithdrawal();
+                });
 
-            // Retry connection
-            document.getElementById('btnRetryConnection').addEventListener('click', () => {
-                if (navigator.onLine) {
-                    handleOnline();
-                } else {
-                    showToast('Masih offline. Periksa koneksi.');
-                }
-            });
+                // Leaderboard
+                $('btnLeaderboard').addEventListener('click', () => {
+                    renderLeaderboard();
+                    leaderboardOverlay.classList.remove('hidden');
+                });
+                $('btnLeaderboard2').addEventListener('click', () => {
+                    renderLeaderboard();
+                    leaderboardOverlay.classList.remove('hidden');
+                });
+                $('btnCloseLeaderboard').addEventListener('click', () => {
+                    leaderboardOverlay.classList.add('hidden');
+                });
 
-            // Online/offline
-            window.addEventListener('online', handleOnline);
-            window.addEventListener('offline', handleOffline);
+                // Settings
+                $('btnSettings').addEventListener('click', () => {
+                    settingsModal.classList.remove('hidden');
+                });
+                $('btnCloseSettings').addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+                $('toggleBGM').addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    state.bgmOn = this.classList.contains('active');
+                    if (state.bgmOn) {
+                        startBGM();
+                    } else {
+                        stopBGM();
+                    }
+                    showToast(state.bgmOn ? '🎵 BGM ON' : '🎵 BGM OFF');
+                });
+                $('toggleSFX').addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    state.sfxOn = this.classList.contains('active');
+                    showToast(state.sfxOn ? '🔊 SFX ON' : '🔇 SFX OFF');
+                });
 
-            // Close modals on overlay click
-            document.querySelectorAll('.modal-overlay').forEach(overlay => {
-                overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) {
-                        overlay.classList.remove('active');
+                // Google login
+                $('btnGoogleLogin').addEventListener('click', () => {
+                    initAudio();
+                    handleGoogleLogin();
+                });
+
+                // Privacy Policy
+                $('btnPrivacyPolicy').addEventListener('click', () => {
+                    showToast('📜 Kebijakan Privasi: Data hanya untuk gameplay.');
+                });
+
+                // Play button
+                $('btnPlay').addEventListener('click', () => {
+                    initAudio();
+                    mainMenuOverlay.classList.add('hidden');
+                    state.gameActive = true;
+                    state.grid = initGrid();
+                    renderGrid(true);
+                    startBGM();
+                    showToast('🎮 Selamat bermain!');
+                });
+
+                // Logout
+                $('btnLogout').addEventListener('click', handleLogout);
+
+                // Retry connection
+                $('btnRetryConnection').addEventListener('click', () => {
+                    if (navigator.onLine) {
+                        offlineOverlay.classList.add('hidden');
+                        showToast('✅ Koneksi kembali!');
+                    } else {
+                        showToast('❌ Masih offline. Periksa koneksi.');
                     }
                 });
+
+                // Auth state change
+                supabase.auth.onAuthStateChange((event, session) => {
+                    try {
+                        if (event === 'SIGNED_IN' && session) {
+                            state.session = session;
+                            state.user = session.user;
+                            onLoggedIn();
+                        } else if (event === 'SIGNED_OUT') {
+                            state.user = null;
+                            state.session = null;
+                            loginOverlay.classList.remove('hidden');
+                            mainMenuOverlay.classList.add('hidden');
+                        }
+                    } catch (e) {
+                        console.error('Auth state change error:', e);
+                    }
+                });
+            }
+
+            // ============================================================
+            // 19. INIT
+            // ============================================================
+            async function init() {
+                createGoldDust();
+                bindEvents();
+                updateHeartsDisplay();
+                updateStatsDisplay();
+                updateOnlineStatus();
+
+                // Initialize grid for preview
+                state.grid = initGrid();
+                renderGrid(false);
+
+                // Check session (handles OAuth callback)
+                await checkSession();
+
+                // Clean URL hash after a delay
+                setTimeout(() => {
+                    if (window.location.hash) {
+                        try {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        } catch (e) { /* ignore */ }
+                    }
+                }, 1000);
+            }
+
+            // Start the game
+            init().catch(err => {
+                console.error('Init error:', err);
+                showToast('⚠️ Terjadi kesalahan. Muat ulang halaman.');
             });
 
-            // Prevent context menu on board
-            dom.board.addEventListener('contextmenu', (e) => e.preventDefault());
-        }
-
-        // ==================== PARTICLES ====================
-        function createParticles() {
-            const container = document.getElementById('particles');
-            const count = 25;
-            for (let i = 0; i < count; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                p.style.left = Math.random() * 100 + '%';
-                p.style.animationDuration = (8 + Math.random() * 12) + 's';
-                p.style.animationDelay = (Math.random() * 15) + 's';
-                p.style.width = (3 + Math.random() * 6) + 'px';
-                p.style.height = p.style.width;
-                p.style.opacity = 0.3 + Math.random() * 0.5;
-                container.appendChild(p);
-            }
-        }
-
-        // ==================== MAIN INIT ====================
-        async function init() {
-            createParticles();
-            bindEvents();
-
-            // Cek koneksi awal
-            if (!navigator.onLine) {
-                handleOffline();
-                return;
-            }
-
-            // Cek auth
-            await checkAuth();
-
-            // Jika tidak ada session, auth screen sudah aktif
-            // Jika ada session, startGame dipanggil dari checkAuth
-        }
-
-        // Jalankan saat DOM siap
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-
-        // Expose beberapa fungsi untuk debugging (opsional)
-        window._cuanBlok = {
-            state: state,
-            shuffleGrid: shuffleGrid,
-            showHint: showHint
-        };
-
-    })();
+        })();
     </script>
 </body>
 </html>
