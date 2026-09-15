@@ -1,1778 +1,1617 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Cuan Blok · Puzzle Penghasil Uang</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* ========== RESET & GLOBAL ========== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cuan Blok: Puzzle Penghasil Uang</title>
+  <!-- Supabase CDN (HANYA SEKALI) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ========== RESET & GLOBAL ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #2A0808 0%, #1A0000 40%, #0a0a0a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Partikel emas melayang */
+    .gold-dust {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .gold-dust span {
+      position: absolute;
+      display: block;
+      width: 6px; height: 6px;
+      background: radial-gradient(circle, #ffd700, #b8860b);
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: floatDust linear infinite;
+      box-shadow: 0 0 10px #ffd70088;
+    }
+    @keyframes floatDust {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.6; }
+      100% { transform: translateY(-20vh) scale(1.2); opacity: 0; }
+    }
 
-        body {
-            background: #0a0a0a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
+    /* ========== ARCADE CONTAINER (MOBILE FRAME) ========== */
+    #app {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      max-height: 900px;
+      background: rgba(20, 5, 5, 0.55);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      border-radius: 28px;
+      border: 1.5px solid rgba(255, 215, 0, 0.35);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.15), inset 0 0 60px rgba(255, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 10;
+      transition: all 0.3s;
+    }
+    @media (max-width: 520px) {
+      #app {
+        border-radius: 0;
+        max-height: none;
+        height: 100vh;
+        border-left: none;
+        border-right: none;
+      }
+    }
 
-        /* ========== ARCADE CONTAINER ========== */
-        #arcade {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            max-height: 900px;
-            background: linear-gradient(145deg, #2A0808 0%, #1A0000 40%, #0a0a0a 100%);
-            border-radius: 28px;
-            border: 1px solid rgba(255, 215, 0, 0.35);
-            box-shadow: 0 0 60px rgba(255, 200, 0, 0.15), inset 0 0 80px rgba(0,0,0,0.6);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
+    /* ========== HEADER ========== */
+    .game-header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(60, 0, 0, 0.7), rgba(20, 0, 0, 0.3));
+      border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+      flex-shrink: 0;
+    }
+    .coin-dollar-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,215,0,0.3);
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0 0 8px #ffd700aa;
+      box-shadow: 0 0 12px #ffd70044;
+    }
+    .stat-badge .icon {
+      font-size: 22px;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px #ffd700cc);
+    }
+    .hearts {
+      display: flex;
+      gap: 2px;
+      font-size: 20px;
+      filter: drop-shadow(0 0 6px #ff3355aa);
+    }
+    .hearts .heart { color: #ff4d6d; }
+    .hearts .heart.empty { color: #553333; }
 
-        /* Floating Gold Dust Particles */
-        #particles {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1;
-            overflow: hidden;
-        }
-        .gold-dust {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: radial-gradient(circle, #FFD700, #FFA500);
-            border-radius: 50%;
-            opacity: 0;
-            animation: floatDust linear infinite;
-            box-shadow: 0 0 6px #FFD700;
-        }
-        @keyframes floatDust {
-            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
-            10% { opacity: 0.9; }
-            90% { opacity: 0.9; }
-            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
-        }
+    /* ========== MAIN AREA ========== */
+    .game-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+    }
+    .game-main::-webkit-scrollbar { width: 3px; }
+    .game-main::-webkit-scrollbar-thumb { background: #ffd70066; border-radius: 4px; }
 
-        /* ========== SCREENS ========== */
-        .screen {
-            position: absolute;
-            inset: 0;
-            display: none;
-            flex-direction: column;
-            z-index: 10;
-            padding: 16px;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-        .screen.active {
-            display: flex;
-        }
+    /* ========== BOARD GRID ========== */
+    .board-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 280px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      width: 100%;
+      max-width: 340px;
+      aspect-ratio: 1/1;
+      background: rgba(0,0,0,0.4);
+      border-radius: 20px;
+      padding: 8px;
+      border: 1px solid rgba(255,215,0,0.2);
+      box-shadow: inset 0 0 30px #00000088;
+    }
+    .block {
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .block:active { transform: scale(0.88); }
+    .block.selected {
+      box-shadow: 0 0 18px #ffd700, 0 0 30px #ffd70088, inset 0 -3px 0 rgba(0,0,0,0.3);
+      transform: scale(1.05);
+      z-index: 2;
+    }
+    .block.falling { transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-        /* ========== LOGIN SCREEN ========== */
-        #loginScreen {
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(ellipse at 50% 30%, rgba(255, 50, 50, 0.15), transparent 70%);
-        }
-        .login-card {
-            background: rgba(20, 5, 5, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            border-radius: 32px;
-            padding: 40px 28px 36px;
-            width: 100%;
-            max-width: 360px;
-            text-align: center;
-            box-shadow: 0 0 50px rgba(255, 180, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.08);
-            animation: cardPulse 3s ease-in-out infinite;
-        }
-        @keyframes cardPulse {
-            0%, 100% { box-shadow: 0 0 50px rgba(255, 180, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.08); }
-            50% { box-shadow: 0 0 70px rgba(255, 180, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.08); }
-        }
-        .game-logo {
-            font-size: 52px;
-            font-weight: 900;
-            background: linear-gradient(180deg, #FFE066, #FFB800, #FF8C00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 30px rgba(255, 200, 0, 0.6);
-            letter-spacing: 2px;
-            line-height: 1.1;
-            margin-bottom: 6px;
-        }
-        .game-sub {
-            font-size: 13px;
-            color: #FFD966;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            opacity: 0.8;
-            margin-bottom: 24px;
-        }
-        .coin-dollar-row {
-            display: flex;
-            justify-content: center;
-            gap: 28px;
-            margin-bottom: 28px;
-        }
-        .coin-dollar-row .icon-big {
-            font-size: 48px;
-            filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.9));
-            animation: bounceIcon 2s ease-in-out infinite;
-        }
-        .coin-dollar-row .icon-big:nth-child(2) {
-            animation-delay: 0.5s;
-        }
-        @keyframes bounceIcon {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .google-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            padding: 16px 20px;
-            background: #ffffff;
-            border: none;
-            border-radius: 18px;
-            font-size: 17px;
-            font-weight: 700;
-            color: #1a1a1a;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 6px 0 #b0b0b0, 0 0 30px rgba(255,255,255,0.15);
-            letter-spacing: 0.3px;
-        }
-        .google-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #b0b0b0, 0 0 20px rgba(255,255,255,0.1);
-        }
-        .google-btn svg {
-            width: 24px;
-            height: 24px;
-        }
-        .login-note {
-            margin-top: 18px;
-            font-size: 11px;
-            color: #a08080;
-            line-height: 1.5;
-        }
+    /* ========== TOMBOL & UI ========== */
+    .button-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      border: none;
+      border-radius: 16px;
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      background: linear-gradient(145deg, #c0392b, #8e1a0f);
+      box-shadow: 0 4px 0 #4a0a0a, 0 6px 16px rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255,215,0,0.3);
+      letter-spacing: 0.3px;
+    }
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #4a0a0a, 0 3px 10px rgba(0,0,0,0.5);
+    }
+    .btn.gold {
+      background: linear-gradient(145deg, #f1c40f, #b8860b);
+      box-shadow: 0 4px 0 #7a5c00, 0 6px 16px rgba(255,215,0,0.4);
+      color: #1a0a00;
+      border-color: #ffd700aa;
+    }
+    .btn.gold:active { box-shadow: 0 1px 0 #7a5c00; }
+    .btn.blue {
+      background: linear-gradient(145deg, #2980b9, #1a5276);
+      box-shadow: 0 4px 0 #0d2e44;
+    }
+    .btn.green {
+      background: linear-gradient(145deg, #27ae60, #145a32);
+      box-shadow: 0 4px 0 #0a2e1a;
+    }
+    .btn.purple {
+      background: linear-gradient(145deg, #8e44ad, #5b2c6f);
+      box-shadow: 0 4px 0 #2e1a3a;
+    }
+    .btn.small { padding: 6px 12px; font-size: 11px; border-radius: 12px; }
+    .btn:disabled {
+      opacity: 0.45;
+      filter: grayscale(0.6);
+      pointer-events: none;
+    }
 
-        /* ========== HEADER PANEL ========== */
-        #gameHeader {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            background: rgba(30, 5, 5, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 215, 0, 0.25);
-            z-index: 20;
-            flex-shrink: 0;
-        }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .header-icon {
-            font-size: 26px;
-            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9));
-            line-height: 1;
-        }
-        .header-stat {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: rgba(0,0,0,0.4);
-            padding: 6px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-        }
-        .header-stat .label {
-            font-size: 10px;
-            color: #c0a080;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .header-stat .value {
-            font-size: 15px;
-            font-weight: 800;
-            color: #FFD966;
-        }
-        .header-right {
-            display: flex;
-            gap: 8px;
-        }
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255, 215, 0, 0.25);
-            color: #FFD966;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.12s;
-        }
-        .icon-btn:active {
-            transform: scale(0.92);
-            background: rgba(255, 215, 0, 0.15);
-        }
+    /* ========== BOTTOM NAV ========== */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 6px 10px;
+      background: linear-gradient(0deg, rgba(30,0,0,0.9), rgba(10,0,0,0.5));
+      border-top: 1px solid rgba(255,215,0,0.2);
+      flex-shrink: 0;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      color: #ffd700aa;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .nav-item .nav-icon { font-size: 22px; line-height: 1; filter: drop-shadow(0 0 6px #ffd70066); }
+    .nav-item.active { color: #ffd700; background: rgba(255,215,0,0.1); }
+    .nav-item:active { transform: scale(0.9); }
 
-        /* ========== GAME AREA ========== */
-        #gameArea {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
-            position: relative;
-            z-index: 5;
-            overflow: hidden;
-        }
-        #gridContainer {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 4px;
-            padding: 10px;
-            background: rgba(0,0,0,0.35);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 215, 0, 0.15);
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 420px;
-            aspect-ratio: 1/1;
-        }
-        .block {
-            aspect-ratio: 1/1;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.08s ease, opacity 0.15s ease, box-shadow 0.15s ease;
-            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.4);
-            position: relative;
-        }
-        .block:active {
-            transform: scale(0.9);
-        }
-        .block.selected {
-            box-shadow: 0 0 12px 3px #FFD700, inset 0 -3px 0 rgba(0,0,0,0.3);
-            transform: scale(1.05);
-            z-index: 2;
-        }
-        .block.pop {
-            animation: blockPop 0.25s ease forwards;
-        }
-        @keyframes blockPop {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-        .block.falling {
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
+    /* ========== MODAL / OVERLAY ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: linear-gradient(160deg, #2a0a0a, #1a0000);
+      border: 1.5px solid rgba(255,215,0,0.5);
+      border-radius: 24px;
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 0 50px rgba(255,215,0,0.2), inset 0 0 40px rgba(255,0,0,0.1);
+      color: #fff;
+      text-align: center;
+      position: relative;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-box h2 {
+      font-size: 20px;
+      margin-bottom: 12px;
+      color: #ffd700;
+      text-shadow: 0 0 16px #ffd70088;
+      letter-spacing: 1px;
+    }
+    .modal-box p {
+      font-size: 14px;
+      color: #ddd;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px; right: 14px;
+      font-size: 24px;
+      color: #ffd700aa;
+      cursor: pointer;
+      background: none;
+      border: none;
+      line-height: 1;
+    }
 
-        /* ========== BOTTOM BAR ========== */
-        #bottomBar {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 10px 8px 14px;
-            background: rgba(20, 3, 3, 0.85);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border-top: 1px solid rgba(255, 215, 0, 0.25);
-            z-index: 20;
-            flex-shrink: 0;
-            gap: 6px;
-        }
-        .bottom-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            padding: 8px 4px;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255, 215, 0, 0.15);
-            color: #FFD966;
-            cursor: pointer;
-            transition: all 0.12s;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .bottom-btn:active {
-            transform: scale(0.94);
-            background: rgba(255, 215, 0, 0.12);
-        }
-        .bottom-btn .btn-icon {
-            font-size: 20px;
-            line-height: 1;
-            filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
-        }
+    /* ========== AD SIMULATOR ========== */
+    #adSimulator .modal-box {
+      max-width: 400px;
+    }
+    .ad-timer {
+      font-size: 42px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 20px #ffd700;
+      margin: 12px 0;
+    }
+    .ad-bar {
+      width: 100%;
+      height: 8px;
+      background: #331111;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0 18px;
+    }
+    .ad-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ffd700, #ff8c00);
+      transition: width 0.2s linear;
+      border-radius: 4px;
+    }
+    .ad-preview {
+      background: #111;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+      border: 1px solid #333;
+      font-size: 13px;
+      color: #aaa;
+    }
 
-        /* ========== VICTORY / OVERLAY ========== */
-        .overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            padding: 24px;
-            text-align: center;
-        }
-        .overlay.active {
-            display: flex;
-        }
-        .overlay h2 {
-            font-size: 32px;
-            font-weight: 900;
-            background: linear-gradient(180deg, #FFE066, #FFB800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-            filter: drop-shadow(0 0 20px rgba(255, 200, 0, 0.5));
-        }
-        .overlay p {
-            color: #c0a080;
-            font-size: 14px;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        .overlay .reward-row {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .overlay .reward-item {
-            background: rgba(255,255,255,0.06);
-            padding: 12px 20px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-        }
-        .overlay .reward-item .num {
-            font-size: 24px;
-            font-weight: 800;
-            color: #FFD966;
-        }
-        .overlay .reward-item .lbl {
-            font-size: 10px;
-            color: #a08080;
-            text-transform: uppercase;
-        }
-        .btn-primary {
-            padding: 14px 32px;
-            border-radius: 16px;
-            border: none;
-            background: linear-gradient(180deg, #FFD700, #FFA500);
-            color: #1a0000;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.12s;
-            box-shadow: 0 5px 0 #B8860B, 0 0 30px rgba(255, 200, 0, 0.3);
-            letter-spacing: 0.5px;
-        }
-        .btn-primary:active {
-            transform: translateY(3px);
-            box-shadow: 0 2px 0 #B8860B, 0 0 20px rgba(255, 200, 0, 0.2);
-        }
-        .btn-secondary {
-            padding: 12px 28px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            background: rgba(255,255,255,0.06);
-            color: #FFD966;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.12s;
-            margin-top: 8px;
-        }
-        .btn-secondary:active {
-            transform: scale(0.96);
-            background: rgba(255, 215, 0, 0.12);
-        }
+    /* ========== SPIN WHEEL ========== */
+    .spin-wheel {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: conic-gradient(#ffd700 0deg 45deg, #c0392b 45deg 90deg, #ffd700 90deg 135deg, #c0392b 135deg 180deg, #ffd700 180deg 225deg, #c0392b 225deg 270deg, #ffd700 270deg 315deg, #c0392b 315deg 360deg);
+      margin: 16px auto;
+      position: relative;
+      box-shadow: 0 0 30px #ffd70066;
+      transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+    .spin-wheel::after {
+      content: '🎰';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      background: #1a0000;
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffd700;
+    }
 
-        /* ========== AD SIMULATOR MODAL ========== */
-        #adModal {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.92);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 24px;
-        }
-        #adModal.active {
-            display: flex;
-        }
-        .ad-box {
-            background: #1a0505;
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            border-radius: 24px;
-            padding: 32px 24px;
-            text-align: center;
-            max-width: 340px;
-            width: 100%;
-            box-shadow: 0 0 60px rgba(255, 200, 0, 0.2);
-        }
-        .ad-box .ad-timer {
-            font-size: 56px;
-            font-weight: 900;
-            color: #FFD700;
-            text-shadow: 0 0 30px rgba(255, 200, 0, 0.6);
-            margin: 16px 0;
-            font-variant-numeric: tabular-nums;
-        }
-        .ad-box .ad-label {
-            font-size: 12px;
-            color: #a08080;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .ad-skip {
-            margin-top: 20px;
-            padding: 14px 40px;
-            border-radius: 16px;
-            border: none;
-            background: linear-gradient(180deg, #FFD700, #FFA500);
-            color: #1a0000;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            opacity: 0.4;
-            pointer-events: none;
-            transition: all 0.3s;
-        }
-        .ad-skip.ready {
-            opacity: 1;
-            pointer-events: auto;
-            box-shadow: 0 0 30px rgba(255, 200, 0, 0.4);
-        }
+    /* ========== LEADERBOARD ========== */
+    .leaderboard-list {
+      list-style: none;
+      text-align: left;
+      margin: 12px 0;
+    }
+    .leaderboard-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255,215,0,0.1);
+      font-size: 13px;
+    }
+    .leaderboard-list li span:first-child { color: #ffd700; font-weight: 700; }
+    .leaderboard-list li span:last-child { color: #ffaa00; }
 
-        /* ========== WD MENU ========== */
-        #wdScreen {
-            padding: 16px;
-            overflow-y: auto;
-        }
-        .wd-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .wd-header .back-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255, 215, 0, 0.25);
-            color: #FFD966;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .wd-header h3 {
-            color: #FFD966;
-            font-size: 20px;
-            font-weight: 800;
-        }
-        .ewallet-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .ewallet-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 16px;
-            padding: 14px 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .ewallet-card:active {
-            transform: scale(0.95);
-        }
-        .ewallet-card.selected {
-            border-color: #FFD700;
-            background: rgba(255, 215, 0, 0.1);
-            box-shadow: 0 0 20px rgba(255, 200, 0, 0.2);
-        }
-        .ewallet-card svg {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 6px;
-        }
-        .ewallet-card .ew-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #ddd;
-        }
-        .wd-form {
-            background: rgba(0,0,0,0.3);
-            border-radius: 20px;
-            padding: 18px;
-            border: 1px solid rgba(255, 215, 0, 0.15);
-        }
-        .wd-form label {
-            display: block;
-            font-size: 11px;
-            color: #a08080;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-        }
-        .wd-form input {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            background: rgba(255,255,255,0.05);
-            color: #fff;
-            font-size: 15px;
-            margin-bottom: 14px;
-            outline: none;
-            transition: border 0.2s;
-        }
-        .wd-form input:focus {
-            border-color: #FFD700;
-        }
-        .wd-form input::placeholder {
-            color: #604040;
-        }
-        .wd-info {
-            font-size: 11px;
-            color: #a08080;
-            line-height: 1.6;
-            margin-bottom: 14px;
-            padding: 10px;
-            background: rgba(255, 200, 0, 0.05);
-            border-radius: 10px;
-            border-left: 3px solid #FFD700;
-        }
+    /* ========== WITHDRAWAL ========== */
+    .wallet-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.4);
+      border: 1.5px solid rgba(255,215,0,0.2);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .wallet-option:active { background: rgba(255,215,0,0.1); }
+    .wallet-option.selected {
+      border-color: #ffd700;
+      box-shadow: 0 0 16px #ffd70044;
+      background: rgba(255,215,0,0.08);
+    }
+    .wallet-option svg { width: 36px; height: 36px; flex-shrink: 0; }
+    .wallet-option .wallet-name { font-weight: 700; font-size: 15px; }
+    .wallet-option .wallet-desc { font-size: 11px; color: #aaa; }
 
-        /* ========== TOAST ========== */
-        #toast {
-            position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(20, 5, 5, 0.95);
-            border: 1px solid rgba(255, 215, 0, 0.5);
-            color: #FFD966;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 600;
-            z-index: 200;
-            opacity: 0;
-            transition: all 0.3s ease;
-            pointer-events: none;
-            white-space: nowrap;
-            box-shadow: 0 0 20px rgba(255, 200, 0, 0.2);
-        }
-        #toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,215,0,0.3);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 10px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .input-field:focus { border-color: #ffd700; }
+    .input-field::placeholder { color: #888; }
 
-        /* ========== LIVE PAYOUT TICKER ========== */
-        #payoutTicker {
-            position: absolute;
-            top: 70px;
-            right: 8px;
-            background: rgba(20, 5, 5, 0.9);
-            border: 1px solid rgba(0, 255, 100, 0.3);
-            border-radius: 12px;
-            padding: 6px 12px;
-            font-size: 10px;
-            color: #88ff88;
-            z-index: 30;
-            display: none;
-            align-items: center;
-            gap: 6px;
-            backdrop-filter: blur(8px);
-            pointer-events: none;
-            box-shadow: 0 0 15px rgba(0, 255, 100, 0.15);
-            white-space: nowrap;
-        }
-        #payoutTicker.show {
-            display: flex;
-            animation: tickerSlide 0.4s ease;
-        }
-        @keyframes tickerSlide {
-            from { transform: translateX(120%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+    /* ========== TICKER ========== */
+    .live-ticker {
+      position: absolute;
+      bottom: 60px;
+      left: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #ffd70044;
+      border-radius: 30px;
+      padding: 6px 14px;
+      font-size: 11px;
+      color: #ffd700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 50;
+      box-shadow: 0 0 20px #00000088;
+      pointer-events: none;
+      animation: fadeInOut 4s ease-in-out infinite;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      10%, 90% { opacity: 1; }
+    }
 
-        /* ========== SPIN WHEEL ========== */
-        #spinOverlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 80;
-            padding: 20px;
-        }
-        #spinOverlay.active {
-            display: flex;
-        }
-        .wheel-container {
-            width: 260px;
-            height: 260px;
-            position: relative;
-            margin-bottom: 24px;
-        }
-        .wheel {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 6px solid #FFD700;
-            box-shadow: 0 0 40px rgba(255, 200, 0, 0.4);
-            transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-            position: relative;
-            overflow: hidden;
-        }
-        .wheel-segment {
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            transform-origin: 100% 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 800;
-            color: #1a0000;
-        }
-        .wheel-pointer {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 14px solid transparent;
-            border-right: 14px solid transparent;
-            border-top: 24px solid #FFD700;
-            filter: drop-shadow(0 0 8px #FFD700);
-            z-index: 5;
-        }
+    /* ========== LOGIN ========== */
+    #loginScreen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 30%, #3a0808, #0a0000);
+      z-index: 2000;
+      padding: 20px;
+    }
+    .login-card {
+      background: rgba(20,5,5,0.85);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255,215,0,0.5);
+      border-radius: 28px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(255,215,0,0.2), inset 0 0 40px rgba(255,0,0,0.1);
+      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .login-logo {
+      font-size: 52px;
+      margin-bottom: 4px;
+      filter: drop-shadow(0 0 20px #ffd700);
+    }
+    .login-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 24px #ffd70088;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+    .login-sub {
+      font-size: 12px;
+      color: #cc9966;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+    .login-coins {
+      font-size: 28px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 12px #ffd700);
+    }
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 16px;
+      background: #fff;
+      color: #222;
+      font-weight: 700;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 6px 0 #bbb, 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .google-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #bbb, 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .google-btn svg { width: 22px; height: 22px; }
 
-        /* ========== HUD ENERGY ========== */
-        .energy-hearts {
-            display: flex;
-            gap: 3px;
-        }
-        .heart {
-            font-size: 16px;
-            filter: drop-shadow(0 0 6px rgba(255, 50, 50, 0.8));
-            transition: all 0.3s;
-        }
-        .heart.empty {
-            filter: grayscale(1) brightness(0.3);
-            opacity: 0.5;
-        }
+    /* ========== MISC ========== */
+    .hidden { display: none !important; }
+    .text-gold { color: #ffd700; }
+    .mt-8 { margin-top: 8px; }
+    .mb-8 { margin-bottom: 8px; }
 
-        /* ========== SCROLLBAR ========== */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 215, 0, 0.3);
-            border-radius: 4px;
-        }
+    /* Ripple effect */
+    .ripple {
+      position: fixed;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffd70088, transparent 70%);
+      pointer-events: none;
+      transform: scale(0);
+      animation: rippleAnim 0.6s ease-out forwards;
+      z-index: 9999;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
 
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 400px) {
-            .game-logo { font-size: 40px; }
-            .coin-dollar-row .icon-big { font-size: 38px; }
-            #gridContainer { gap: 3px; padding: 8px; }
-            .bottom-btn { font-size: 9px; padding: 6px 2px; }
-            .bottom-btn .btn-icon { font-size: 17px; }
-        }
-
-        /* ========== MISC ========== */
-        .hidden { display: none !important; }
-        .flex-center { display: flex; align-items: center; justify-content: center; }
-    </style>
+    /* Small screens */
+    @media (max-height: 700px) {
+      #board { max-width: 280px; }
+      .btn { padding: 8px 14px; font-size: 12px; }
+      .game-header { padding: 8px 12px; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Partikel Emas -->
+  <div class="gold-dust" id="goldDust"></div>
 
-<div id="arcade">
-    <!-- Floating Gold Dust -->
-    <div id="particles"></div>
+  <!-- ARCADE CONTAINER -->
+  <div id="app">
 
-    <!-- ========== LOGIN SCREEN ========== -->
-    <div class="screen active" id="loginScreen">
-        <div class="login-card">
-            <div class="game-logo">CUAN BLOK</div>
-            <div class="game-sub">Puzzle Penghasil Uang</div>
-            <div class="coin-dollar-row">
-                <span class="icon-big">🪙</span>
-                <span class="icon-big">💵</span>
-            </div>
-            <button class="google-btn" id="googleLoginBtn">
-                <svg viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-                Login dengan Google
-            </button>
-            <div class="login-note">
-                Dengan masuk, Anda menyetujui Syarat & Ketentuan.<br>
-                Saldo dapat dicairkan ke DANA, OVO, GoPay.
-            </div>
+    <!-- HEADER -->
+    <header class="game-header">
+      <div class="coin-dollar-group">
+        <div class="stat-badge">
+          <span class="icon">🪙</span>
+          <span id="coinDisplay">0</span>
         </div>
+        <div class="stat-badge">
+          <span class="icon">💵</span>
+          <span id="dollarDisplay">0.00</span>
+        </div>
+      </div>
+      <div class="hearts" id="heartsDisplay">
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+      </div>
+    </header>
+
+    <!-- MAIN GAME AREA -->
+    <main class="game-main" id="gameMain">
+      <!-- BOARD -->
+      <div class="board-wrapper">
+        <div id="board"></div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="button-row">
+        <button class="btn small" id="btnHammer">🔨 Hammer</button>
+        <button class="btn small" id="btnShuffle">🔄 Shuffle</button>
+        <button class="btn small gold" id="btnConvert">💵 Konversi</button>
+        <button class="btn small purple" id="btnSpin">🎰 Spin</button>
+        <button class="btn small blue" id="btnChest">🎁 Peti</button>
+      </div>
+      <div class="button-row">
+        <button class="btn small green" id="btnWatchAdEnergy">📺 +Energi</button>
+        <button class="btn small" id="btnWithdrawMenu">💸 WD</button>
+        <button class="btn small gold" id="btnDailyCheck">📅 Check-in</button>
+        <button class="btn small purple" id="btnLeaderboard">🏆 Peringkat</button>
+      </div>
+
+      <!-- LIVE TICKER -->
+      <div class="live-ticker" id="liveTicker">
+        <span>💸</span>
+        <span id="tickerText">Rian_07 baru saja withdraw Rp 250.000!</span>
+      </div>
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-nav="home">
+        <span class="nav-icon">🏠</span>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" data-nav="mission">
+        <span class="nav-icon">📋</span>
+        <span>Misi</span>
+      </div>
+      <div class="nav-item" data-nav="invite">
+        <span class="nav-icon">👥</span>
+        <span>Undang</span>
+      </div>
+      <div class="nav-item" data-nav="profile">
+        <span class="nav-icon">👤</span>
+        <span>Profil</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ========== LOGIN SCREEN ========== -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">🎮</div>
+      <div class="login-title">CUAN BLOK</div>
+      <div class="login-sub">PUZZLE PENGHASIL UANG</div>
+      <div class="login-coins">🪙 💵 🪙</div>
+      <p style="font-size:13px;color:#aaa;margin-bottom:20px;">Mainkan, kumpulkan koin, dan tarik saldo ke e-wallet favoritmu!</p>
+      <button class="google-btn" id="googleLoginBtn">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+        Login dengan Google
+      </button>
+      <p style="font-size:10px;color:#666;margin-top:16px;">Dengan login, kamu menyetujui Syarat & Ketentuan</p>
     </div>
+  </div>
 
-    <!-- ========== MAIN GAME SCREEN ========== -->
-    <div class="screen" id="gameScreen">
-        <!-- Header -->
-        <div id="gameHeader">
-            <div class="header-left">
-                <span class="header-icon">🪙</span>
-                <div class="header-stat">
-                    <span class="label">Koin</span>
-                    <span class="value" id="coinDisplay">0</span>
-                </div>
-                <span class="header-icon">💵</span>
-                <div class="header-stat">
-                    <span class="label">USD</span>
-                    <span class="value" id="dollarDisplay">0.00</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="energy-hearts" id="energyHearts"></div>
-                <div class="icon-btn" id="spinBtn">🎰</div>
-                <div class="icon-btn" id="wdBtn">💳</div>
-            </div>
-        </div>
+  <!-- ========== MODAL GENERAL ========== -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" id="modalContent"></div>
+  </div>
 
-        <!-- Live Payout Ticker -->
-        <div id="payoutTicker">
-            <span>✅</span>
-            <span id="tickerText">Rian_07 baru saja WD Rp 150.000</span>
-        </div>
-
-        <!-- Game Area -->
-        <div id="gameArea">
-            <div id="gridContainer"></div>
-        </div>
-
-        <!-- Bottom Bar -->
-        <div id="bottomBar">
-            <div class="bottom-btn" id="hammerBtn">
-                <span class="btn-icon">🔨</span>
-                <span>Hammer</span>
-            </div>
-            <div class="bottom-btn" id="shuffleBtn">
-                <span class="btn-icon">🔀</span>
-                <span>Shuffle</span>
-            </div>
-            <div class="bottom-btn" id="convertBtn">
-                <span class="btn-icon">💱</span>
-                <span>Konversi</span>
-            </div>
-            <div class="bottom-btn" id="chestBtn">
-                <span class="btn-icon">🎁</span>
-                <span>Peti</span>
-            </div>
-            <div class="bottom-btn" id="missionBtn">
-                <span class="btn-icon">📋</span>
-                <span>Misi</span>
-            </div>
-        </div>
+  <!-- ========== AD SIMULATOR ========== -->
+  <div class="modal-overlay" id="adSimulator">
+    <div class="modal-box">
+      <h2>📺 Iklan Berhadiah</h2>
+      <div class="ad-preview" id="adPreviewText">Memuat iklan...</div>
+      <div class="ad-timer" id="adTimer">5</div>
+      <div class="ad-bar"><div class="ad-bar-fill" id="adBarFill"></div></div>
+      <p style="font-size:11px;color:#888;">Hadiah akan diberikan setelah iklan selesai</p>
+      <button class="btn gold" id="adClaimBtn" disabled>⏳ Tunggu...</button>
     </div>
+  </div>
 
-    <!-- ========== WD SCREEN ========== -->
-    <div class="screen" id="wdScreen">
-        <div class="wd-header">
-            <div class="back-btn" id="wdBackBtn">←</div>
-            <h3>Penarikan Saldo</h3>
-        </div>
-        <div class="ewallet-grid">
-            <!-- DANA -->
-            <div class="ewallet-card" data-ew="dana">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="100" height="100" rx="22" fill="#118EEA"/>
-                    <text x="50" y="62" font-size="34" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">DANA</text>
-                </svg>
-                <div class="ew-name">DANA</div>
-            </div>
-            <!-- OVO -->
-            <div class="ewallet-card" data-ew="ovo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="100" height="100" rx="22" fill="#4C3494"/>
-                    <text x="50" y="62" font-size="34" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">OVO</text>
-                </svg>
-                <div class="ew-name">OVO</div>
-            </div>
-            <!-- GoPay -->
-            <div class="ewallet-card" data-ew="gopay">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="100" height="100" rx="22" fill="#00AED6"/>
-                    <text x="50" y="58" font-size="26" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">GoPay</text>
-                </svg>
-                <div class="ew-name">GoPay</div>
-            </div>
-        </div>
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    (function() {
+      'use strict';
 
-        <div class="wd-form">
-            <label>Nama Pemilik Rekening</label>
-            <input type="text" id="wdName" placeholder="Masukkan nama lengkap">
-            <label>Nomor HP Terdaftar</label>
-            <input type="tel" id="wdPhone" placeholder="08xxxxxxxxxx">
-            <label>Jumlah Penarikan (min. Rp 50.000)</label>
-            <input type="number" id="wdAmount" placeholder="50000" min="50000" step="10000">
-            <div class="wd-info">
-                ⚠️ Syarat WD:<br>
-                • Tonton 5 iklan harian (0/5)<br>
-                • Undang 3 teman aktif (0/3)<br>
-                • Saldo minimal $5.00<br>
-                • Antrean WD 3-7 hari kerja
-            </div>
-            <button class="btn-primary" id="wdSubmitBtn" style="width:100%;">Ajukan Penarikan</button>
-        </div>
-    </div>
+      // ============================================================
+      // 1. INISIALISASI SUPABASE (HANYA SEKALI)
+      // ============================================================
+      const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
+      const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      window.__supabase = supabase; // akses global jika diperlukan
 
-    <!-- ========== VICTORY OVERLAY ========== -->
-    <div class="overlay" id="victoryOverlay">
-        <h2>🎉 MENANG! 🎉</h2>
-        <p>Anda berhasil menghancurkan blok!</p>
-        <div class="reward-row">
-            <div class="reward-item">
-                <div class="num" id="victoryCoins">+0</div>
-                <div class="lbl">Koin</div>
-            </div>
-        </div>
-        <button class="btn-primary" id="claimX3Btn">Klaim Koin x3 (Tonton Iklan)</button>
-        <button class="btn-secondary" id="claimNormalBtn">Klaim Biasa</button>
-    </div>
+      // ============================================================
+      // 2. STATE GAME
+      // ============================================================
+      const state = {
+        user: null,
+        coins: 0,
+        dollars: 0.00,
+        hearts: 5,
+        maxHearts: 5,
+        board: [],
+        boardSize: 7,
+        selected: [],
+        isProcessing: false,
+        energyRegenTimer: null,
+        streak: 0,
+        lastCheckIn: null,
+        adsWatchedToday: 0,
+        adsRequiredForWD: 5,
+        referrals: 0,
+        referralsRequired: 3,
+        wdQueueDays: 0,
+        wdUnlocked: false,
+        vipTier: 0,
+        inactivityTimer: null,
+        audioCtx: null,
+        bgmEnabled: true,
+        sfxEnabled: true,
+        bgmInterval: null,
+        spinAvailable: true,
+        lastSpinDate: null,
+        chestOpened: 0,
+        adInProgress: false,
+        adCallback: null,
+        sessionChecked: false,
+        hammerCount: 1,
+        shuffleCount: 1,
+        leaderboardBots: [
+          { name: 'Rian_07', score: 284500 },
+          { name: 'Putri Cantik', score: 271200 },
+          { name: 'Sultan_Muda', score: 265800 },
+          { name: 'Dewi_99', score: 249300 },
+          { name: 'Budi_Gaming', score: 238100 },
+          { name: 'Kamu', score: 0 }
+        ]
+      };
 
-    <!-- ========== GAME OVER OVERLAY ========== -->
-    <div class="overlay" id="gameOverOverlay">
-        <h2 style="background: linear-gradient(180deg, #FF6666, #CC0000); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GAME OVER</h2>
-        <p>Energi habis! Tonton iklan untuk revive +5 langkah.</p>
-        <button class="btn-primary" id="reviveBtn">Revive (Tonton Iklan)</button>
-        <button class="btn-secondary" id="giveUpBtn">Menyerah</button>
-    </div>
+      // DOM refs
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => document.querySelectorAll(s);
 
-    <!-- ========== AD SIMULATOR MODAL ========== -->
-    <div id="adModal">
-        <div class="ad-box">
-            <div class="ad-label">Iklan Sponsor</div>
-            <div class="ad-timer" id="adTimer">5</div>
-            <div class="ad-label">Hadiah akan diberikan otomatis</div>
-            <button class="ad-skip" id="adSkipBtn">Lewati / Klaim Reward</button>
-        </div>
-    </div>
+      const dom = {
+        board: $('#board'),
+        coinDisplay: $('#coinDisplay'),
+        dollarDisplay: $('#dollarDisplay'),
+        heartsDisplay: $('#heartsDisplay'),
+        loginScreen: $('#loginScreen'),
+        googleLoginBtn: $('#googleLoginBtn'),
+        modalOverlay: $('#modalOverlay'),
+        modalContent: $('#modalContent'),
+        adSimulator: $('#adSimulator'),
+        adTimer: $('#adTimer'),
+        adBarFill: $('#adBarFill'),
+        adClaimBtn: $('#adClaimBtn'),
+        adPreviewText: $('#adPreviewText'),
+        liveTicker: $('#liveTicker'),
+        tickerText: $('#tickerText'),
+        gameMain: $('#gameMain')
+      };
 
-    <!-- ========== SPIN WHEEL OVERLAY ========== -->
-    <div id="spinOverlay">
-        <h2 style="color:#FFD966; font-size:24px; font-weight:800; margin-bottom:16px;">🎰 Lucky Spin Harian</h2>
-        <div class="wheel-container">
-            <div class="wheel-pointer"></div>
-            <div class="wheel" id="spinWheel">
-                <!-- Segments generated by JS -->
-            </div>
-        </div>
-        <button class="btn-primary" id="spinActionBtn">Putar Sekarang!</button>
-        <button class="btn-secondary" id="spinCloseBtn">Tutup</button>
-    </div>
-
-    <!-- ========== TOAST ========== -->
-    <div id="toast"></div>
-</div>
-
-<script>
-    // ============================================================
-    // 1. SUPABASE INIT (SEKALI SAJA)
-    // ============================================================
-    const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-    // ============================================================
-    // 2. GAME STATE
-    // ============================================================
-    const GRID_SIZE = 8;
-    const COLORS = ['#FF6B6B','#4ECDC4','#FFD93D','#A66CFF','#FF8C42','#6BCB77'];
-    let board = [];
-    let selectedBlocks = [];
-    let isAnimating = false;
-    let userId = null;
-    let energy = 5;
-    let maxEnergy = 5;
-    let coins = 0;
-    let dollars = 0.00;
-    let audioCtx = null;
-    let bgmOsc = null;
-    let bgmGain = null;
-    let sfxEnabled = true;
-    let bgmEnabled = true;
-    let adCallback = null;
-    let spinRewardReady = false;
-    let spinUsedToday = false;
-
-    // ============================================================
-    // 3. DOM REFS
-    // ============================================================
-    const $ = (id) => document.getElementById(id);
-    const loginScreen = $('loginScreen');
-    const gameScreen = $('gameScreen');
-    const wdScreen = $('wdScreen');
-    const gridContainer = $('gridContainer');
-    const coinDisplay = $('coinDisplay');
-    const dollarDisplay = $('dollarDisplay');
-    const energyHearts = $('energyHearts');
-    const victoryOverlay = $('victoryOverlay');
-    const gameOverOverlay = $('gameOverOverlay');
-    const adModal = $('adModal');
-    const adTimer = $('adTimer');
-    const adSkipBtn = $('adSkipBtn');
-    const spinOverlay = $('spinOverlay');
-    const spinWheel = $('spinWheel');
-    const toastEl = $('toast');
-    const payoutTicker = $('payoutTicker');
-    const tickerText = $('tickerText');
-
-    // ============================================================
-    // 4. GOLD DUST PARTICLES
-    // ============================================================
-    function createParticles() {
-        const container = $('particles');
-        for (let i = 0; i < 30; i++) {
-            const p = document.createElement('div');
-            p.className = 'gold-dust';
-            p.style.left = Math.random() * 100 + '%';
-            p.style.animationDuration = (6 + Math.random() * 10) + 's';
-            p.style.animationDelay = Math.random() * 10 + 's';
-            p.style.width = (2 + Math.random() * 3) + 'px';
-            p.style.height = p.style.width;
-            container.appendChild(p);
-        }
-    }
-    createParticles();
-
-    // ============================================================
-    // 5. AUDIO SYNTHESIS
-    // ============================================================
-    function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        startBGM();
-    }
-
-    function startBGM() {
-        if (!audioCtx || !bgmEnabled) return;
+      // ============================================================
+      // 3. AUDIO (Web Audio API) — diinisialisasi pada interaksi pertama
+      // ============================================================
+      function initAudio() {
+        if (state.audioCtx) return;
         try {
-            if (bgmOsc) bgmOsc.stop();
-            bgmOsc = audioCtx.createOscillator();
-            bgmGain = audioCtx.createGain();
-            bgmOsc.type = 'triangle';
-            bgmOsc.frequency.value = 220;
-            bgmGain.gain.value = 0.04;
-            bgmOsc.connect(bgmGain);
-            bgmGain.connect(audioCtx.destination);
-            bgmOsc.start();
+          state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          console.warn('AudioContext tidak didukung');
+        }
+      }
 
-            // Simple arpeggio loop
-            const notes = [220, 277, 330, 277, 220, 330, 277, 220];
-            let idx = 0;
-            setInterval(() => {
-                if (bgmOsc && bgmEnabled) {
-                    bgmOsc.frequency.setValueAtTime(notes[idx % notes.length], audioCtx.currentTime);
-                    idx++;
-                }
-            }, 400);
-        } catch(e) {}
-    }
+      function playSFX(type) {
+        if (!state.sfxEnabled || !state.audioCtx) return;
+        const ctx = state.audioCtx;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-    function playSFX(freq, duration, type = 'sine', vol = 0.1) {
-        if (!audioCtx || !sfxEnabled) return;
-        try {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        switch(type) {
+          case 'click':
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            osc.start(now); osc.stop(now + 0.12);
+            break;
+          case 'break':
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            osc.start(now); osc.stop(now + 0.25);
+            break;
+          case 'coin':
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(1800, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15);
+            break;
+          case 'lose':
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc.start(now); osc.stop(now + 0.35);
+            break;
+          case 'win':
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523, now);
+            osc.frequency.setValueAtTime(659, now + 0.1);
+            osc.frequency.setValueAtTime(784, now + 0.2);
+            osc.frequency.setValueAtTime(1047, now + 0.3);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.start(now); osc.stop(now + 0.5);
+            break;
+        }
+      }
+
+      function startBGM() {
+        if (!state.bgmEnabled || !state.audioCtx) return;
+        if (state.bgmInterval) clearInterval(state.bgmInterval);
+        const ctx = state.audioCtx;
+        const notes = [262, 330, 392, 523, 392, 330];
+        let idx = 0;
+        state.bgmInterval = setInterval(() => {
+          if (!state.bgmEnabled || !state.audioCtx) return;
+          try {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
             osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
-        } catch(e) {}
-    }
+            gain.connect(ctx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(notes[idx % notes.length], ctx.currentTime);
+            gain.gain.setValueAtTime(0.06, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+            idx++;
+          } catch(e) {}
+        }, 400);
+      }
 
-    function sfxClick() { playSFX(800, 0.06, 'square', 0.06); }
-    function sfxPop() { playSFX(1200, 0.1, 'sine', 0.08); }
-    function sfxCoin() { playSFX(1600, 0.12, 'sine', 0.1); }
-    function sfxHurt() { playSFX(200, 0.2, 'sawtooth', 0.08); }
-    function sfxFanfare() {
-        [523, 659, 784, 1047].forEach((f, i) => {
-            setTimeout(() => playSFX(f, 0.2, 'sine', 0.1), i * 120);
-        });
-    }
-
-    function vibrate(ms = 30) {
-        if (navigator.vibrate) navigator.vibrate(ms);
-    }
-
-    // ============================================================
-    // 6. TOAST & TICKER
-    // ============================================================
-    function showToast(msg, duration = 2000) {
-        toastEl.textContent = msg;
-        toastEl.classList.add('show');
-        clearTimeout(toastEl._timeout);
-        toastEl._timeout = setTimeout(() => toastEl.classList.remove('show'), duration);
-    }
-
-    const tickerMessages = [
-        'Rian_07 baru saja WD Rp 150.000',
-        'Putri Cantik WD Rp 200.000',
-        'Budi Gaming WD Rp 75.000',
-        'Sultan_Muda WD Rp 500.000',
-        'Dewi_99 WD Rp 120.000',
-        'Andi Pro WD Rp 300.000',
-    ];
-    function showTicker() {
-        const msg = tickerMessages[Math.floor(Math.random() * tickerMessages.length)];
-        tickerText.textContent = msg;
-        payoutTicker.classList.add('show');
-        setTimeout(() => payoutTicker.classList.remove('show'), 4000);
-    }
-    setInterval(() => {
-        if (Math.random() > 0.5 && gameScreen.classList.contains('active')) {
-            showTicker();
+      function stopBGM() {
+        if (state.bgmInterval) {
+          clearInterval(state.bgmInterval);
+          state.bgmInterval = null;
         }
-    }, 12000);
+      }
 
-    // ============================================================
-    // 7. AUTH (GOOGLE LOGIN via SUPABASE)
-    // ============================================================
-    async function handleGoogleLogin() {
-        initAudio(); // Audio must be initialized on user gesture
-        sfxClick();
-        vibrate(30);
-        try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin + window.location.pathname }
-            });
-            if (error) throw error;
-        } catch (e) {
-            console.warn('OAuth error, using guest mode:', e);
-            // Fallback: guest login
-            userId = 'guest_' + Date.now();
-            enterGame();
+      // ============================================================
+      // 4. HAPTIC & RIPPLE
+      // ============================================================
+      function haptic() {
+        if (navigator.vibrate) {
+          try { navigator.vibrate(30); } catch(e) {}
         }
-    }
+      }
 
-    async function checkSession() {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                userId = session.user.id;
-                enterGame();
-                return true;
-            }
-            return false;
-        } catch (e) {
-            return false;
-        }
-    }
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-            userId = session.user.id;
-            enterGame();
-        }
-    });
-
-    // Check URL for OAuth callback
-    window.addEventListener('load', async () => {
-        // Clean hash from URL after OAuth
-        if (window.location.hash.includes('access_token')) {
-            const { data, error } = await supabase.auth.getSession();
-            if (data?.session) {
-                userId = data.session.user.id;
-                enterGame();
-                history.replaceState(null, '', window.location.pathname);
-                return;
-            }
-        }
-        // Try existing session
-        const hasSession = await checkSession();
-        if (!hasSession) {
-            // Show login screen
-        }
-    });
-
-    // ============================================================
-    // 8. ENTER GAME
-    // ============================================================
-    function enterGame() {
-        loginScreen.classList.remove('active');
-        gameScreen.classList.add('active');
-        initBoard();
-        renderBoard();
-        updateUI();
-        startEnergyRegen();
-        showTicker();
-        // Daily streak check
-        checkDailyStreak();
-    }
-
-    // ============================================================
-    // 9. BOARD GENERATION & RENDERING
-    // ============================================================
-    function randomColor() {
-        return COLORS[Math.floor(Math.random() * COLORS.length)];
-    }
-
-    function initBoard() {
-        board = [];
-        for (let r = 0; r < GRID_SIZE; r++) {
-            board[r] = [];
-            for (let c = 0; c < GRID_SIZE; c++) {
-                board[r][c] = randomColor();
-            }
-        }
-        // Remove initial matches
-        let hasMatch = true;
-        let attempts = 0;
-        while (hasMatch && attempts < 100) {
-            hasMatch = false;
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    const match = findMatchAt(r, c);
-                    if (match.length >= 3) {
-                        board[r][c] = randomColor();
-                        hasMatch = true;
-                    }
-                }
-            }
-            attempts++;
-        }
-    }
-
-    function renderBoard() {
-        gridContainer.innerHTML = '';
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; c++) {
-                const block = document.createElement('div');
-                block.className = 'block';
-                block.dataset.row = r;
-                block.dataset.col = c;
-                block.style.background = board[r][c];
-                block.addEventListener('click', () => onBlockClick(r, c));
-                gridContainer.appendChild(block);
-            }
-        }
-    }
-
-    // ============================================================
-    // 10. MATCH DETECTION
-    // ============================================================
-    function findMatchAt(row, col) {
-        const color = board[row][col];
-        if (!color) return [];
-        const visited = new Set();
-        const stack = [[row, col]];
-        const match = [];
-        while (stack.length) {
-            const [r, c] = stack.pop();
-            const key = r + ',' + c;
-            if (visited.has(key)) continue;
-            visited.add(key);
-            if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) continue;
-            if (board[r][c] !== color) continue;
-            match.push([r, c]);
-            stack.push([r+1, c], [r-1, c], [r, c+1], [r, c-1]);
-        }
-        return match;
-    }
-
-    // ============================================================
-    // 11. BLOCK CLICK HANDLER
-    // ============================================================
-    function onBlockClick(row, col) {
-        if (isAnimating) return;
-        if (energy <= 0) {
-            gameOverOverlay.classList.add('active');
-            return;
-        }
-        vibrate(20);
-        sfxClick();
-
-        const match = findMatchAt(row, col);
-        if (match.length >= 3) {
-            // Valid match
-            sfxPop();
-            removeMatches(match);
-        } else {
-            showToast('Butuh minimal 3 blok terhubung!');
-        }
-    }
-
-    // ============================================================
-    // 12. REMOVE & GRAVITY
-    // ============================================================
-    function removeMatches(match) {
-        isAnimating = true;
-        const blockElements = gridContainer.children;
-        match.forEach(([r, c]) => {
-            const idx = r * GRID_SIZE + c;
-            const el = blockElements[idx];
-            if (el) {
-                el.classList.add('pop');
-            }
-        });
-
-        setTimeout(() => {
-            match.forEach(([r, c]) => {
-                board[r][c] = null;
-            });
-            applyGravity();
-            fillEmpty();
-            renderBoard();
-            isAnimating = false;
-
-            // Reward
-            const earned = match.length * 5;
-            coins += earned;
-            sfxCoin();
-            updateUI();
-
-            // Check for more matches after gravity
-            setTimeout(() => {
-                checkAutoMatches();
-            }, 350);
-        }, 250);
-    }
-
-    function applyGravity() {
-        for (let c = 0; c < GRID_SIZE; c++) {
-            let writeRow = GRID_SIZE - 1;
-            for (let r = GRID_SIZE - 1; r >= 0; r--) {
-                if (board[r][c] !== null) {
-                    board[writeRow][c] = board[r][c];
-                    writeRow--;
-                }
-            }
-            for (let r = writeRow; r >= 0; r--) {
-                board[r][c] = null;
-            }
-        }
-    }
-
-    function fillEmpty() {
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; c++) {
-                if (board[r][c] === null) {
-                    board[r][c] = randomColor();
-                }
-            }
-        }
-    }
-
-    function checkAutoMatches() {
-        let found = false;
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; c++) {
-                const match = findMatchAt(r, c);
-                if (match.length >= 3) {
-                    found = true;
-                    removeMatches(match);
-                    return;
-                }
-            }
-        }
-        // If no matches, check for victory condition (all blocks same?)
-        // Victory: if no valid moves or random chance
-        if (!found && Math.random() < 0.15) {
-            showVictory();
-        }
-    }
-
-    // ============================================================
-    // 13. VICTORY
-    // ============================================================
-    function showVictory() {
-        const reward = 50 + Math.floor(Math.random() * 100);
-        $('victoryCoins').textContent = '+' + reward;
-        victoryOverlay.classList.add('active');
-        sfxFanfare();
-    }
-
-    $('claimX3Btn').addEventListener('click', () => {
-        sfxClick();
-        showAdSimulator(() => {
-            const base = parseInt($('victoryCoins').textContent.replace('+', '')) || 50;
-            coins += base * 3;
-            updateUI();
-            victoryOverlay.classList.remove('active');
-            showToast('🪙 +' + (base * 3) + ' koin!');
-            sfxCoin();
-        });
-    });
-
-    $('claimNormalBtn').addEventListener('click', () => {
-        sfxClick();
-        const base = parseInt($('victoryCoins').textContent.replace('+', '')) || 50;
-        coins += base;
-        updateUI();
-        victoryOverlay.classList.remove('active');
-    });
-
-    // ============================================================
-    // 14. GAME OVER & REVIVE
-    // ============================================================
-    function gameOver() {
-        gameOverOverlay.classList.add('active');
-    }
-
-    $('reviveBtn').addEventListener('click', () => {
-        sfxClick();
-        showAdSimulator(() => {
-            energy = 5;
-            gameOverOverlay.classList.remove('active');
-            updateUI();
-            showToast('❤️ Energi dipulihkan!');
-        });
-    });
-
-    $('giveUpBtn').addEventListener('click', () => {
-        sfxClick();
-        gameOverOverlay.classList.remove('active');
-        energy = 5;
-        updateUI();
-        initBoard();
-        renderBoard();
-    });
-
-    // ============================================================
-    // 15. ENERGY SYSTEM
-    // ============================================================
-    function updateUI() {
-        coinDisplay.textContent = coins;
-        dollarDisplay.textContent = dollars.toFixed(2);
-        renderHearts();
-    }
-
-    function renderHearts() {
-        energyHearts.innerHTML = '';
-        for (let i = 0; i < maxEnergy; i++) {
-            const heart = document.createElement('span');
-            heart.className = 'heart' + (i >= energy ? ' empty' : '');
-            heart.textContent = '❤️';
-            energyHearts.appendChild(heart);
-        }
-    }
-
-    let energyInterval = null;
-    function startEnergyRegen() {
-        if (energyInterval) clearInterval(energyInterval);
-        energyInterval = setInterval(() => {
-            if (energy < maxEnergy) {
-                energy++;
-                updateUI();
-            }
-        }, 60000); // 1 energy per minute
-    }
-
-    // ============================================================
-    // 16. AD SIMULATOR
-    // ============================================================
-    function showAdSimulator(callback) {
-        adCallback = callback;
-        adModal.classList.add('active');
-        let timeLeft = 5;
-        adTimer.textContent = timeLeft;
-        adSkipBtn.classList.remove('ready');
-        adSkipBtn.textContent = 'Lewati / Klaim Reward';
-
-        const interval = setInterval(() => {
-            timeLeft--;
-            adTimer.textContent = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(interval);
-                adSkipBtn.classList.add('ready');
-                adSkipBtn.textContent = '✅ Klaim Reward';
-            }
-        }, 1000);
-
-        adSkipBtn.onclick = () => {
-            if (timeLeft > 0) return;
-            clearInterval(interval);
-            adModal.classList.remove('active');
-            sfxCoin();
-            if (adCallback) adCallback();
-            adCallback = null;
-        };
-    }
-
-    // ============================================================
-    // 17. POWER-UPS
-    // ============================================================
-    $('hammerBtn').addEventListener('click', () => {
-        sfxClick();
-        showAdSimulator(() => {
-            showToast('🔨 Hammer siap! Ketuk blok untuk menghancurkan.');
-            // Enable one-shot hammer
-            const handler = (e) => {
-                const block = e.target.closest('.block');
-                if (!block) return;
-                const r = parseInt(block.dataset.row);
-                const c = parseInt(block.dataset.col);
-                board[r][c] = null;
-                applyGravity();
-                fillEmpty();
-                renderBoard();
-                showToast('💥 Blok dihancurkan!');
-                gridContainer.removeEventListener('click', handler);
-            };
-            gridContainer.addEventListener('click', handler);
-        });
-    });
-
-    $('shuffleBtn').addEventListener('click', () => {
-        sfxClick();
-        showAdSimulator(() => {
-            initBoard();
-            renderBoard();
-            showToast('🔀 Papan diacak ulang!');
-        });
-    });
-
-    $('convertBtn').addEventListener('click', () => {
-        sfxClick();
-        if (coins < 1000) {
-            showToast('Minimal 1000 koin untuk konversi!');
-            return;
-        }
-        showAdSimulator(() => {
-            const convertAmount = Math.floor(coins / 1000) * 0.10;
-            coins = coins % 1000;
-            dollars += convertAmount;
-            updateUI();
-            showToast('💵 +$' + convertAmount.toFixed(2));
-            sfxCoin();
-        });
-    });
-
-    $('chestBtn').addEventListener('click', () => {
-        sfxClick();
-        showAdSimulator(() => {
-            showAdSimulator(() => {
-                const reward = 100 + Math.floor(Math.random() * 400);
-                coins += reward;
-                updateUI();
-                showToast('🎁 +' + reward + ' koin dari peti!');
-                sfxCoin();
-            });
-        });
-    });
-
-    $('missionBtn').addEventListener('click', () => {
-        sfxClick();
-        showToast('📋 Misi: Mainkan 10 game, tonton 5 iklan, undang 3 teman');
-    });
-
-    // ============================================================
-    // 18. WITHDRAWAL
-    // ============================================================
-    $('wdBtn').addEventListener('click', () => {
-        sfxClick();
-        gameScreen.classList.remove('active');
-        wdScreen.classList.add('active');
-    });
-
-    $('wdBackBtn').addEventListener('click', () => {
-        sfxClick();
-        wdScreen.classList.remove('active');
-        gameScreen.classList.add('active');
-    });
-
-    // E-wallet selection
-    document.querySelectorAll('.ewallet-card').forEach(card => {
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.ewallet-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            sfxClick();
-        });
-    });
-
-    $('wdSubmitBtn').addEventListener('click', () => {
-        sfxClick();
-        const name = $('wdName').value.trim();
-        const phone = $('wdPhone').value.trim();
-        const amount = parseInt($('wdAmount').value);
-        const selected = document.querySelector('.ewallet-card.selected');
-
-        if (!name || !phone || !amount) {
-            showToast('⚠️ Lengkapi semua data!');
-            return;
-        }
-        if (amount < 50000) {
-            showToast('⚠️ Minimal penarikan Rp 50.000');
-            return;
-        }
-        if (dollars < 5.00) {
-            showToast('⚠️ Saldo minimal $5.00 untuk WD');
-            return;
-        }
-        if (!selected) {
-            showToast('⚠️ Pilih e-wallet terlebih dahulu!');
-            return;
-        }
-
-        // Simulate WD queue
-        showToast('✅ WD Rp ' + amount.toLocaleString('id-ID') + ' masuk antrean (3-7 hari kerja)');
-        dollars = Math.max(0, dollars - (amount / 10000));
-        updateUI();
-        $('wdAmount').value = '';
-    });
-
-    // ============================================================
-    // 19. LUCKY SPIN
-    // ============================================================
-    $('spinBtn').addEventListener('click', () => {
-        sfxClick();
-        spinOverlay.classList.add('active');
-        buildWheel();
-    });
-
-    $('spinCloseBtn').addEventListener('click', () => {
-        sfxClick();
-        spinOverlay.classList.remove('active');
-    });
-
-    function buildWheel() {
-        spinWheel.innerHTML = '';
-        const segments = ['🪙 100', '💵 $0.5', '🪙 500', '💵 $1', '🪙 200', '💵 $0.2', '🪙 1000', '😢 Zonk'];
-        const colors = ['#FF6B6B','#4ECDC4','#FFD93D','#A66CFF','#FF8C42','#6BCB77','#FF6B6B','#4ECDC4'];
-        const angleStep = 360 / segments.length;
-        segments.forEach((seg, i) => {
-            const div = document.createElement('div');
-            div.className = 'wheel-segment';
-            div.textContent = seg;
-            div.style.background = colors[i];
-            div.style.transform = `rotate(${i * angleStep}deg) skewY(-${90 - angleStep}deg)`;
-            div.style.transformOrigin = '100% 100%';
-            div.style.left = '50%';
-            div.style.top = '0';
-            div.style.width = '50%';
-            div.style.height = '50%';
-            // Simplified wheel representation
-            spinWheel.appendChild(div);
-        });
-        // Use a simpler approach: just show segments as colored slices
-        spinWheel.innerHTML = `
-            <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(
-                #FF6B6B 0deg 45deg,
-                #4ECDC4 45deg 90deg,
-                #FFD93D 90deg 135deg,
-                #A66CFF 135deg 180deg,
-                #FF8C42 180deg 225deg,
-                #6BCB77 225deg 270deg,
-                #FF6B6B 270deg 315deg,
-                #4ECDC4 315deg 360deg
-            );"></div>
-        `;
-    }
-
-    let spinRotation = 0;
-    $('spinActionBtn').addEventListener('click', () => {
-        if (spinUsedToday) {
-            showToast('⏰ Sudah spin hari ini! Tonton iklan untuk putaran tambahan.');
-            showAdSimulator(() => {
-                spinUsedToday = false;
-                performSpin();
-            });
-            return;
-        }
-        performSpin();
-    });
-
-    function performSpin() {
-        sfxClick();
-        spinRotation += 720 + Math.floor(Math.random() * 360);
-        spinWheel.style.transform = `rotate(${spinRotation}deg)`;
-        spinUsedToday = true;
-        setTimeout(() => {
-            const rewards = [
-                { type: 'coin', value: 100 },
-                { type: 'dollar', value: 0.5 },
-                { type: 'coin', value: 500 },
-                { type: 'dollar', value: 1.0 },
-                { type: 'coin', value: 200 },
-                { type: 'dollar', value: 0.2 },
-                { type: 'coin', value: 1000 },
-                { type: 'coin', value: 0 },
-            ];
-            const reward = rewards[Math.floor(Math.random() * rewards.length)];
-            if (reward.type === 'coin') {
-                coins += reward.value;
-                showToast('🪙 +' + reward.value + ' koin!');
-            } else {
-                dollars += reward.value;
-                showToast('💵 +$' + reward.value.toFixed(2));
-            }
-            updateUI();
-            sfxCoin();
-            spinOverlay.classList.remove('active');
-        }, 3200);
-    }
-
-    // ============================================================
-    // 20. DAILY STREAK (Simulated)
-    // ============================================================
-    function checkDailyStreak() {
-        const lastLogin = localStorage.getItem('cuanLastLogin');
-        const today = new Date().toDateString();
-        if (lastLogin === today) return;
-        localStorage.setItem('cuanLastLogin', today);
-        const streak = parseInt(localStorage.getItem('cuanStreak') || '0') + 1;
-        localStorage.setItem('cuanStreak', streak);
-        if (streak > 1) {
-            const bonus = streak * 50;
-            coins += bonus;
-            updateUI();
-            showToast('🔥 Streak Hari ' + streak + '! +' + bonus + ' koin');
-        }
-    }
-
-    // ============================================================
-    // 21. EXIT INTENT
-    // ============================================================
-    document.addEventListener('mouseleave', (e) => {
-        if (e.clientY < 10 && gameScreen.classList.contains('active')) {
-            showAdSimulator(() => {
-                showToast('👋 Terima kasih sudah menonton!');
-            });
-        }
-    });
-
-    // ============================================================
-    // 22. TOUCH RIPPLE EFFECT
-    // ============================================================
-    document.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
+      function createRipple(e) {
         const ripple = document.createElement('div');
-        ripple.style.position = 'fixed';
-        ripple.style.left = touch.clientX + 'px';
-        ripple.style.top = touch.clientY + 'px';
-        ripple.style.width = '10px';
-        ripple.style.height = '10px';
-        ripple.style.borderRadius = '50%';
-        ripple.style.background = 'rgba(255, 215, 0, 0.5)';
-        ripple.style.transform = 'translate(-50%, -50%) scale(0)';
-        ripple.style.pointerEvents = 'none';
-        ripple.style.zIndex = '999';
-        ripple.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+        ripple.className = 'ripple';
+        const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        ripple.style.left = (x - 25) + 'px';
+        ripple.style.top = (y - 25) + 'px';
+        ripple.style.width = '50px';
+        ripple.style.height = '50px';
         document.body.appendChild(ripple);
-        requestAnimationFrame(() => {
-            ripple.style.transform = 'translate(-50%, -50%) scale(4)';
-            ripple.style.opacity = '0';
-        });
         setTimeout(() => ripple.remove(), 600);
-    }, { passive: true });
+      }
 
-    // ============================================================
-    // 23. LOGIN BUTTON
-    // ============================================================
-    $('googleLoginBtn').addEventListener('click', handleGoogleLogin);
-
-    // ============================================================
-    // 24. GAME LOOP / ENERGY CONSUMPTION
-    // ============================================================
-    setInterval(() => {
-        if (gameScreen.classList.contains('active') && energy > 0 && !isAnimating) {
-            // Slow energy drain over time (optional)
-            // Energy is consumed on game over / actions
-        }
-    }, 10000);
-
-    // ============================================================
-    // 25. AUTO-CHECK SESSION ON LOAD (FINAL)
-    // ============================================================
-    (async function init() {
-        // Try to restore session
+      // ============================================================
+      // 5. LOGIN & SUPABASE AUTH
+      // ============================================================
+      async function checkSession() {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                userId = session.user.id;
-                enterGame();
-            }
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session && session.user) {
+            state.user = session.user;
+            onLoginSuccess();
+          }
         } catch (e) {
-            // No session, show login
+          console.warn('Session error:', e);
         }
-    })();
+        state.sessionChecked = true;
+      }
 
-    // Clean OAuth hash from URL after processing
-    if (window.location.hash.includes('access_token')) {
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          state.user = session.user;
+          onLoginSuccess();
+        } else if (event === 'SIGNED_OUT') {
+          state.user = null;
+          dom.loginScreen.classList.remove('hidden');
+        }
+      });
+
+      async function handleGoogleLogin() {
+        initAudio(); // Autoplay policy mitigation
+        if (state.audioCtx && state.audioCtx.state === 'suspended') {
+          state.audioCtx.resume();
+        }
+        haptic();
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname
+            }
+          });
+          if (error) throw error;
+        } catch (e) {
+          alert('Gagal login: ' + e.message);
+        }
+      }
+
+      function onLoginSuccess() {
+        dom.loginScreen.classList.add('hidden');
+        startBGM();
+        // Simulasi data user
+        loadUserData();
+        updateUI();
+        // Inactivity timer
+        resetInactivityTimer();
+      }
+
+      // ============================================================
+      // 6. LOAD USER DATA (simulasi)
+      // ============================================================
+      function loadUserData() {
+        // Coba ambil dari localStorage
+        const saved = localStorage.getItem('cuanBlokData');
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            state.coins = data.coins || 0;
+            state.dollars = data.dollars || 0;
+            state.hearts = data.hearts ?? 5;
+            state.streak = data.streak || 0;
+            state.lastCheckIn = data.lastCheckIn || null;
+            state.adsWatchedToday = data.adsWatchedToday || 0;
+            state.referrals = data.referrals || 0;
+            state.vipTier = data.vipTier || 0;
+            state.hammerCount = data.hammerCount ?? 1;
+            state.shuffleCount = data.shuffleCount ?? 1;
+            state.lastSpinDate = data.lastSpinDate || null;
+          } catch(e) {}
+        }
+        // Generate board
+        generateBoard();
+      }
+
+      function saveUserData() {
+        try {
+          localStorage.setItem('cuanBlokData', JSON.stringify({
+            coins: state.coins,
+            dollars: state.dollars,
+            hearts: state.hearts,
+            streak: state.streak,
+            lastCheckIn: state.lastCheckIn,
+            adsWatchedToday: state.adsWatchedToday,
+            referrals: state.referrals,
+            vipTier: state.vipTier,
+            hammerCount: state.hammerCount,
+            shuffleCount: state.shuffleCount,
+            lastSpinDate: state.lastSpinDate
+          }));
+        } catch(e) {}
+      }
+
+      // ============================================================
+      // 7. BOARD LOGIC (7x7)
+      // ============================================================
+      const COLORS = ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#1abc9c'];
+      const ICONS = ['🔴','🔵','🟢','🟡','🟣','🟠','🟦'];
+
+      function generateBoard() {
+        state.board = [];
+        for (let r = 0; r < state.boardSize; r++) {
+          state.board[r] = [];
+          for (let c = 0; c < state.boardSize; c++) {
+            state.board[r][c] = Math.floor(Math.random() * COLORS.length);
+          }
+        }
+        renderBoard();
+      }
+
+      function renderBoard() {
+        dom.board.innerHTML = '';
+        for (let r = 0; r < state.boardSize; r++) {
+          for (let c = 0; c < state.boardSize; c++) {
+            const val = state.board[r][c];
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.dataset.row = r;
+            block.dataset.col = c;
+            block.style.backgroundColor = COLORS[val];
+            block.textContent = ICONS[val];
+            block.addEventListener('click', (e) => handleBlockClick(r, c, e));
+            block.addEventListener('touchstart', (e) => {
+              createRipple(e);
+              haptic();
+            }, { passive: true });
+            dom.board.appendChild(block);
+          }
+        }
+      }
+
+      function handleBlockClick(r, c, e) {
+        if (state.isProcessing) return;
+        createRipple(e);
+        haptic();
+        initAudio();
+        if (state.audioCtx && state.audioCtx.state === 'suspended') state.audioCtx.resume();
+
+        const val = state.board[r][c];
+        if (val === -1) return;
+
+        // Cari grup terhubung
+        const group = findConnectedGroup(r, c, val);
+        if (group.length < 3) {
+          playSFX('click');
+          // Getar kecil tanda tidak valid
+          if (navigator.vibrate) navigator.vibrate(15);
+          return;
+        }
+
+        // Hancurkan
+        playSFX('break');
+        state.isProcessing = true;
+
+        // Tandai selected
+        const blocks = dom.board.querySelectorAll('.block');
+        blocks.forEach(b => {
+          if (group.some(([gr, gc]) => gr == b.dataset.row && gc == b.dataset.col)) {
+            b.classList.add('selected');
+          }
+        });
+
+        // Hapus setelah animasi
         setTimeout(() => {
-            history.replaceState(null, '', window.location.pathname);
-        }, 1000);
-    }
+          group.forEach(([gr, gc]) => {
+            state.board[gr][gc] = -1;
+          });
+          applyGravity();
+          renderBoard();
+          // Hitung reward
+          const baseReward = group.length * 10;
+          const multiplier = 1 + (state.vipTier * 0.15);
+          let reward = Math.floor(baseReward * multiplier);
+          // Coin throttling saat mendekati threshold WD
+          if (state.coins > 5000 && state.coins < 10000) {
+            reward = Math.floor(reward * 0.6);
+          } else if (state.coins >= 10000) {
+            reward = Math.floor(reward * 0.3);
+          }
+          state.coins += reward;
+          playSFX('coin');
+          updateUI();
+          saveUserData();
 
-</script>
+          // Cek kemenangan (papan kosong atau skor)
+          if (state.coins >= 2000 && !state.wdUnlocked) {
+            // Buka WD jika syarat terpenuhi (cek nanti)
+          }
+
+          state.isProcessing = false;
+          // Cek apakah papan kosong
+          const anyLeft = state.board.some(row => row.some(v => v !== -1));
+          if (!anyLeft) {
+            generateBoard();
+          }
+        }, 250);
+      }
+
+      function findConnectedGroup(r, c, val) {
+        const visited = new Set();
+        const group = [];
+        const queue = [[r, c]];
+        visited.add(r + ',' + c);
+        const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+        while (queue.length) {
+          const [cr, cc] = queue.shift();
+          group.push([cr, cc]);
+          for (const [dr, dc] of dirs) {
+            const nr = cr + dr, nc = cc + dc;
+            if (nr >= 0 && nr < state.boardSize && nc >= 0 && nc < state.boardSize) {
+              const key = nr + ',' + nc;
+              if (!visited.has(key) && state.board[nr][nc] === val) {
+                visited.add(key);
+                queue.push([nr, nc]);
+              }
+            }
+          }
+        }
+        return group;
+      }
+
+      function applyGravity() {
+        for (let c = 0; c < state.boardSize; c++) {
+          let empty = state.boardSize - 1;
+          for (let r = state.boardSize - 1; r >= 0; r--) {
+            if (state.board[r][c] !== -1) {
+              state.board[empty][c] = state.board[r][c];
+              if (empty !== r) state.board[r][c] = -1;
+              empty--;
+            }
+          }
+          // Isi bagian atas dengan blok baru
+          for (let r = empty; r >= 0; r--) {
+            state.board[r][c] = Math.floor(Math.random() * COLORS.length);
+          }
+        }
+      }
+
+      // ============================================================
+      // 8. UI UPDATE
+      // ============================================================
+      function updateUI() {
+        dom.coinDisplay.textContent = state.coins.toLocaleString('id-ID');
+        dom.dollarDisplay.textContent = '$' + state.dollars.toFixed(2);
+        // Hearts
+        let heartsHtml = '';
+        for (let i = 0; i < state.maxHearts; i++) {
+          heartsHtml += `<span class="heart ${i < state.hearts ? '' : 'empty'}">${i < state.hearts ? '❤️' : '🖤'}</span>`;
+        }
+        dom.heartsDisplay.innerHTML = heartsHtml;
+      }
+
+      // ============================================================
+      // 9. AD SIMULATOR (Fallback Desktop)
+      // ============================================================
+      function showAdSimulator(callback) {
+        if (state.adInProgress) return;
+        state.adInProgress = true;
+        state.adCallback = callback;
+        dom.adSimulator.classList.add('active');
+        dom.adTimer.textContent = '5';
+        dom.adBarFill.style.width = '0%';
+        dom.adClaimBtn.disabled = true;
+        dom.adClaimBtn.textContent = '⏳ Tunggu...';
+        dom.adPreviewText.textContent = '📱 Iklan simulasi: ' + (Math.random() > 0.5 ? 'Dapatkan cuan tak terbatas!' : 'Main game seru lainnya!');
+
+        let timeLeft = 5;
+        const interval = setInterval(() => {
+          timeLeft--;
+          dom.adTimer.textContent = timeLeft;
+          dom.adBarFill.style.width = ((5 - timeLeft) / 5 * 100) + '%';
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            dom.adClaimBtn.disabled = false;
+            dom.adClaimBtn.textContent = '✅ Klaim Hadiah';
+          }
+        }, 1000);
+
+        dom.adClaimBtn.onclick = () => {
+          clearInterval(interval);
+          dom.adSimulator.classList.remove('active');
+          state.adInProgress = false;
+          state.adsWatchedToday++;
+          playSFX('win');
+          if (state.adCallback) state.adCallback();
+          state.adCallback = null;
+          saveUserData();
+        };
+      }
+
+      // ============================================================
+      // 10. FITUR MONETISASI
+      // ============================================================
+
+      // --- Energi / Nyawa ---
+      function consumeEnergy() {
+        if (state.hearts <= 0) {
+          showModal('Energi Habis', 'Tonton iklan untuk mendapatkan +1 energi atau tunggu cooldown.', [
+            { label: '📺 Tonton Iklan', action: () => { showAdSimulator(() => { state.hearts = Math.min(state.hearts + 1, state.maxHearts); updateUI(); }); } },
+            { label: 'Tutup', action: closeModal }
+          ]);
+          return false;
+        }
+        state.hearts--;
+        updateUI();
+        if (state.hearts <= 0) {
+          startEnergyRegen();
+        }
+        return true;
+      }
+
+      function startEnergyRegen() {
+        if (state.energyRegenTimer) clearInterval(state.energyRegenTimer);
+        state.energyRegenTimer = setInterval(() => {
+          if (state.hearts < state.maxHearts) {
+            state.hearts++;
+            updateUI();
+            playSFX('coin');
+          } else {
+            clearInterval(state.energyRegenTimer);
+            state.energyRegenTimer = null;
+          }
+        }, 60000); // 1 menit per energi (simulasi cepat)
+      }
+
+      // --- Multiplier Kemenangan x3 ---
+      function showVictoryMultiplier() {
+        showModal('🎉 Kemenangan!', 'Klaim koin x3 dengan menonton video pendek!', [
+          { label: '📺 Klaim x3', action: () => {
+            showAdSimulator(() => {
+              const bonus = Math.floor(state.coins * 0.5);
+              state.coins += bonus;
+              updateUI();
+              showModal('💰 Bonus!', `Kamu mendapat +${bonus} koin!`, [{ label: 'OK', action: closeModal }]);
+            });
+          }},
+          { label: 'Nanti', action: closeModal }
+        ]);
+      }
+
+      // --- Roda Keberuntungan ---
+      function spinWheel() {
+        const today = new Date().toDateString();
+        if (state.lastSpinDate === today) {
+          showModal('🎰 Spin Harian', 'Kamu sudah spin hari ini. Tonton iklan untuk spin tambahan!', [
+            { label: '📺 Tonton Iklan', action: () => {
+              showAdSimulator(() => {
+                doSpin();
+              });
+            }},
+            { label: 'Tutup', action: closeModal }
+          ]);
+          return;
+        }
+        doSpin();
+      }
+
+      function doSpin() {
+        const rewards = [50, 100, 200, 500, 1000, 250, 750];
+        const reward = rewards[Math.floor(Math.random() * rewards.length)];
+        showModal('🎰 Putaran Keberuntungan', 
+          `<div class="spin-wheel" style="transform: rotate(${Math.random()*720}deg)"></div>
+           <p>Kamu mendapatkan <strong class="text-gold">${reward} koin</strong>!</p>`, 
+          [{ label: 'Klaim', action: () => {
+            state.coins += reward;
+            state.lastSpinDate = new Date().toDateString();
+            updateUI();
+            saveUserData();
+            closeModal();
+          }}]
+        );
+        playSFX('win');
+      }
+
+      // --- Syarat Penarikan ---
+      function canWithdraw() {
+        if (state.hearts <= 0) return false;
+        if (state.adsWatchedToday < state.adsRequiredForWD) return false;
+        if (state.referrals < state.referralsRequired) return false;
+        if (state.dollars < 5) return false; // Minimal $5
+        return true;
+      }
+
+      // --- Referral ---
+      function showInvite() {
+        const code = 'CUAN' + (state.user?.id?.slice(0,6) || 'BLOK');
+        showModal('👥 Undang Teman', 
+          `<p>Bagikan kode unikmu: <strong class="text-gold">${code}</strong></p>
+           <p>Dapatkan akses WD setelah <strong>${state.referralsRequired} teman</strong> bergabung.</p>
+           <p>Progress: ${state.referrals}/${state.referralsRequired}</p>
+           <button class="btn small gold" id="simulateReferralBtn" style="margin-top:8px;">🧪 Simulasi Teman Gabung</button>`,
+          [{ label: 'Tutup', action: closeModal }]
+        );
+        setTimeout(() => {
+          const btn = document.getElementById('simulateReferralBtn');
+          if (btn) btn.onclick = () => {
+            state.referrals++;
+            updateUI();
+            saveUserData();
+            closeModal();
+            showModal('✅ Berhasil!', `Sekarang ${state.referrals}/${state.referralsRequired} referral!`, [{ label: 'OK', action: closeModal }]);
+          };
+        }, 100);
+      }
+
+      // --- Power Ups ---
+      function useHammer() {
+        if (state.hammerCount <= 0) {
+          showModal('🔨 Hammer Habis', 'Tonton iklan untuk mendapatkan 1 hammer!', [
+            { label: '📺 Tonton Iklan', action: () => { showAdSimulator(() => { state.hammerCount++; updateUI(); }); }},
+            { label: 'Tutup', action: closeModal }
+          ]);
+          return;
+        }
+        state.hammerCount--;
+        updateUI();
+        // Hancurkan blok acak
+        const r = Math.floor(Math.random() * state.boardSize);
+        const c = Math.floor(Math.random() * state.boardSize);
+        if (state.board[r][c] !== -1) {
+          state.board[r][c] = -1;
+          applyGravity();
+          renderBoard();
+          playSFX('break');
+        }
+        saveUserData();
+      }
+
+      function useShuffle() {
+        if (state.shuffleCount <= 0) {
+          showModal('🔄 Shuffle Habis', 'Tonton iklan untuk mendapatkan 1 shuffle!', [
+            { label: '📺 Tonton Iklan', action: () => { showAdSimulator(() => { state.shuffleCount++; updateUI(); }); }},
+            { label: 'Tutup', action: closeModal }
+          ]);
+          return;
+        }
+        state.shuffleCount--;
+        updateUI();
+        generateBoard();
+        playSFX('click');
+        saveUserData();
+      }
+
+      // --- Konversi Koin ke Dollar ---
+      function convertCoins() {
+        if (state.coins < 1000) {
+          showModal('💵 Konversi', 'Minimal 1000 koin untuk konversi. Tonton iklan untuk bonus koin?', [
+            { label: '📺 Tonton Iklan', action: () => { showAdSimulator(() => { state.coins += 500; updateUI(); }); }},
+            { label: 'Tutup', action: closeModal }
+          ]);
+          return;
+        }
+        showAdSimulator(() => {
+          const amount = Math.floor(state.coins / 1000);
+          const dollars = amount * 0.01; // 1000 koin = $0.01
+          state.coins -= amount * 1000;
+          state.dollars += dollars;
+          updateUI();
+          saveUserData();
+          showModal('💵 Berhasil!', `Kamu menukar ${amount * 1000} koin menjadi $${dollars.toFixed(2)}`, [{ label: 'OK', action: closeModal }]);
+        });
+      }
+
+      // --- Peti Keberuntungan ---
+      function openChest() {
+        showAdSimulator(() => {
+          const rewards = [100, 250, 500, 1000, 2000];
+          const reward = rewards[Math.floor(Math.random() * rewards.length)];
+          state.coins += reward;
+          updateUI();
+          saveUserData();
+          showModal('🎁 Peti Terbuka!', `Kamu mendapatkan <strong class="text-gold">${reward} koin</strong>!`, [{ label: 'Mantap!', action: closeModal }]);
+        });
+      }
+
+      // --- Check-in Harian ---
+      function dailyCheckIn() {
+        const today = new Date().toDateString();
+        if (state.lastCheckIn === today) {
+          showModal('📅 Check-in', 'Kamu sudah check-in hari ini. Kembali besok!', [{ label: 'OK', action: closeModal }]);
+          return;
+        }
+        // Cek streak
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (state.lastCheckIn === yesterday) {
+          state.streak++;
+        } else {
+          state.streak = 1;
+        }
+        state.lastCheckIn = today;
+        const reward = state.streak * 50;
+        state.coins += reward;
+        updateUI();
+        saveUserData();
+        showModal('📅 Check-in Beruntun!', 
+          `Hari ke-${state.streak}!<br>Kamu mendapatkan <strong class="text-gold">${reward} koin</strong>!`,
+          [{ label: 'Klaim', action: closeModal }]
+        );
+        playSFX('coin');
+      }
+
+      // --- WD (Withdrawal) ---
+      function showWithdrawMenu() {
+        if (!canWithdraw()) {
+          let reasons = [];
+          if (state.adsWatchedToday < state.adsRequiredForWD) reasons.push(`Tonton ${state.adsRequiredForWD - state.adsWatchedToday} iklan lagi (${state.adsWatchedToday}/${state.adsRequiredForWD})`);
+          if (state.referrals < state.referralsRequired) reasons.push(`Butuh ${state.referralsRequired - state.referrals} referral lagi (${state.referrals}/${state.referralsRequired})`);
+          if (state.dollars < 5) reasons.push('Saldo minimal $5');
+          showModal('🔒 WD Terkunci', 
+            `<p>${reasons.join('<br>')}</p>
+             <button class="btn small gold" id="skipReferralBtn" style="margin-top:10px;">💎 Skip Referral (Rp 50.000)</button>`,
+            [{ label: 'Tutup', action: closeModal }]
+          );
+          setTimeout(() => {
+            const btn = document.getElementById('skipReferralBtn');
+            if (btn) btn.onclick = () => {
+              state.referrals = state.referralsRequired;
+              updateUI();
+              saveUserData();
+              closeModal();
+              showModal('💎 Berhasil!', 'Syarat referral terpenuhi!', [{ label: 'OK', action: closeModal }]);
+            };
+          }, 100);
+          return;
+        }
+
+        // Tampilkan pilihan e-wallet
+        showModal('💸 Penarikan Saldo', 
+          `<p>Pilih e-wallet tujuan:</p>
+           <div class="wallet-option" data-wallet="dana">
+             <svg viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="#118EEA"/><text x="20" y="27" text-anchor="middle" fill="white" font-size="18" font-weight="bold">DANA</text></svg>
+             <div><div class="wallet-name" style="color:#118EEA;">DANA</div><div class="wallet-desc">Biru • Proses 1-3 hari</div></div>
+           </div>
+           <div class="wallet-option" data-wallet="ovo">
+             <svg viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="#4C3494"/><text x="20" y="27" text-anchor="middle" fill="white" font-size="18" font-weight="bold">OVO</text></svg>
+             <div><div class="wallet-name" style="color:#4C3494;">OVO</div><div class="wallet-desc">Ungu • Proses 1-3 hari</div></div>
+           </div>
+           <div class="wallet-option" data-wallet="gopay">
+             <svg viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="#00AA13"/><text x="20" y="27" text-anchor="middle" fill="white" font-size="18" font-weight="bold">GoPay</text></svg>
+             <div><div class="wallet-name" style="color:#00AA13;">GoPay</div><div class="wallet-desc">Hijau • Proses 1-3 hari</div></div>
+           </div>
+           <input class="input-field" id="wdName" placeholder="Nama sesuai e-wallet" />
+           <input class="input-field" id="wdPhone" placeholder="Nomor HP terdaftar" inputmode="numeric" />
+           <p style="font-size:11px;color:#888;">Saldo: $${state.dollars.toFixed(2)} | Antrean: ${state.wdQueueDays} hari</p>`,
+          [{ label: 'Proses WD', action: processWithdraw }, { label: 'Tutup', action: closeModal }]
+        );
+      }
+
+      function processWithdraw() {
+        const name = document.getElementById('wdName')?.value;
+        const phone = document.getElementById('wdPhone')?.value;
+        if (!name || !phone) {
+          alert('Harap isi nama dan nomor HP!');
+          return;
+        }
+        const amount = state.dollars;
+        state.dollars = 0;
+        state.wdQueueDays = 3 + Math.floor(Math.random() * 4);
+        updateUI();
+        saveUserData();
+        closeModal();
+        showModal('✅ WD Diproses!', 
+          `Penarikan $${amount.toFixed(2)} ke ${name} (${phone}) sedang diproses.<br>Antrean: ${state.wdQueueDays} hari kerja.`,
+          [{ label: 'OK', action: closeModal }]
+        );
+        playSFX('win');
+      }
+
+      // --- Leaderboard ---
+      function showLeaderboard() {
+        state.leaderboardBots[5].score = state.coins;
+        const sorted = [...state.leaderboardBots].sort((a,b) => b.score - a.score);
+        const list = sorted.map((item, i) => 
+          `<li><span>#${i+1} ${item.name}</span><span>${item.score.toLocaleString('id-ID')} 🪙</span></li>`
+        ).join('');
+        showModal('🏆 Peringkat Sultan', 
+          `<ul class="leaderboard-list">${list}</ul>`,
+          [{ label: 'Tutup', action: closeModal }]
+        );
+      }
+
+      // --- Modal Helper ---
+      function showModal(title, content, buttons) {
+        dom.modalContent.innerHTML = `
+          <button class="close-modal" onclick="document.getElementById('modalOverlay').classList.remove('active')">✕</button>
+          <h2>${title}</h2>
+          <div>${content}</div>
+          <div class="modal-actions mt-8" id="modalActions"></div>
+        `;
+        const actions = document.getElementById('modalActions');
+        buttons.forEach(btn => {
+          const b = document.createElement('button');
+          b.className = 'btn small ' + (btn.className || 'gold');
+          b.textContent = btn.label;
+          b.onclick = (e) => {
+            e.preventDefault();
+            haptic();
+            if (btn.action) btn.action();
+          };
+          actions.appendChild(b);
+        });
+        dom.modalOverlay.classList.add('active');
+      }
+
+      function closeModal() {
+        dom.modalOverlay.classList.remove('active');
+      }
+
+      // ============================================================
+      // 11. LIVE TICKER
+      // ============================================================
+      const tickerMessages = [
+        '💸 Rian_07 baru saja withdraw Rp 250.000!',
+        '💸 Putri Cantik withdraw Rp 1.200.000!',
+        '💸 Sultan_Muda withdraw Rp 500.000!',
+        '💸 Dewi_99 withdraw Rp 175.000!',
+        '💸 Budi_Gaming withdraw Rp 320.000!',
+        '💸 Kamu? Ayo capai targetmu!'
+      ];
+      let tickerIdx = 0;
+      setInterval(() => {
+        tickerIdx = (tickerIdx + 1) % tickerMessages.length;
+        if (dom.tickerText) dom.tickerText.textContent = tickerMessages[tickerIdx];
+      }, 4000);
+
+      // ============================================================
+      // 12. INACTIVITY PENALTY
+      // ============================================================
+      function resetInactivityTimer() {
+        if (state.inactivityTimer) clearTimeout(state.inactivityTimer);
+        state.inactivityTimer = setTimeout(() => {
+          // Reset saldo jika tidak aktif 3x24 jam (simulasi dipercepat 3 menit)
+          state.coins = 0;
+          state.dollars = 0;
+          updateUI();
+          saveUserData();
+          showModal('⚠️ Akun Tidak Aktif', 'Saldo direset karena tidak aktif selama 3 hari.', [{ label: 'OK', action: closeModal }]);
+        }, 180000); // 3 menit simulasi
+      }
+
+      document.addEventListener('click', resetInactivityTimer);
+      document.addEventListener('touchstart', resetInactivityTimer, { passive: true });
+
+      // ============================================================
+      // 13. EXIT INTENT
+      // ============================================================
+      document.addEventListener('mouseleave', (e) => {
+        if (e.clientY < 10 && !sessionStorage.getItem('exitShown')) {
+          sessionStorage.setItem('exitShown', 'true');
+          showModal('🎁 Tunggu Dulu!', 'Dapatkan bonus 500 koin gratis sebelum pergi!', [
+            { label: '📺 Klaim Bonus', action: () => { showAdSimulator(() => { state.coins += 500; updateUI(); }); }},
+            { label: 'Tutup', action: closeModal }
+          ]);
+        }
+      });
+
+      // ============================================================
+      // 14. INIT & EVENT BINDING
+      // ============================================================
+      function bindEvents() {
+        // Login
+        dom.googleLoginBtn.addEventListener('click', handleGoogleLogin);
+
+        // Game buttons
+        document.getElementById('btnHammer').onclick = (e) => { createRipple(e); haptic(); useHammer(); };
+        document.getElementById('btnShuffle').onclick = (e) => { createRipple(e); haptic(); useShuffle(); };
+        document.getElementById('btnConvert').onclick = (e) => { createRipple(e); haptic(); convertCoins(); };
+        document.getElementById('btnSpin').onclick = (e) => { createRipple(e); haptic(); spinWheel(); };
+        document.getElementById('btnChest').onclick = (e) => { createRipple(e); haptic(); openChest(); };
+        document.getElementById('btnWatchAdEnergy').onclick = (e) => { createRipple(e); haptic(); showAdSimulator(() => { state.hearts = Math.min(state.hearts + 1, state.maxHearts); updateUI(); }); };
+        document.getElementById('btnWithdrawMenu').onclick = (e) => { createRipple(e); haptic(); showWithdrawMenu(); };
+        document.getElementById('btnDailyCheck').onclick = (e) => { createRipple(e); haptic(); dailyCheckIn(); };
+        document.getElementById('btnLeaderboard').onclick = (e) => { createRipple(e); haptic(); showLeaderboard(); };
+
+        // Nav
+        $$('.nav-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            createRipple(e); haptic();
+            $$('.nav-item').forEach(n => n.classList.remove('active'));
+            item.classList.add('active');
+            const nav = item.dataset.nav;
+            if (nav === 'invite') showInvite();
+            else if (nav === 'mission') showModal('📋 Misi Harian', 
+              `<p>✅ Mainkan 1 game (${state.coins > 0 ? 'Selesai' : 'Belum'})</p>
+               <p>✅ Tonton 3 iklan (${state.adsWatchedToday}/3)</p>
+               <p>✅ Check-in harian</p>`, 
+              [{ label: 'Tutup', action: closeModal }]);
+            else if (nav === 'profile') showModal('👤 Profil', 
+              `<p>User: ${state.user?.email || 'Guest'}</p>
+               <p>VIP Tier: ${state.vipTier}</p>
+               <p>Koin: ${state.coins.toLocaleString('id-ID')}</p>
+               <p>Dollar: $${state.dollars.toFixed(2)}</p>`,
+              [{ label: 'Tutup', action: closeModal }]);
+          });
+        });
+      }
+
+      // Partikel emas
+      function createGoldDust() {
+        const container = document.getElementById('goldDust');
+        for (let i = 0; i < 30; i++) {
+          const span = document.createElement('span');
+          span.style.left = Math.random() * 100 + '%';
+          span.style.animationDuration = (6 + Math.random() * 10) + 's';
+          span.style.animationDelay = Math.random() * 10 + 's';
+          span.style.width = span.style.height = (3 + Math.random() * 6) + 'px';
+          container.appendChild(span);
+        }
+      }
+
+      // Cek session saat halaman dimuat
+      async function init() {
+        createGoldDust();
+        bindEvents();
+        updateUI();
+        await checkSession();
+        if (!state.user && state.sessionChecked) {
+          dom.loginScreen.classList.remove('hidden');
+        } else if (state.user) {
+          onLoginSuccess();
+        }
+        // Cek apakah board sudah dibuat
+        if (state.board.length === 0) {
+          generateBoard();
+        }
+        // Tampilkan victory multiplier setiap 10 kali hancur (simulasi)
+        // (bisa ditambahkan nanti)
+      }
+
+      init();
+
+      // Ekspos beberapa fungsi untuk debugging
+      window.__game = { state, showAdSimulator, updateUI };
+
+    })();
+  </script>
 </body>
 </html>
