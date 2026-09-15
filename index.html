@@ -1,473 +1,795 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>CUAN BLOK: PUZZLE PENGHASIL UANG</title>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-  background: linear-gradient(160deg, #2A0808 0%, #1A0000 40%, #0a0a0a 100%);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100dvh;
-  position: relative;
-  overflow: hidden;
-}
-#particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
-.particle {
-  position: absolute; width: 6px; height: 6px; border-radius: 50%;
-  background: radial-gradient(circle, #ffd700, #b8860b);
-  box-shadow: 0 0 8px #ffd700aa;
-  animation: floatUp linear infinite;
-  opacity: 0;
-}
-@keyframes floatUp {
-  0% { transform: translateY(100vh) scale(0); opacity: 0; }
-  10% { opacity: 0.9; }
-  90% { opacity: 0.6; }
-  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-}
-.arcade {
-  width: 100%; max-width: 480px; height: 100dvh;
-  display: flex; flex-direction: column;
-  position: relative; z-index: 2;
-  background: rgba(20, 5, 5, 0.55);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-left: 1px solid rgba(255, 215, 0, 0.18);
-  border-right: 1px solid rgba(255, 215, 0, 0.18);
-  overflow: hidden;
-}
-.screen { display: none; flex-direction: column; height: 100%; width: 100%; }
-.screen.active { display: flex; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CUAN BLOK · Puzzle Penghasil Uang</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <style>
+    /* ===== RESET & GLOBAL ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100dvh;
+      overflow: hidden;
+      color: #fff;
+    }
+    #app {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      max-height: 900px;
+      background: radial-gradient(circle at 50% 0%, #2A0808 0%, #1A0000 60%, #0a0a0a 100%);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 60px rgba(0,0,0,0.9);
+    }
 
-/* ===== LOGIN ===== */
-#screen-login { justify-content: center; align-items: center; padding: 24px; text-align: center; }
-.login-logo { width: 110px; height: 110px; margin-bottom: 18px; animation: spinCoin 3.5s linear infinite; }
-@keyframes spinCoin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
-.login-title {
-  font-size: 42px; font-weight: 900; letter-spacing: 3px;
-  background: linear-gradient(180deg, #fff7cc, #ffd700 40%, #b8860b);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-  margin-bottom: 8px; text-shadow: 0 0 30px rgba(255,215,0,0.3);
-}
-.login-sub { font-size: 12px; letter-spacing: 6px; color: #ffd700; opacity: 0.85; margin-bottom: 38px; font-weight: 600; }
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 12px;
-  background: #fff; color: #1a0000; border: none;
-  padding: 16px 42px; border-radius: 50px;
-  font-size: 19px; font-weight: 800; cursor: pointer;
-  box-shadow: 0 8px 32px rgba(255,255,255,0.25), 0 0 0 2px #ffd70055;
-  animation: bounceBtn 1.8s ease-in-out infinite;
-  transition: transform 0.15s;
-}
-.btn-primary:active { transform: scale(0.95); }
-@keyframes bounceBtn {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-7px); }
-}
-.btn-primary svg { width: 28px; height: 28px; }
-.login-hint { margin-top: 30px; font-size: 12px; color: #aaa; letter-spacing: 0.5px; }
+    /* ===== PARTICLES ===== */
+    .particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      background: radial-gradient(circle, #ffd700, #b8860b);
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      animation: floatUp 6s linear infinite;
+      filter: drop-shadow(0 0 4px #ffd700aa);
+      z-index: 1;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(100dvh) scale(0.5); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.6; }
+      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
 
-/* ===== GAME HEADER ===== */
-.game-header {
-  padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 8px;
-  border-bottom: 1px solid rgba(255,215,0,0.12); flex-shrink: 0;
-}
-.header-top { display: flex; justify-content: space-between; align-items: center; }
-.coin-display { display: flex; align-items: center; gap: 7px; font-size: 19px; font-weight: 800; color: #ffd700; }
-.coin-display svg { width: 26px; height: 26px; filter: drop-shadow(0 0 8px #ffd700aa); }
-.header-stats { display: flex; gap: 10px; align-items: center; font-size: 13px; }
-.stat-pill {
-  background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 20px;
-  border: 1px solid rgba(255,215,0,0.15); display: flex; align-items: center; gap: 4px;
-  font-weight: 600;
-}
-.header-btns { display: flex; gap: 6px; }
-.icon-btn {
-  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.18);
-  color: #fff; border-radius: 10px; padding: 6px 9px; font-size: 12px;
-  cursor: pointer; font-weight: 600; transition: background 0.2s;
-}
-.icon-btn:active { background: rgba(255,215,0,0.2); }
-.vip-badge { font-size: 11px; color: #ffd700; font-weight: 800; }
-.heart-row { display: flex; gap: 3px; font-size: 15px; }
+    /* ===== ARCADE CONTAINER ===== */
+    .arcade {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin: 8px;
+      border-radius: 28px;
+      background: rgba(20, 10, 10, 0.55);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 215, 0, 0.25);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,215,0,0.1);
+      overflow: hidden;
+    }
 
-/* ===== TICKER ===== */
-.ticker {
-  height: 0; overflow: hidden; transition: height 0.4s;
-  background: rgba(255,215,0,0.08); border-bottom: 1px solid rgba(255,215,0,0.15);
-  display: flex; align-items: center; padding: 0 14px; font-size: 12px;
-  color: #ffe066; white-space: nowrap; flex-shrink: 0;
-}
-.ticker.show { height: 30px; }
-.ticker span { filter: drop-shadow(0 0 6px #ffd700); margin-right: 6px; }
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.35);
+      border-bottom: 1px solid rgba(255,215,0,0.15);
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .coin-display {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+    .coin-display svg { width: 22px; height: 22px; }
+    .coin-display span { font-weight: 800; font-size: 15px; color: #ffd700; }
+    .header-actions {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .header-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 11px;
+      padding: 5px 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+      white-space: nowrap;
+    }
+    .header-btn:active { transform: scale(0.94); }
+    .header-btn.active { background: rgba(255,215,0,0.25); border-color: #ffd700; }
 
-/* ===== BOARD ===== */
-.game-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow: hidden; }
-.board-wrap { position: relative; width: 100%; max-width: 400px; }
-#board {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
-  background: rgba(0,0,0,0.35); padding: 6px; border-radius: 16px;
-  border: 1px solid rgba(255,215,0,0.15);
-}
-.cell {
-  aspect-ratio: 1; border-radius: 7px; cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s, opacity 0.25s;
-  position: relative; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; user-select: none;
-}
-.cell:active { transform: scale(0.88); }
-.cell.pop { animation: popClear 0.3s ease-out forwards; }
-@keyframes popClear {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.35); opacity: 0.8; }
-  100% { transform: scale(0); opacity: 0; }
-}
-.cell.hammer-target { outline: 2px dashed #ffd700; outline-offset: -2px; }
-.cell .chest-icon { font-size: 22px; filter: drop-shadow(0 0 5px #ffd700); animation: chestPulse 1s infinite; }
-@keyframes chestPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+    /* ===== HEARTS & TICKETS ===== */
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 12px 8px;
+      font-size: 13px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hearts { letter-spacing: 2px; font-size: 16px; }
+    .hearts .empty { opacity: 0.35; }
+    .regen-timer { font-size: 11px; color: #ffd700aa; }
 
-/* ===== POWERUPS ===== */
-.powerup-row { display: flex; gap: 10px; margin-top: 14px; }
-.powerup-btn {
-  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.25);
-  color: #fff; border-radius: 14px; padding: 10px 16px; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  font-size: 11px; font-weight: 600; min-width: 76px; transition: background 0.2s;
-}
-.powerup-btn:active { background: rgba(255,215,0,0.18); }
-.powerup-btn .pu-icon { font-size: 20px; }
-.powerup-btn .pu-count { color: #ffd700; font-weight: 800; }
+    /* ===== GAME BOARD ===== */
+    .board-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4px 10px;
+      position: relative;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 1;
+      background: rgba(0,0,0,0.3);
+      border-radius: 18px;
+      padding: 6px;
+      border: 1px solid rgba(255,215,0,0.2);
+      touch-action: none;
+      user-select: none;
+    }
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s;
+      position: relative;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
+      will-change: transform;
+    }
+    .cell:active { transform: scale(0.9); }
+    .cell.shake { animation: shake 0.3s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+    .cell.pop { animation: popClear 0.25s ease forwards; }
+    @keyframes popClear {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.8; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+    .cell .chest-icon {
+      font-size: 22px;
+      filter: drop-shadow(0 0 6px #ffd700);
+      animation: bounce 1s infinite;
+    }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
 
-/* ===== BOTTOM NAV ===== */
-.bottom-nav {
-  display: flex; border-top: 1px solid rgba(255,215,0,0.12);
-  background: rgba(10,0,0,0.7); flex-shrink: 0;
-}
-.nav-btn {
-  flex: 1; background: none; border: none; color: #999;
-  padding: 10px 2px 12px; cursor: pointer; display: flex;
-  flex-direction: column; align-items: center; gap: 2px;
-  font-size: 10px; font-weight: 600; transition: color 0.2s;
-}
-.nav-btn .nav-icon { font-size: 19px; }
-.nav-btn.active { color: #ffd700; }
-.nav-btn:active { color: #ffd700; }
+    /* ===== FLOATING COIN ===== */
+    .float-coin {
+      position: absolute;
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8c00;
+      pointer-events: none;
+      animation: floatCoin 0.9s ease-out forwards;
+      z-index: 50;
+    }
+    @keyframes floatCoin {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1.6); }
+    }
 
-/* ===== MODAL ===== */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.82);
-  backdrop-filter: blur(5px); z-index: 100;
-  display: none; justify-content: center; align-items: center; padding: 20px;
-}
-.modal-overlay.active { display: flex; }
-.modal {
-  background: linear-gradient(160deg, #1e1010, #0f0505);
-  border: 1px solid rgba(255,215,0,0.35); border-radius: 22px;
-  padding: 24px 20px; width: 100%; max-width: 400px;
-  max-height: 88dvh; overflow-y: auto; position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(255,215,0,0.08);
-  animation: modalIn 0.25s ease-out;
-}
-@keyframes modalIn { from { transform: scale(0.92) translateY(15px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-.modal-title { font-size: 21px; font-weight: 800; color: #ffd700; margin-bottom: 8px; text-align: center; }
-.modal-desc { font-size: 13px; color: #ccc; margin-bottom: 16px; text-align: center; line-height: 1.5; white-space: pre-line; }
-.modal-input {
-  width: 100%; padding: 13px 14px; border-radius: 12px;
-  border: 1px solid rgba(255,215,0,0.3); background: rgba(0,0,0,0.4);
-  color: #fff; font-size: 15px; margin-bottom: 10px; outline: none;
-  transition: border-color 0.2s;
-}
-.modal-input:focus { border-color: #ffd700; }
-.modal-input.error { border-color: #ff4d4d; }
-.modal-input.ok { border-color: #34d399; }
-.error-msg { font-size: 12px; margin-bottom: 10px; min-height: 16px; font-weight: 600; }
-.error-msg.err { color: #ff6b6b; }
-.error-msg.ok { color: #34d399; }
-.btn-row { display: flex; gap: 10px; margin-top: 12px; }
-.btn-modal {
-  flex: 1; padding: 13px; border-radius: 12px; border: none;
-  font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s, transform 0.1s;
-}
-.btn-modal:active { transform: scale(0.97); }
-.btn-modal.primary { background: linear-gradient(135deg, #ffd700, #ffb300); color: #1a0000; }
-.btn-modal.primary:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-modal.secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-.hp-field { position: absolute; left: -9999px; opacity: 0; height: 0; width: 0; }
-#turnstile-container, #turnstile-wd-container { min-height: 65px; display: flex; justify-content: center; margin-bottom: 8px; }
+    /* ===== POWER-UP BAR ===== */
+    .powerups {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 6px 12px 10px;
+    }
+    .powerup-btn {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 14px;
+      padding: 8px 14px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.2s;
+    }
+    .powerup-btn:active { transform: scale(0.93); }
+    .powerup-btn .badge {
+      background: #ffd700;
+      color: #1a0000;
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 900;
+    }
 
-/* ===== WD WALLET SELECT ===== */
-.wallet-select { display: flex; gap: 8px; margin-bottom: 14px; justify-content: center; }
-.wallet-opt {
-  border-radius: 12px; padding: 8px 6px; background: rgba(255,255,255,0.05);
-  border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
-  display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;
-}
-.wallet-opt.selected { border-color: #ffd700; transform: scale(1.05); background: rgba(255,215,0,0.1); }
-.wallet-opt svg { width: 64px; height: 28px; }
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      padding: 6px 4px 10px;
+      background: rgba(0,0,0,0.4);
+      border-top: 1px solid rgba(255,215,0,0.15);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 12px;
+      transition: 0.2s;
+      font-weight: 600;
+    }
+    .nav-btn.active { color: #ffd700; background: rgba(255,215,0,0.1); }
+    .nav-btn .nav-icon { font-size: 18px; }
 
-/* ===== WD CODE ===== */
-.wd-code-box {
-  background: #1a0a0a; border: 2px solid #ffd700; border-radius: 14px;
-  padding: 16px; margin: 14px 0; font-family: 'Courier New', monospace;
-  font-size: 13px; color: #ffd700; word-break: break-all; line-height: 1.6;
-  text-align: center; box-shadow: 0 0 20px rgba(255,215,0,0.15) inset;
-}
-.progress-bar-outer { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin: 10px 0; }
-.progress-bar-inner { height: 100%; background: linear-gradient(90deg, #ffd700, #ffb300); transition: width 0.4s; border-radius: 10px; }
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: linear-gradient(160deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255,215,0,0.35);
+      border-radius: 24px;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 85dvh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      position: relative;
+    }
+    .modal h2 {
+      font-size: 18px;
+      margin-bottom: 14px;
+      color: #ffd700;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .modal p { font-size: 13px; line-height: 1.5; color: #ccc; margin-bottom: 10px; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,215,0,0.3);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 15px;
+      margin-bottom: 10px;
+      outline: none;
+      font-family: inherit;
+    }
+    .modal input:focus { border-color: #ffd700; }
+    .modal .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 16px;
+      border: none;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+    }
+    .modal .btn:active { transform: scale(0.97); }
+    .btn-gold {
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #1a0000;
+      box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+    }
+    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(255,215,0,0.4);
+      color: #ffd700;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: #fff;
+    }
 
-/* ===== TOAST ===== */
-#toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; gap: 8px; width: 90%; max-width: 400px; pointer-events: none; }
-.toast {
-  background: rgba(30,15,15,0.96); border: 1px solid rgba(255,215,0,0.4);
-  color: #fff; padding: 12px 16px; border-radius: 14px; font-size: 13px;
-  font-weight: 600; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-  animation: toastIn 0.3s ease-out; backdrop-filter: blur(10px);
-}
-@keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.toast.out { animation: toastOut 0.3s ease-in forwards; }
-@keyframes toastOut { to { transform: translateY(-20px); opacity: 0; } }
+    /* ===== WALLET SELECT ===== */
+    .wallet-options {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 12px 0;
+    }
+    .wallet-opt {
+      flex: 1;
+      background: rgba(0,0,0,0.4);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 10px 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.25s;
+    }
+    .wallet-opt.selected {
+      border-color: #ffd700;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255,215,0,0.3);
+    }
+    .wallet-opt svg { width: 44px; height: 44px; }
+    .wallet-opt span { display: block; font-size: 10px; margin-top: 4px; font-weight: 700; }
 
-/* ===== SPIN WHEEL ===== */
-.wheel {
-  width: 200px; height: 200px; border-radius: 50%; margin: 20px auto;
-  background: conic-gradient(#FF6B6B 0 60deg, #4ECDC4 60deg 120deg, #FFE66D 120deg 180deg, #A78BFA 180deg 240deg, #F472B6 240deg 300deg, #34D399 300deg 360deg);
-  border: 5px solid #ffd700; box-shadow: 0 0 30px rgba(255,215,0,0.4);
-  position: relative; transition: transform 4s cubic-bezier(0.17,0.67,0.12,0.99);
-}
-.wheel::after {
-  content: '▼'; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-  font-size: 24px; color: #ffd700; filter: drop-shadow(0 0 6px #ffd700);
-}
+    /* ===== WD CODE BOX ===== */
+    .wd-code-box {
+      background: #0a0a0a;
+      border: 2px solid #ffd700;
+      border-radius: 14px;
+      padding: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      word-break: break-all;
+      color: #ffd700;
+      margin: 12px 0;
+      text-align: center;
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+    }
 
-/* ===== CHECKIN ===== */
-.checkin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
-.checkin-day {
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,215,0,0.2);
-  border-radius: 12px; padding: 10px 4px; text-align: center; font-size: 11px;
-  display: flex; flex-direction: column; gap: 3px; align-items: center;
-}
-.checkin-day.claimed { background: rgba(52,211,153,0.15); border-color: #34d399; }
-.checkin-day.today { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.3); }
-.checkin-day .day-num { font-weight: 800; color: #ffd700; }
-.checkin-day .day-reward { color: #ffe066; font-size: 10px; }
+    /* ===== TOAST ===== */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+      width: 90%;
+      max-width: 380px;
+    }
+    .toast {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255,215,0,0.4);
+      border-radius: 14px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      animation: toastIn 0.3s ease;
+      pointer-events: auto;
+      font-weight: 600;
+    }
+    .toast.warn { border-color: #f59e0b; color: #fbbf24; }
+    .toast.error { border-color: #ef4444; color: #fca5a5; }
+    .toast.success { border-color: #22c55e; color: #86efac; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-/* ===== MISSION ===== */
-.mission-item {
-  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.15);
-  border-radius: 12px; padding: 12px; margin-bottom: 10px;
-}
-.mission-item .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.mission-item .m-name { font-size: 13px; font-weight: 600; }
-.mission-item .m-reward { font-size: 12px; color: #ffd700; font-weight: 700; }
-.mission-item .m-btn { padding: 6px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
-.mission-item .m-btn.claim { background: #ffd700; color: #1a0000; }
-.mission-item .m-btn.claimed { background: rgba(255,255,255,0.15); color: #999; cursor: default; }
+    /* ===== LOGIN SCREEN ===== */
+    .login-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px 24px;
+      background: radial-gradient(circle at 50% 30%, #2A0808 0%, #1A0000 60%, #0a0a0a 100%);
+      text-align: center;
+      gap: 10px;
+    }
+    .login-screen.hidden { display: none; }
+    .logo-coin {
+      width: 110px;
+      height: 110px;
+      animation: spinCoin 3s linear infinite;
+      filter: drop-shadow(0 0 20px #ffd700aa);
+    }
+    @keyframes spinCoin {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+    .game-title {
+      font-size: 34px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffd700, #ff8c00, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+      text-shadow: 0 0 30px rgba(255,215,0,0.3);
+    }
+    .game-sub {
+      font-size: 12px;
+      letter-spacing: 6px;
+      color: #ffd700aa;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .btn-start {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      color: #1a0000;
+      border: none;
+      border-radius: 60px;
+      padding: 16px 40px;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(255,255,255,0.25);
+      animation: bounceBtn 1.5s infinite;
+      transition: 0.2s;
+      margin-top: 10px;
+    }
+    .btn-start:active { transform: scale(0.95); }
+    .btn-start svg { width: 30px; height: 30px; }
+    @keyframes bounceBtn {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .login-hint {
+      font-size: 11px;
+      color: #888;
+      margin-top: 16px;
+    }
 
-/* ===== LEADERBOARD ===== */
-.lb-item {
-  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
-  background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 8px;
-  border: 1px solid rgba(255,215,0,0.1);
-}
-.lb-rank { font-size: 16px; font-weight: 800; width: 28px; text-align: center; }
-.lb-rank.gold { color: #ffd700; }
-.lb-rank.silver { color: #c0c0c0; }
-.lb-rank.bronze { color: #cd7f32; }
-.lb-name { flex: 1; font-size: 14px; font-weight: 600; }
-.lb-score { font-size: 13px; color: #ffd700; font-weight: 700; }
+    /* ===== ADMIN STYLES ===== */
+    .admin-container {
+      position: absolute;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      background: #0f172a;
+      overflow: hidden;
+    }
+    .admin-container.show { display: flex; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #1e293b;
+      border-bottom: 1px solid #06b6d4;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .admin-header h1 { font-size: 15px; color: #06b6d4; letter-spacing: 1px; }
+    .admin-header-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .admin-header-actions button {
+      background: #0f172a;
+      border: 1px solid #06b6d4;
+      color: #06b6d4;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .admin-header-actions button:active { background: #06b6d4; color: #0f172a; }
+    .admin-tabs {
+      display: flex;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      overflow-x: auto;
+    }
+    .admin-tab {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .admin-tab.active { color: #06b6d4; border-bottom-color: #06b6d4; }
+    .admin-content { flex: 1; overflow-y: auto; padding: 14px; }
+    .admin-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 3px solid #06b6d4;
+    }
+    .admin-card .code { font-family: 'Courier New', monospace; font-size: 11px; color: #94a3b8; word-break: break-all; }
+    .admin-card .meta { font-size: 12px; color: #cbd5e1; margin-top: 6px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 800;
+      margin-left: 6px;
+    }
+    .badge.pending { background: #f59e0b; color: #1a0000; }
+    .badge.paid { background: #22c55e; color: #052e16; }
+    .badge.rejected { background: #ef4444; color: #fff; }
+    .admin-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .admin-actions button {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .admin-actions .pay { background: #22c55e; color: #052e16; }
+    .admin-actions .reject { background: #ef4444; color: #fff; }
+    .admin-login {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      padding: 30px;
+      gap: 14px;
+    }
+    .admin-login input {
+      max-width: 280px;
+      text-align: center;
+    }
 
-/* ===== ADMIN ===== */
-#screen-admin { background: #0f172a; padding: 0; }
-.admin-header {
-  background: #1e293b; padding: 14px 16px; display: flex;
-  justify-content: space-between; align-items: center;
-  border-bottom: 2px solid #06b6d4; flex-wrap: wrap; gap: 8px;
-}
-.admin-header h1 { font-size: 16px; color: #06b6d4; font-weight: 800; letter-spacing: 1px; }
-.admin-header-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-.admin-btn {
-  background: #06b6d4; color: #0f172a; border: none; padding: 7px 12px;
-  border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
-  transition: background 0.2s;
-}
-.admin-btn:hover { background: #22d3ee; }
-.admin-btn.danger { background: #ef4444; color: #fff; }
-.admin-btn.secondary { background: #334155; color: #fff; }
-.admin-tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; }
-.admin-tab {
-  flex: 1; padding: 12px; background: none; border: none; color: #94a3b8;
-  font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
-  transition: all 0.2s;
-}
-.admin-tab.active { color: #06b6d4; border-bottom-color: #06b6d4; background: #0f172a; }
-.admin-body { flex: 1; overflow-y: auto; padding: 16px; }
-.admin-card {
-  background: #1e293b; border: 1px solid #334155; border-radius: 12px;
-  padding: 14px; margin-bottom: 12px;
-}
-.admin-card textarea {
-  width: 100%; min-height: 100px; background: #0f172a; border: 1px solid #334155;
-  border-radius: 8px; color: #e2e8f0; padding: 10px; font-family: monospace;
-  font-size: 12px; resize: vertical; outline: none;
-}
-.admin-card textarea:focus { border-color: #06b6d4; }
-.wd-item {
-  background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-  padding: 12px; margin-bottom: 10px; font-size: 12px;
-}
-.wd-item .wd-row { display: flex; justify-content: space-between; margin-bottom: 4px; color: #cbd5e1; }
-.wd-item .wd-code { font-family: monospace; font-size: 10px; color: #06b6d4; word-break: break-all; margin: 6px 0; background: #0f172a; padding: 6px; border-radius: 6px; }
-.wd-item .wd-actions { display: flex; gap: 8px; margin-top: 8px; }
-.wd-item .wd-actions button { flex: 1; padding: 7px; border: none; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
-.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
-.badge.pending { background: #fbbf24; color: #0f172a; }
-.badge.done { background: #22c55e; color: #0f172a; }
-.badge.rejected { background: #ef4444; color: #fff; }
-.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; text-align: center; }
-.stat-card .stat-num { font-size: 26px; font-weight: 900; color: #06b6d4; }
-.stat-card .stat-label { font-size: 11px; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
-.admin-login-box { max-width: 340px; margin: auto; padding: 30px 20px; text-align: center; }
-.admin-login-box input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 15px; margin-bottom: 12px; outline: none; }
-.admin-login-box input:focus { border-color: #06b6d4; }
-.filter-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
-.filter-row input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 12px; }
+    /* ===== SPIN WHEEL ===== */
+    .spin-wheel {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      margin: 10px auto;
+      background: conic-gradient(#FF6B6B 0deg 60deg, #4ECDC4 60deg 120deg, #FFE66D 120deg 180deg, #A78BFA 180deg 240deg, #F472B6 240deg 300deg, #34D399 300deg 360deg);
+      border: 6px solid #ffd700;
+      box-shadow: 0 0 30px rgba(255,215,0,0.4);
+      transition: transform 3s cubic-bezier(0.2, 0.8, 0.3, 1);
+      position: relative;
+    }
+    .spin-wheel::after {
+      content: '🎯';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 30px;
+    }
 
-/* ===== GAME OVER ===== */
-.gameover-icon { font-size: 56px; text-align: center; margin-bottom: 10px; }
-.cooldown-text { font-size: 13px; color: #ffd700; text-align: center; margin: 10px 0; font-weight: 700; }
+    /* ===== CHECKIN GRID ===== */
+    .checkin-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .checkin-day {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 12px;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 11px;
+    }
+    .checkin-day.claimed { background: rgba(34,197,94,0.2); border-color: #22c55e; }
+    .checkin-day.today { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.4); }
 
-/* ===== AD SIM ===== */
-.ad-countdown { font-size: 56px; font-weight: 900; color: #ffd700; text-align: center; margin: 20px 0; text-shadow: 0 0 30px rgba(255,215,0,0.5); }
-.ad-progress { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
-.ad-progress-inner { height: 100%; background: linear-gradient(90deg, #ffd700, #ff8c00); width: 0%; transition: width 1s linear; }
+    /* ===== MISSION LIST ===== */
+    .mission-item {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,215,0,0.1);
+    }
+    .mission-item .mission-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .mission-progress {
+      height: 8px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .mission-progress .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff8c00);
+      border-radius: 4px;
+      transition: width 0.4s;
+    }
+    .mission-claim {
+      background: #ffd700;
+      color: #1a0000;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .mission-claim:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* ===== FLASH SALE ===== */
-.flash-sale-box { background: linear-gradient(135deg, rgba(255,0,0,0.2), rgba(255,215,0,0.15)); border: 2px solid #ff4444; border-radius: 16px; padding: 18px; text-align: center; margin: 12px 0; }
-.flash-timer { font-size: 32px; font-weight: 900; color: #ff4444; font-family: monospace; }
-.flash-price { font-size: 18px; color: #ffd700; font-weight: 800; margin: 8px 0; }
-.flash-price s { color: #999; font-size: 14px; }
+    /* ===== LEADERBOARD ===== */
+    .lb-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
+    }
+    .lb-row .rank { font-weight: 900; color: #ffd700; width: 30px; }
+    .lb-row .name { flex: 1; }
+    .lb-row .score { font-weight: 700; color: #4ECDC4; }
 
-/* ===== SCROLLBAR ===== */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 10px; }
+    /* ===== PROGRESS BAR WD ===== */
+    .progress-bar {
+      height: 10px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff8c00);
+      border-radius: 5px;
+      transition: width 0.4s;
+    }
 
-.hidden { display: none !important; }
-.text-center { text-align: center; }
-.mt-10 { margin-top: 10px; }
-.mb-10 { margin-bottom: 10px; }
-</style>
+    /* ===== FLASH SALE ===== */
+    .flash-sale {
+      background: linear-gradient(135deg, #ef4444, #f59e0b);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+      margin: 10px 0;
+      animation: flashPulse 1s infinite;
+    }
+    @keyframes flashPulse {
+      0%,100% { box-shadow: 0 0 10px rgba(239,68,68,0.5); }
+      50% { box-shadow: 0 0 30px rgba(239,68,68,0.9); }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 360px) {
+      .game-title { font-size: 26px; }
+      .btn-start { font-size: 17px; padding: 14px 30px; }
+      .board { gap: 3px; padding: 4px; }
+      .cell { border-radius: 8px; }
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #ffd70044; border-radius: 2px; }
+  </style>
 </head>
 <body>
+<div id="app">
+  <!-- PARTICLES -->
+  <div id="particles"></div>
 
-<div id="particles"></div>
+  <!-- ARCADE CONTAINER -->
+  <div class="arcade">
 
-<div class="arcade">
-
-  <!-- ===== LOGIN SCREEN ===== -->
-  <div id="screen-login" class="screen active">
-    <svg class="login-logo" viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
-      <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
-      <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
-    </svg>
-    <div class="login-title">CUAN BLOK</div>
-    <div class="login-sub">PUZZLE PENGHASIL UANG</div>
-    <button class="btn-primary" id="btn-start">
-      <svg viewBox="0 0 100 100" fill="none">
-        <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
-        <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
-        <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
-      </svg>
-      Mulai Main
-    </button>
-    <div class="login-hint">🔒 Device-based login · anti-bot berlapis</div>
-  </div>
-
-  <!-- ===== GAME SCREEN ===== -->
-  <div id="screen-game" class="screen">
-    <div class="game-header">
-      <div class="header-top">
-        <div class="coin-display">
-          <svg viewBox="0 0 100 100" fill="none">
-            <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
-            <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
-            <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
-          </svg>
-          <span id="coin-amount">0</span>
-        </div>
-        <div class="header-btns">
-          <button class="icon-btn" id="btn-bgm">🎵 ON</button>
-          <button class="icon-btn" id="btn-sfx">🔊 ON</button>
-        </div>
+    <!-- HEADER -->
+    <div class="header">
+      <div class="coin-display">
+        <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/><circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/><text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text></svg>
+        <span id="coinAmount">0</span>
       </div>
-      <div class="header-stats">
-        <div class="stat-pill heart-row" id="heart-display">❤️❤️❤️</div>
-        <div class="stat-pill" id="ticket-display">🎬 3</div>
-        <div class="stat-pill vip-badge" id="vip-display">👑 VIP 1</div>
-      </div>
-      <div class="stat-pill" id="heart-timer" style="display:none; font-size:11px;"></div>
-    </div>
-
-    <div class="ticker" id="ticker"><span>💵</span><span id="ticker-text"></span></div>
-
-    <div class="game-body">
-      <div class="board-wrap">
-        <div id="board"></div>
-      </div>
-      <div class="powerup-row">
-        <button class="powerup-btn" id="btn-hammer">
-          <span class="pu-icon">🔨</span>
-          <span>Hammer</span>
-          <span class="pu-count" id="hammer-count">1</span>
-        </button>
-        <button class="powerup-btn" id="btn-shuffle">
-          <span class="pu-icon">🔀</span>
-          <span>Shuffle</span>
-          <span class="pu-count" id="shuffle-count">1</span>
-        </button>
-        <button class="powerup-btn" id="btn-buy-powerup">
-          <span class="pu-icon">💰</span>
-          <span>Beli</span>
-          <span class="pu-count">500</span>
-        </button>
+      <div class="header-actions">
+        <button class="header-btn" id="btnBgm">🎵 BGM</button>
+        <button class="header-btn" id="btnSfx">🔊 SFX</button>
+        <button class="header-btn" id="btnVip">👑 VIP 0</button>
       </div>
     </div>
 
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="hearts" id="heartsDisplay">❤️❤️❤️</div>
+      <div class="regen-timer" id="regenTimer"></div>
+      <div style="font-size:12px;">🎬 <span id="ticketCount">3</span> tiket</div>
+    </div>
+
+    <!-- BOARD -->
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+      <div id="boardMessage" style="font-size:12px;color:#ffd700aa;margin-top:6px;text-align:center;"></div>
+    </div>
+
+    <!-- POWER-UPS -->
+    <div class="powerups">
+      <button class="powerup-btn" id="btnHammer">🔨 Hammer <span class="badge" id="hammerCount">1</span></button>
+      <button class="powerup-btn" id="btnShuffle">🔀 Shuffle <span class="badge" id="shuffleCount">1</span></button>
+    </div>
+
+    <!-- BOTTOM NAV -->
     <div class="bottom-nav">
       <button class="nav-btn active" data-nav="game"><span class="nav-icon">🎮</span>Game</button>
       <button class="nav-btn" data-nav="spin"><span class="nav-icon">🎡</span>Spin</button>
       <button class="nav-btn" data-nav="checkin"><span class="nav-icon">📅</span>Check-in</button>
       <button class="nav-btn" data-nav="ranking"><span class="nav-icon">🏆</span>Ranking</button>
-      <button class="nav-btn" data-nav="wd"><span class="nav-icon">💰</span>WD</button>
+      <button class="nav-btn" data-nav="wd"><span class="nav-icon">💸</span>WD</button>
     </div>
   </div>
 
-  <!-- ===== ADMIN SCREEN ===== -->
-  <div id="screen-admin" class="screen">
-    <div id="admin-login-view" class="admin-login-box">
-      <h2 style="color:#06b6d4; margin-bottom:20px; font-size:20px;">🔐 ADMIN LOGIN</h2>
-      <input type="password" id="admin-pass" placeholder="Masukkan password admin">
-      <button class="admin-btn" style="width:100%; padding:13px; font-size:15px;" id="admin-login-btn">Login</button>
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <svg class="logo-coin" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
+      <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
+    </svg>
+    <h1 class="game-title">CUAN BLOK</h1>
+    <p class="game-sub">PUZZLE PENGHASIL UANG</p>
+    <button class="btn-start" id="btnStartLogin">
+      <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/><circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/><text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text></svg>
+      MULAI MAIN
+    </button>
+    <p class="login-hint">🔒 Device-based login · anti-bot berlapis</p>
+  </div>
+
+  <!-- ADMIN CONTAINER -->
+  <div class="admin-container" id="adminContainer">
+    <div class="admin-login" id="adminLogin">
+      <h2 style="color:#06b6d4;letter-spacing:2px;">🔐 ADMIN ACCESS</h2>
+      <input type="password" id="adminPass" placeholder="Password admin" autocomplete="off">
+      <button class="btn btn-gold" id="btnAdminLogin" style="max-width:280px;">MASUK</button>
+      <button class="btn btn-outline" id="btnAdminBack" style="max-width:280px;">← Kembali ke Game</button>
     </div>
-    <div id="admin-dashboard-view" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+    <div id="adminDashboard" style="display:none;flex:1;flex-direction:column;">
       <div class="admin-header">
         <h1>🔐 ADMIN PANEL · CUAN BLOK</h1>
-        <div class="admin-header-btns">
-          <button class="admin-btn" id="admin-export">Export JSON</button>
-          <button class="admin-btn secondary" id="admin-import-btn">Import JSON</button>
-          <input type="file" id="admin-import-file" accept=".json" style="display:none;">
-          <button class="admin-btn danger" id="admin-logout">Logout</button>
+        <div class="admin-header-actions">
+          <button id="btnExport">📥 Export JSON</button>
+          <button id="btnImport">📤 Import JSON</button>
+          <button id="btnAdminLogout">🚪 Logout</button>
         </div>
       </div>
       <div class="admin-tabs">
@@ -476,1268 +798,1943 @@ body {
         <button class="admin-tab" data-tab="done">Selesai</button>
         <button class="admin-tab" data-tab="stats">Statistik</button>
       </div>
-      <div class="admin-body" id="admin-body"></div>
+      <div class="admin-content" id="adminContent"></div>
+      <input type="file" id="importFile" accept=".json" style="display:none;">
     </div>
   </div>
 
-</div>
+  <!-- MODAL OVERLAY -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalContent"></div>
+  </div>
 
-<!-- ===== MODAL CONTAINER ===== -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal" id="modal-content"></div>
-</div>
+  <!-- TOAST -->
+  <div id="toast-container"></div>
 
-<div id="toast-container"></div>
+  <!-- AUDIO -->
+  <audio id="bgm-audio" loop preload="auto" src="./bgm.mp3"></audio>
+</div>
 
 <script>
 'use strict';
 
 /* ============================================================
-   1. GLOBAL ERROR HANDLER + SAFE RUN
+   1. GLOBAL ERROR HANDLER + SAFERUN
    ============================================================ */
-window.addEventListener('error', function(e) {
-  console.warn('[Error]', e.message || 'Unknown error');
+window.addEventListener('error', (e) => {
+  console.warn('[GlobalError]', e.message);
 });
-window.addEventListener('unhandledrejection', function(e) {
-  console.warn('[Promise]', e.reason);
+window.addEventListener('unhandledrejection', (e) => {
+  console.warn('[UnhandledRejection]', e.reason);
 });
-function safeRun(fn, name) {
-  try { return fn(); } catch (e) { console.warn('[safeRun:' + name + ']', e.message); }
-}
+const safeRun = (fn, name) => {
+  try { return fn(); } catch (e) { console.warn('[SafeRun]', name, e.message); }
+};
 
 /* ============================================================
    2. KONSTANTA
    ============================================================ */
-var TURNSTILE_SITEKEY = '0x4AAAAAAE2Fyk4QG8WKjJdg';
-var ADMIN_HASH = '#a7k9x2mz-admin';
-var ADMIN_PASSWORD_DEFAULT = 'cuan2025';
-var BOARD_SIZE = 7;
-var COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA', '#F472B6', '#34D399'];
-var MIN_WD = 10000;
-var POWERUP_COST = 500;
-var HEART_REGEN_MS = 30 * 60 * 1000;
-var TICKET_REGEN_MS = 30 * 60 * 1000;
-var VIP_TIERS = [
-  { level: 0, min: 0, bonus: 0, name: 'VIP 1' },
-  { level: 1, min: 10000, bonus: 0.1, name: 'VIP 1' },
-  { level: 2, min: 50000, bonus: 0.2, name: 'VIP 2' },
-  { level: 3, min: 100000, bonus: 0.3, name: 'VIP 3' },
-  { level: 4, min: 500000, bonus: 0.5, name: 'VIP 4' },
-  { level: 5, min: 1000000, bonus: 1.0, name: 'VIP 5' }
+const APP_VERSION = 'v8';
+const ADMIN_HASH = '#a7k9x2mz-admin';
+const ADMIN_PASS_DEFAULT = 'cuan2025';
+const TURNSTILE_SITEKEY = '0x4AAAAAAE2Fyk4QG8WKjJdg';
+const BOARD_SIZE = 7;
+const COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA', '#F472B6', '#34D399'];
+const MAX_HEARTS = 3;
+const HEART_REGEN_MS = 30 * 60 * 1000; // 30 menit
+const MAX_TICKETS = 3;
+const TICKET_REGEN_MS = 30 * 60 * 1000;
+const WD_MIN = 10000;
+const VIP_TIERS = [
+  { level: 0, name: 'VIP 0', min: 0, bonus: 0 },
+  { level: 1, name: 'VIP 1', min: 10000, bonus: 0.1 },
+  { level: 2, name: 'VIP 2', min: 50000, bonus: 0.2 },
+  { level: 3, name: 'VIP 3', min: 100000, bonus: 0.3 },
+  { level: 4, name: 'VIP 4', min: 500000, bonus: 0.5 },
+  { level: 5, name: 'VIP 5', min: 1000000, bonus: 1.0 },
 ];
-var BOT_NAMES = ['SultanCuan', 'RajaKoin', 'DewiFortune', 'KingPuzzle', 'MasterBlok', 'CuanMax', 'HokiTerus', 'BandarKoin', 'SultanMuda', 'RatuBlok'];
-
-/* ============================================================
-   3. SECURITY CONSTANTS
-   ============================================================ */
-var DEVICE_KEY = 'cuanblok_device_v1';
-var DEVICE_ACCOUNTS_KEY = 'cuanblok_device_v1_accounts';
-var PLAYER_KEY = 'cuanblok_player_v1';
-var WD_PENDING_KEY = 'cuanblok_wd_pending_v1';
-var ADMIN_KEY = 'cuanblok_admin_v1';
-var SETTINGS_KEY = 'cuanblok_settings_v1';
-
-/* ============================================================
-   4. STATE
-   ============================================================ */
-var state = {
-  screen: 'login',
-  isAdmin: false,
-  adminAuthed: false,
-  adminTab: 'input',
-  turnstileToken: null,
-  turnstileBypassed: false,
-  turnstileWdToken: null,
-  turnstileWdBypassed: false,
-  deviceId: null,
-  player: null,
-  board: [],
-  hearts: 3,
-  maxHearts: 3,
-  tickets: 3,
-  maxTickets: 3,
-  lastHeartRegen: Date.now(),
-  lastTicketRegen: Date.now(),
-  selectedWallet: 'DANA',
-  hammerMode: false,
-  boardLocked: false,
-  gameOver: false,
-  reviveCooldownUntil: 0,
-  reviveAdUsedToday: false,
-  wdCooldownUntil: 0,
-  shadowbanned: false,
-  honeypotTrips: 0,
-  lastSpinDate: '',
-  lastCheckinDate: '',
-  checkinStreak: 0,
-  dailyAdCount: 0,
-  lastAdDate: '',
-  lastMysteryChestDate: '',
-  flashSaleActive: false,
-  flashSaleEnd: 0,
-  flashSaleLastAppear: 0,
-  lastTickerTime: 0,
-  exitIntentShown: false,
-  audioCtx: null,
-  bgmOn: true,
-  sfxOn: true,
-  missions: {
-    playGame: { progress: 0, target: 1, reward: 100, claimed: false },
-    clearMatch: { progress: 0, target: 10, reward: 200, claimed: false },
-    spin: { progress: 0, target: 1, reward: 50, claimed: false },
-    checkin: { progress: 0, target: 1, reward: 100, claimed: false },
-    collectCoins: { progress: 0, target: 1000, reward: 300, claimed: false }
-  },
-  missionDate: '',
-  leaderboard: []
+const BOT_NAMES = ['Sultan***', 'Cuan***', 'Hoki***', 'Jp***', 'Maxwin***', 'Gacor***', 'Zeus***', 'Dewa***', 'Raja***', 'Bos***'];
+const STORAGE = {
+  device: 'cuanblok_device_v1',
+  accounts: 'cuanblok_device_v1_accounts',
+  player: 'cuanblok_player_v1',
+  settings: 'cuanblok_settings_v1',
+  wdPending: 'cuanblok_wd_pending_v1',
+  admin: 'cuanblok_admin_v1',
 };
 
 /* ============================================================
-   5. DOM REFS
+   3. STATE
    ============================================================ */
-var dom = {};
-function cacheDom() {
-  dom.screenLogin = document.getElementById('screen-login');
-  dom.screenGame = document.getElementById('screen-game');
-  dom.screenAdmin = document.getElementById('screen-admin');
-  dom.btnStart = document.getElementById('btn-start');
-  dom.coinAmount = document.getElementById('coin-amount');
-  dom.heartDisplay = document.getElementById('heart-display');
-  dom.ticketDisplay = document.getElementById('ticket-display');
-  dom.vipDisplay = document.getElementById('vip-display');
-  dom.heartTimer = document.getElementById('heart-timer');
-  dom.ticker = document.getElementById('ticker');
-  dom.tickerText = document.getElementById('ticker-text');
-  dom.board = document.getElementById('board');
-  dom.btnHammer = document.getElementById('btn-hammer');
-  dom.btnShuffle = document.getElementById('btn-shuffle');
-  dom.btnBuyPowerup = document.getElementById('btn-buy-powerup');
-  dom.hammerCount = document.getElementById('hammer-count');
-  dom.shuffleCount = document.getElementById('shuffle-count');
-  dom.btnBgm = document.getElementById('btn-bgm');
-  dom.btnSfx = document.getElementById('btn-sfx');
-  dom.modalOverlay = document.getElementById('modal-overlay');
-  dom.modalContent = document.getElementById('modal-content');
-  dom.toastContainer = document.getElementById('toast-container');
-  dom.adminLoginView = document.getElementById('admin-login-view');
-  dom.adminDashboardView = document.getElementById('admin-dashboard-view');
-  dom.adminPass = document.getElementById('admin-pass');
-  dom.adminLoginBtn = document.getElementById('admin-login-btn');
-  dom.adminExport = document.getElementById('admin-export');
-  dom.adminImportBtn = document.getElementById('admin-import-btn');
-  dom.adminImportFile = document.getElementById('admin-import-file');
-  dom.adminLogout = document.getElementById('admin-logout');
-  dom.adminBody = document.getElementById('admin-body');
-  dom.particles = document.getElementById('particles');
-}
+let state = {
+  isAdmin: false,
+  adminAuthed: false,
+  turnstileToken: null,
+  turnstileBypassed: false,
+  deviceId: null,
+  player: null,
+  board: [],
+  hearts: MAX_HEARTS,
+  lastHeartRegen: 0,
+  tickets: MAX_TICKETS,
+  lastTicketRegen: 0,
+  coins: 0,
+  totalCoinsEarned: 0,
+  referral: '',
+  vipLevel: 0,
+  swipe: { active: false, startR: -1, startC: -1, startX: 0, startY: 0 },
+  bgmOn: true,
+  sfxOn: true,
+  audioCtx: null,
+  bgmAudio: null,
+  lastMatchClear: 0,
+  dailySpinDate: '',
+  dailyCheckinDate: '',
+  checkinStreak: 0,
+  lastFlashSale: 0,
+  flashSaleActive: false,
+  lastMysteryChest: 0,
+  mysteryChestClaimed: false,
+  lastReviveDate: '',
+  dailyAdCount: 0,
+  dailyMultiplierCount: 0,
+  honeypotTripped: 0,
+  wdDisabledUntil: 0,
+  loginTime: 0,
+  missions: {},
+  missionProgress: {},
+  gameOverModal: false,
+  reviveCooldown: 0,
+  lastTickerTime: 0,
+  tickerActive: false,
+  hammerCount: 1,
+  shuffleCount: 1,
+  hammerMode: false,
+  referralCode: '',
+  turnstileWidgetId: null,
+  turnstileTimer: null,
+  lastWdDate: '',
+  wdQueue: 0,
+  totalMatches: 0,
+  sessionMatches: 0,
+  sessionCoins: 0,
+};
 
 /* ============================================================
-   6. UTILITAS
+   4. DOM REFS
    ============================================================ */
-function showToast(msg, duration) {
+const dom = {
+  app: document.getElementById('app'),
+  particles: document.getElementById('particles'),
+  coinAmount: document.getElementById('coinAmount'),
+  btnBgm: document.getElementById('btnBgm'),
+  btnSfx: document.getElementById('btnSfx'),
+  btnVip: document.getElementById('btnVip'),
+  heartsDisplay: document.getElementById('heartsDisplay'),
+  regenTimer: document.getElementById('regenTimer'),
+  ticketCount: document.getElementById('ticketCount'),
+  board: document.getElementById('board'),
+  boardMessage: document.getElementById('boardMessage'),
+  btnHammer: document.getElementById('btnHammer'),
+  btnShuffle: document.getElementById('btnShuffle'),
+  hammerCount: document.getElementById('hammerCount'),
+  shuffleCount: document.getElementById('shuffleCount'),
+  loginScreen: document.getElementById('loginScreen'),
+  btnStartLogin: document.getElementById('btnStartLogin'),
+  adminContainer: document.getElementById('adminContainer'),
+  adminLogin: document.getElementById('adminLogin'),
+  adminPass: document.getElementById('adminPass'),
+  btnAdminLogin: document.getElementById('btnAdminLogin'),
+  btnAdminBack: document.getElementById('btnAdminBack'),
+  adminDashboard: document.getElementById('adminDashboard'),
+  adminContent: document.getElementById('adminContent'),
+  btnExport: document.getElementById('btnExport'),
+  btnImport: document.getElementById('btnImport'),
+  btnAdminLogout: document.getElementById('btnAdminLogout'),
+  importFile: document.getElementById('importFile'),
+  modalOverlay: document.getElementById('modalOverlay'),
+  modalContent: document.getElementById('modalContent'),
+  toastContainer: document.getElementById('toast-container'),
+  bgmAudio: document.getElementById('bgm-audio'),
+};
+
+/* ============================================================
+   5. UTILITAS
+   ============================================================ */
+function showToast(msg, type = 'info', duration = 2800) {
   if (!dom.toastContainer) return;
-  var t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  dom.toastContainer.appendChild(t);
-  setTimeout(function() {
-    t.classList.add('out');
-    setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
-  }, duration || 2800);
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  dom.toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
 }
+
 function vibrate(ms) {
-  if (navigator.vibrate) navigator.vibrate(ms);
+  if (navigator.vibrate) safeRun(() => navigator.vibrate(ms), 'vibrate');
 }
+
 function formatNumber(n) {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
+
 function copyToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function() {
-      showToast('📋 Kode berhasil disalin!');
-    }).catch(function() { fallbackCopy(text); });
-  } else { fallbackCopy(text); }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 Kode dicopy!', 'success');
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
 }
+
 function fallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
-  document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); showToast('📋 Kode berhasil disalin!'); } catch(e) { showToast('❌ Gagal menyalin'); }
-  document.body.removeChild(ta);
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showToast('📋 Kode dicopy!', 'success'); }
+  catch (e) { showToast('❌ Gagal copy', 'error'); }
+  ta.remove();
 }
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'baru saja';
+  if (m < 60) return m + ' menit lalu';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' jam lalu';
+  return Math.floor(h / 24) + ' hari lalu';
+}
+
+/* ============================================================
+   6. ANTI-BOT FUNCTIONS
+   ============================================================ */
 function djb2Hash(str) {
-  var hash = 5381;
-  for (var i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & hash; }
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & 0xffffffff;
+  }
   return Math.abs(hash).toString(36);
 }
-function randomHex(len) { var s = ''; for (var i = 0; i < len; i++) s += Math.floor(Math.random() * 16).toString(16); return s; }
-function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-function formatTime(ms) {
-  var s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
-  if (h > 0) return h + 'j ' + (m % 60) + 'm';
-  if (m > 0) return m + 'm ' + (s % 60) + 'd';
-  return s + 'd';
+
+function getDeviceFingerprint() {
+  try {
+    const raw = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + 'x' + screen.height,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+      navigator.hardwareConcurrency || 0,
+      navigator.platform || '',
+      navigator.deviceMemory || 0,
+    ].join('||');
+    const hash = djb2Hash(raw);
+    return 'dev_' + hash.slice(0, 8);
+  } catch (e) {
+    return 'dev_fallback';
+  }
 }
 
-/* ============================================================
-   7. ANTI-BOT FUNCTIONS
-   ============================================================ */
 function getDeviceId() {
-  var ua = navigator.userAgent || '';
-  var lang = navigator.language || '';
-  var screenInfo = (screen.width || 0) + 'x' + (screen.height || 0);
-  var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  var hc = navigator.hardwareConcurrency || 0;
-  var plat = navigator.platform || '';
-  var dm = navigator.deviceMemory || 0;
-  var raw = ua + '|' + lang + '|' + screenInfo + '|' + tz + '|' + hc + '|' + plat + '|' + dm;
-  return 'dev_' + djb2Hash(raw).substring(0, 8);
+  try {
+    let id = localStorage.getItem(STORAGE.device);
+    if (!id) {
+      id = getDeviceFingerprint();
+      localStorage.setItem(STORAGE.device, id);
+    }
+    return id;
+  } catch (e) {
+    return 'dev_nostorage';
+  }
 }
+
 function getDeviceAccounts() {
-  try { var d = localStorage.getItem(DEVICE_ACCOUNTS_KEY); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+  try {
+    const raw = localStorage.getItem(STORAGE.accounts);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    if (data.sig !== djb2Hash(JSON.stringify(data.accounts))) return [];
+    return data.accounts || [];
+  } catch (e) { return []; }
 }
-function saveDeviceAccount(nickname) {
-  var accounts = getDeviceAccounts();
-  accounts.push({ name: nickname, time: Date.now(), sig: djb2Hash(nickname + '|' + state.deviceId) });
-  var cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  accounts = accounts.filter(function(a) { return a.time > cutoff; });
-  localStorage.setItem(DEVICE_ACCOUNTS_KEY, JSON.stringify(accounts));
+
+function saveDeviceAccounts(accounts) {
+  try {
+    const data = { accounts, sig: djb2Hash(JSON.stringify(accounts)) };
+    localStorage.setItem(STORAGE.accounts, JSON.stringify(data));
+  } catch (e) { /* ignore */ }
 }
-function canCreateAccount() {
-  var accounts = getDeviceAccounts();
-  var cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  accounts = accounts.filter(function(a) { return a.time > cutoff; });
-  return accounts.length < 3;
+
+function checkRateLimit() {
+  const accounts = getDeviceAccounts();
+  const now = Date.now();
+  const recent = accounts.filter(a => now - a.ts < 24 * 60 * 60 * 1000);
+  if (recent.length >= 3) {
+    showToast('⚠️ Max 3 akun per device per 24 jam', 'warn');
+    return false;
+  }
+  return true;
 }
-function validateNickname(name) {
-  if (!name || name.length < 3) return { ok: false, msg: 'Minimal 3 karakter' };
-  if (name.length > 16) return { ok: false, msg: 'Maksimal 16 karakter' };
-  if (!/^[a-zA-Z0-9_]+$/.test(name)) return { ok: false, msg: 'Hanya huruf, angka, underscore' };
-  if (/^\d+$/.test(name)) return { ok: false, msg: 'Tidak boleh angka semua' };
-  if (/(.)\1{3,}/.test(name)) return { ok: false, msg: 'Terlalu banyak karakter berulang' };
-  if (/^bot/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
-  if (/^user\d+$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
-  if (/^test\d+$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
-  if (/^admin/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
-  if (/^null$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
-  if (/^guest\d+$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
-  return { ok: true, msg: 'Nama valid ✓' };
+
+function validateNickname(nick) {
+  if (!nick || nick.length < 3 || nick.length > 16) return { ok: false, msg: '3-16 karakter' };
+  if (!/^[a-zA-Z0-9_]+$/.test(nick)) return { ok: false, msg: 'Hanya huruf, angka, underscore' };
+  if (/^\d+$/.test(nick)) return { ok: false, msg: 'Tidak boleh angka semua' };
+  if (/(.)\1{3,}/.test(nick)) return { ok: false, msg: 'Tidak boleh karakter berulang >3x' };
+  if (/^bot/i.test(nick)) return { ok: false, msg: 'Nama tidak valid' };
+  if (/^user\d+$/i.test(nick)) return { ok: false, msg: 'Nama tidak valid' };
+  if (/^test\d+$/i.test(nick)) return { ok: false, msg: 'Nama tidak valid' };
+  if (/^admin/i.test(nick)) return { ok: false, msg: 'Nama tidak valid' };
+  if (/^null$/i.test(nick)) return { ok: false, msg: 'Nama tidak valid' };
+  if (/^guest\d+$/i.test(nick)) return { ok: false, msg: 'Nama tidak valid' };
+  return { ok: true, msg: 'OK' };
 }
-function generateReferral(name) {
-  var prefix = name.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4);
-  while (prefix.length < 4) prefix += 'X';
-  var suffix = '';
-  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  for (var i = 0; i < 4; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
-  return prefix + suffix;
+
+function generateReferral(nickname) {
+  const base = nickname.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4).padEnd(4, 'X');
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return base + rand;
 }
 
 /* ============================================================
-   8. TURNSTILE HELPERS
+   7. TURNSTILE HELPERS
    ============================================================ */
-var turnstileAttempts = 0;
 function renderTurnstileWidget(containerId, onSuccess) {
   if (!window.turnstile) {
-    turnstileAttempts++;
-    if (turnstileAttempts > 25) {
-      state.turnstileBypassed = true;
-      if (onSuccess) onSuccess('bypass_' + randomHex(16));
-      showToast('⚠️ Turnstile timeout, lanjut dengan mode fallback', 3000);
-      return;
-    }
-    setTimeout(function() { renderTurnstileWidget(containerId, onSuccess); }, 200);
+    setTimeout(() => renderTurnstileWidget(containerId, onSuccess), 200);
     return;
   }
-  var container = document.getElementById(containerId);
+  const container = document.getElementById(containerId);
   if (!container || container.dataset.rendered === '1') return;
   container.dataset.rendered = '1';
   try {
-    window.turnstile.render(container, {
+    state.turnstileWidgetId = window.turnstile.render(container, {
       sitekey: TURNSTILE_SITEKEY,
       theme: 'dark',
-      callback: function(token) { console.log('[Turnstile] Token diterima'); if (onSuccess) onSuccess(token); },
-      'error-callback': function(err) { console.warn('[Turnstile]', err); },
-      'expired-callback': function() { console.warn('[Turnstile] expired'); }
+      callback: (token) => {
+        console.log('[Turnstile] Token diterima');
+        state.turnstileToken = token;
+        onSuccess(token);
+      },
+      'error-callback': (err) => { console.warn('[Turnstile]', err); },
+      'expired-callback': () => { console.warn('[Turnstile] expired'); },
     });
     console.log('[Turnstile] Widget rendered');
-  } catch (e) { console.warn('[Turnstile] Render gagal:', e.message); }
+  } catch (e) {
+    console.warn('[Turnstile] Render gagal:', e.message);
+  }
 }
-function resetTurnstile(containerId) {
-  var container = document.getElementById(containerId);
-  if (container) { container.dataset.rendered = '0'; container.innerHTML = ''; }
+
+function startTurnstileTimeout() {
+  if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
+  state.turnstileTimer = setTimeout(() => {
+    if (!state.turnstileToken) {
+      state.turnstileBypassed = true;
+      showToast('⚠️ Turnstile timeout, lanjut dengan mode terbatas', 'warn', 4000);
+    }
+  }, 5000);
 }
 
 /* ============================================================
-   9. AUDIO
+   8. AUDIO (BGM + SFX)
    ============================================================ */
 function initAudio() {
-  if (state.audioCtx) return;
-  try { state.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.warn('[Audio] Gagal init'); }
+  if (!state.audioCtx) {
+    try {
+      state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { console.warn('[Audio] AudioContext gagal', e); }
+  }
+  if (state.audioCtx && state.audioCtx.state === 'suspended') {
+    state.audioCtx.resume().catch(() => {});
+  }
+  state.bgmAudio = dom.bgmAudio;
+  if (state.bgmAudio) {
+    state.bgmAudio.volume = 0.4;
+    state.bgmAudio.addEventListener('error', () => {
+      console.warn('[Audio] BGM file gagal load (404?)');
+      showToast('⚠️ File bgm.mp3 tidak ditemukan', 'warn');
+    });
+    if (state.bgmOn) {
+      safeRun(() => {
+        const p = state.bgmAudio.play();
+        if (p && p.catch) p.catch(() => {
+          showToast('🎵 Klik lagi untuk aktifkan BGM', 'warn');
+        });
+      }, 'bgmPlay');
+    }
+  }
 }
-function playTone(freq, duration, type) {
+
+function playBgm() {
+  if (!state.bgmAudio || !state.bgmOn) return;
+  safeRun(() => {
+    const p = state.bgmAudio.play();
+    if (p && p.catch) p.catch(() => {
+      showToast('🎵 Klik lagi untuk aktifkan BGM', 'warn');
+    });
+  }, 'playBgm');
+  console.log('[Audio] BGM started');
+}
+
+function pauseBgm() {
+  if (!state.bgmAudio) return;
+  safeRun(() => state.bgmAudio.pause(), 'pauseBgm');
+  console.log('[Audio] BGM paused');
+}
+
+function duckBgm(on) {
+  if (!state.bgmAudio) return;
+  state.bgmAudio.volume = on ? 0.15 : 0.4;
+}
+
+function sfxPop() {
   if (!state.sfxOn || !state.audioCtx) return;
-  try {
-    var osc = state.audioCtx.createOscillator();
-    var gain = state.audioCtx.createGain();
-    osc.type = type || 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.08, state.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + duration);
-    osc.connect(gain); gain.connect(state.audioCtx.destination);
-    osc.start(); osc.stop(state.audioCtx.currentTime + duration);
-  } catch(e) {}
+  safeRun(() => {
+    const ctx = state.audioCtx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = 520;
+    g.gain.setValueAtTime(0.08, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+    o.connect(g).connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.08);
+  }, 'sfxPop');
 }
-function sfxPop() { playTone(520, 0.08, 'square'); }
-function sfxCoin() { playTone(880, 0.12, 'sine'); setTimeout(function(){ playTone(1200, 0.1, 'sine'); }, 60); }
-function sfxClick() { playTone(300, 0.05, 'triangle'); }
-function sfxWin() { playTone(660, 0.15, 'sine'); setTimeout(function(){ playTone(880, 0.15, 'sine'); }, 120); setTimeout(function(){ playTone(1100, 0.2, 'sine'); }, 240); }
+
+function sfxCoin() {
+  if (!state.sfxOn || !state.audioCtx) return;
+  safeRun(() => {
+    const ctx = state.audioCtx;
+    [880, 1200].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.06, ctx.currentTime + i * 0.06);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12 + i * 0.06);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.06);
+      o.stop(ctx.currentTime + 0.12 + i * 0.06);
+    });
+  }, 'sfxCoin');
+}
+
+function sfxClick() {
+  if (!state.sfxOn || !state.audioCtx) return;
+  safeRun(() => {
+    const ctx = state.audioCtx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 300;
+    g.gain.setValueAtTime(0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    o.connect(g).connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.05);
+  }, 'sfxClick');
+}
+
+function sfxError() {
+  if (!state.sfxOn || !state.audioCtx) return;
+  safeRun(() => {
+    const ctx = state.audioCtx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.value = 200;
+    g.gain.setValueAtTime(0.08, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    o.connect(g).connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.15);
+  }, 'sfxError');
+}
+
+function sfxWin() {
+  if (!state.sfxOn || !state.audioCtx) return;
+  safeRun(() => {
+    const ctx = state.audioCtx;
+    [660, 880, 1100].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.06, ctx.currentTime + i * 0.08);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3 + i * 0.08);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.08);
+      o.stop(ctx.currentTime + 0.3 + i * 0.08);
+    });
+  }, 'sfxWin');
+}
 
 /* ============================================================
-   10. AUTH PLAYER
+   9. AUTH PLAYER
    ============================================================ */
 function loadPlayer() {
   try {
-    var d = localStorage.getItem(PLAYER_KEY);
-    if (d) { state.player = JSON.parse(d); return true; }
-  } catch(e) {}
-  return false;
+    const raw = localStorage.getItem(STORAGE.player);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data.nickname) return null;
+    return data;
+  } catch (e) { return null; }
 }
+
 function savePlayer() {
   if (!state.player) return;
-  try { localStorage.setItem(PLAYER_KEY, JSON.stringify(state.player)); } catch(e) {}
-}
-function createPlayer(nickname) {
-  var referral = generateReferral(nickname);
-  state.player = {
-    name: nickname,
-    coins: 0,
-    totalCoins: 0,
-    referral: referral,
-    deviceId: state.deviceId,
-    hearts: 3,
-    maxHearts: 3,
-    tickets: 3,
-    maxTickets: 3,
-    lastHeartRegen: Date.now(),
-    lastTicketRegen: Date.now(),
-    hammer: 1,
-    shuffle: 1,
-    lastSpinDate: '',
-    lastCheckinDate: '',
-    checkinStreak: 0,
-    dailyAdCount: 0,
-    lastAdDate: '',
-    lastMysteryChestDate: '',
-    reviveCooldownUntil: 0,
-    reviveAdUsedToday: false,
-    wdCooldownUntil: 0,
-    shadowbanned: false,
-    honeypotTrips: 0,
-    missions: {
-      playGame: { progress: 0, target: 1, reward: 100, claimed: false },
-      clearMatch: { progress: 0, target: 10, reward: 200, claimed: false },
-      spin: { progress: 0, target: 1, reward: 50, claimed: false },
-      checkin: { progress: 0, target: 1, reward: 100, claimed: false },
-      collectCoins: { progress: 0, target: 1000, reward: 300, claimed: false }
-    },
-    missionDate: todayStr(),
-    createdAt: Date.now()
-  };
-  savePlayer();
-  console.log('[Login] Akun dibuat:', nickname);
-  console.log('[Game] Masuk sebagai:', nickname, '| Kode referral:', referral);
-  return state.player;
-}
-function updateHearts() {
-  if (!state.player) return;
-  var now = Date.now();
-  var elapsed = now - state.player.lastHeartRegen;
-  if (state.player.hearts < state.player.maxHearts) {
-    var regen = Math.floor(elapsed / HEART_REGEN_MS);
-    if (regen > 0) {
-      state.player.hearts = Math.min(state.player.maxHearts, state.player.hearts + regen);
-      state.player.lastHeartRegen = now;
-      savePlayer();
-    }
-  }
-  elapsed = now - state.player.lastTicketRegen;
-  if (state.player.tickets < state.player.maxTickets) {
-    var tregen = Math.floor(elapsed / TICKET_REGEN_MS);
-    if (tregen > 0) {
-      state.player.tickets = Math.min(state.player.maxTickets, state.player.tickets + tregen);
-      state.player.lastTicketRegen = now;
-      savePlayer();
-    }
-  }
-}
-function getVipLevel() {
-  if (!state.player) return VIP_TIERS[0];
-  var total = state.player.totalCoins || 0;
-  var tier = VIP_TIERS[0];
-  for (var i = 0; i < VIP_TIERS.length; i++) {
-    if (total >= VIP_TIERS[i].min) tier = VIP_TIERS[i];
-  }
-  return tier;
+  try {
+    state.player.coins = state.coins;
+    state.player.totalCoinsEarned = state.totalCoinsEarned;
+    state.player.hearts = state.hearts;
+    state.player.lastHeartRegen = state.lastHeartRegen;
+    state.player.tickets = state.tickets;
+    state.player.lastTicketRegen = state.lastTicketRegen;
+    state.player.vipLevel = state.vipLevel;
+    state.player.dailySpinDate = state.dailySpinDate;
+    state.player.dailyCheckinDate = state.dailyCheckinDate;
+    state.player.checkinStreak = state.checkinStreak;
+    state.player.hammerCount = state.hammerCount;
+    state.player.shuffleCount = state.shuffleCount;
+    state.player.missions = state.missions;
+    state.player.missionProgress = state.missionProgress;
+    state.player.dailyAdCount = state.dailyAdCount;
+    state.player.dailyMultiplierCount = state.dailyMultiplierCount;
+    state.player.lastReviveDate = state.lastReviveDate;
+    state.player.lastMysteryChest = state.lastMysteryChest;
+    state.player.mysteryChestClaimed = state.mysteryChestClaimed;
+    state.player.lastWdDate = state.lastWdDate;
+    state.player.wdQueue = state.wdQueue;
+    state.player.totalMatches = state.totalMatches;
+    localStorage.setItem(STORAGE.player, JSON.stringify(state.player));
+  } catch (e) { /* ignore */ }
 }
 
-/* ============================================================
-   11. AUTH ADMIN
-   ============================================================ */
-function loadAdminData() {
-  try { var d = localStorage.getItem(ADMIN_KEY); if (d) return JSON.parse(d); } catch(e) {}
-  return { pending: [], done: [], sig: '' };
-}
-function saveAdminData(data) {
-  data.sig = djb2Hash(JSON.stringify(data.pending) + JSON.stringify(data.done));
-  localStorage.setItem(ADMIN_KEY, JSON.stringify(data));
-}
-function adminLogin(password) {
-  if (password === ADMIN_PASSWORD_DEFAULT) {
-    state.adminAuthed = true;
-    showToast('✅ Login admin berhasil');
-    renderAdmin();
-    return true;
-  }
-  showToast('❌ Password salah');
-  return false;
-}
-
-/* ============================================================
-   12. ADMIN DASHBOARD
-   ============================================================ */
-function renderAdmin() {
-  if (!dom.adminLoginView || !dom.adminDashboardView) return;
-  if (!state.adminAuthed) {
-    dom.adminLoginView.classList.remove('hidden');
-    dom.adminDashboardView.classList.add('hidden');
-    return;
-  }
-  dom.adminLoginView.classList.add('hidden');
-  dom.adminDashboardView.classList.remove('hidden');
-  renderAdminBody();
-}
-function parseWdCode(code) {
-  var parts = code.trim().split('|');
-  if (parts.length !== 8) return null;
-  if (parts[0] !== 'CB') return null;
-  return {
-    prefix: parts[0], name: parts[1], device: parts[2], amount: parseInt(parts[3]) || 0,
-    wallet: parts[4], phone: parts[5], referral: parts[6], timestamp: parts[7],
-    raw: code.trim(), status: 'pending', parsedAt: Date.now()
-  };
-}
-function renderAdminBody() {
-  if (!dom.adminBody) return;
-  var data = loadAdminData();
-  var tab = state.adminTab;
-  if (tab === 'input') {
-    dom.adminBody.innerHTML = '<div class="admin-card"><h3 style="color:#06b6d4; margin-bottom:10px; font-size:14px;">📥 Input Kode WD dari Player</h3><textarea id="admin-wd-input" placeholder="Paste kode WD di sini...&#10;Contoh: CB|SultanCuan|dev_x9|10000|DANA|0812xxxx|SULT7X9K|m2k9x2"></textarea><button class="admin-btn" style="margin-top:10px; width:100%;" id="admin-parse-btn">Parse & Simpan</button></div>';
-    var parseBtn = document.getElementById('admin-parse-btn');
-    if (parseBtn) parseBtn.addEventListener('click', function() {
-      var ta = document.getElementById('admin-wd-input');
-      if (!ta || !ta.value.trim()) { showToast('❌ Masukkan kode WD'); return; }
-      var parsed = parseWdCode(ta.value);
-      if (!parsed) { showToast('❌ Format kode tidak valid'); return; }
-      data.pending.push(parsed);
-      saveAdminData(data);
-      showToast('✅ WD berhasil disimpan ke pending');
-      ta.value = '';
-      renderAdminBody();
-    });
-  } else if (tab === 'pending') {
-    if (data.pending.length === 0) {
-      dom.adminBody.innerHTML = '<div class="admin-card text-center" style="color:#94a3b8;">Tidak ada WD pending</div>';
-      return;
-    }
-    var html = '';
-    data.pending.forEach(function(wd, i) {
-      html += '<div class="wd-item"><div class="wd-row"><span>👤 ' + wd.name + '</span><span class="badge pending">PENDING</span></div><div class="wd-row"><span>💰 ' + formatNumber(wd.amount) + ' koin</span><span>🏦 ' + wd.wallet + '</span></div><div class="wd-row"><span>📱 ' + wd.phone + '</span><span>🔗 ' + wd.referral + '</span></div><div class="wd-code">' + wd.raw + '</div><div class="wd-actions"><button class="admin-btn" data-idx="' + i + '" data-action="paid" style="background:#22c55e;">✅ Dibayar</button><button class="admin-btn danger" data-idx="' + i + '" data-action="reject">❌ Tolak</button></div></div>';
-    });
-    dom.adminBody.innerHTML = html;
-    dom.adminBody.querySelectorAll('button[data-action]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var idx = parseInt(this.getAttribute('data-idx'));
-        var action = this.getAttribute('data-action');
-        var wd = data.pending[idx];
-        if (!wd) return;
-        data.pending.splice(idx, 1);
-        if (action === 'paid') { wd.status = 'done'; wd.doneAt = Date.now(); data.done.push(wd); showToast('✅ WD ditandai dibayar'); }
-        else { wd.status = 'rejected'; wd.rejectedAt = Date.now(); data.done.push(wd); showToast('❌ WD ditolak'); }
-        saveAdminData(data); renderAdminBody();
-      });
-    });
-  } else if (tab === 'done') {
-    if (data.done.length === 0) {
-      dom.adminBody.innerHTML = '<div class="admin-card text-center" style="color:#94a3b8;">Belum ada WD selesai</div>';
-      return;
-    }
-    var dhtml = '<div class="filter-row"><input type="date" id="admin-filter-date"></div>';
-    data.done.forEach(function(wd) {
-      var badge = wd.status === 'done' ? '<span class="badge done">DIBAYAR</span>' : '<span class="badge rejected">DITOLAK</span>';
-      dhtml += '<div class="wd-item"><div class="wd-row"><span>👤 ' + wd.name + '</span>' + badge + '</div><div class="wd-row"><span>💰 ' + formatNumber(wd.amount) + ' koin</span><span>🏦 ' + wd.wallet + '</span></div><div class="wd-code">' + wd.raw + '</div></div>';
-    });
-    dom.adminBody.innerHTML = dhtml;
-  } else if (tab === 'stats') {
-    var totalPending = data.pending.reduce(function(s, w) { return s + w.amount; }, 0);
-    var totalDone = data.done.reduce(function(s, w) { return s + w.amount; }, 0);
-    var coinsCirculating = 0;
-    try { var p = JSON.parse(localStorage.getItem(PLAYER_KEY) || '{}'); coinsCirculating = p.coins || 0; } catch(e) {}
-    dom.adminBody.innerHTML = '<div class="stat-grid"><div class="stat-card"><div class="stat-num">' + data.pending.length + '</div><div class="stat-label">WD Pending</div></div><div class="stat-card"><div class="stat-num">' + data.done.length + '</div><div class="stat-label">WD Selesai</div></div><div class="stat-card"><div class="stat-num">' + formatNumber(totalPending) + '</div><div class="stat-label">Koin Pending</div></div><div class="stat-card"><div class="stat-num">' + formatNumber(totalDone) + '</div><div class="stat-label">Koin Dibayar</div></div><div class="stat-card"><div class="stat-num">' + formatNumber(coinsCirculating) + '</div><div class="stat-label">Koin Beredar</div></div></div>';
-  }
-}
-
-/* ============================================================
-   13. PERSISTENCE PLAYER
-   ============================================================ */
-function saveSettings() {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bgmOn: state.bgmOn, sfxOn: state.sfxOn })); } catch(e) {}
-}
 function loadSettings() {
   try {
-    var d = localStorage.getItem(SETTINGS_KEY);
-    if (d) { var s = JSON.parse(d); state.bgmOn = s.bgmOn !== false; state.sfxOn = s.sfxOn !== false; }
-  } catch(e) {}
+    const raw = localStorage.getItem(STORAGE.settings);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (typeof data.bgmOn === 'boolean') state.bgmOn = data.bgmOn;
+    if (typeof data.sfxOn === 'boolean') state.sfxOn = data.sfxOn;
+  } catch (e) { /* ignore */ }
 }
 
-/* ============================================================
-   14. UI RENDER PLAYER
-   ============================================================ */
-function renderGameUI() {
-  if (!state.player) return;
-  updateHearts();
-  var vip = getVipLevel();
-  if (dom.coinAmount) dom.coinAmount.textContent = formatNumber(state.player.coins);
-  if (dom.heartDisplay) {
-    var h = '';
-    for (var i = 0; i < state.player.maxHearts; i++) h += i < state.player.hearts ? '❤️' : '🖤';
-    dom.heartDisplay.textContent = h;
-  }
-  if (dom.ticketDisplay) dom.ticketDisplay.textContent = '🎬 ' + state.player.tickets;
-  if (dom.vipDisplay) dom.vipDisplay.textContent = '👑 ' + vip.name;
-  if (dom.hammerCount) dom.hammerCount.textContent = state.player.hammer;
-  if (dom.shuffleCount) dom.shuffleCount.textContent = state.player.shuffle;
-  if (dom.btnBgm) dom.btnBgm.textContent = state.bgmOn ? '🎵 ON' : '🎵 OFF';
-  if (dom.btnSfx) dom.btnSfx.textContent = state.sfxOn ? '🔊 ON' : '🔊 OFF';
-  if (dom.heartTimer) {
-    if (state.player.hearts < state.player.maxHearts) {
-      var remain = HEART_REGEN_MS - (Date.now() - state.player.lastHeartRegen);
-      if (remain > 0) { dom.heartTimer.style.display = 'block'; dom.heartTimer.textContent = '⏳ Hati penuh dalam ' + formatTime(remain); }
-      else dom.heartTimer.style.display = 'none';
-    } else dom.heartTimer.style.display = 'none';
-  }
+function saveSettings() {
+  try {
+    localStorage.setItem(STORAGE.settings, JSON.stringify({
+      bgmOn: state.bgmOn,
+      sfxOn: state.sfxOn,
+    }));
+  } catch (e) { /* ignore */ }
 }
 
-/* ============================================================
-   15. GAMEPLAY
-   ============================================================ */
-function initBoard() {
-  state.board = [];
-  for (var r = 0; r < BOARD_SIZE; r++) {
-    state.board[r] = [];
-    for (var c = 0; c < BOARD_SIZE; c++) {
-      state.board[r][c] = { color: COLORS[Math.floor(Math.random() * COLORS.length)], chest: false };
+function processLogin(nickname, referral) {
+  const deviceId = state.deviceId;
+  const accounts = getDeviceAccounts();
+  const existing = accounts.find(a => a.nickname === nickname);
+  if (existing) {
+    // Login akun yang sudah ada
+    state.player = loadPlayer();
+    if (state.player && state.player.nickname === nickname) {
+      restorePlayerState();
+      showToast('✅ Selamat datang kembali, ' + nickname + '!', 'success');
+      console.log('[Login] Login ulang: ' + nickname);
+      startGame();
+      return true;
     }
   }
-  if (Math.random() < 0.15) {
-    var cr = Math.floor(Math.random() * BOARD_SIZE);
-    var cc = Math.floor(Math.random() * BOARD_SIZE);
-    state.board[cr][cc].chest = true;
-  }
-  renderBoard();
+  // Akun baru
+  if (!checkRateLimit()) return false;
+  const refCode = referral || generateReferral(nickname);
+  state.player = {
+    nickname,
+    deviceId,
+    referral: refCode,
+    coins: 0,
+    totalCoinsEarned: 0,
+    hearts: MAX_HEARTS,
+    lastHeartRegen: Date.now(),
+    tickets: MAX_TICKETS,
+    lastTicketRegen: Date.now(),
+    vipLevel: 0,
+    dailySpinDate: '',
+    dailyCheckinDate: '',
+    checkinStreak: 0,
+    hammerCount: 1,
+    shuffleCount: 1,
+    missions: {},
+    missionProgress: {},
+    dailyAdCount: 0,
+    dailyMultiplierCount: 0,
+    lastReviveDate: '',
+    lastMysteryChest: 0,
+    mysteryChestClaimed: false,
+    lastWdDate: '',
+    wdQueue: 0,
+    totalMatches: 0,
+    createdAt: Date.now(),
+  };
+  accounts.push({ nickname, deviceId, ts: Date.now() });
+  saveDeviceAccounts(accounts);
+  state.coins = 0;
+  state.totalCoinsEarned = 0;
+  state.hearts = MAX_HEARTS;
+  state.lastHeartRegen = Date.now();
+  state.tickets = MAX_TICKETS;
+  state.lastTicketRegen = Date.now();
+  state.referral = refCode;
+  state.vipLevel = 0;
+  state.referralCode = refCode;
+  savePlayer();
+  initMissions();
+  showToast('🎉 Akun dibuat! Kode referral: ' + refCode, 'success', 4000);
+  console.log('[Login] Akun dibuat: ' + nickname);
+  console.log('[Game] Masuk sebagai: ' + nickname + ' | Kode referral: ' + refCode);
+  startGame();
+  return true;
 }
+
+function restorePlayerState() {
+  if (!state.player) return;
+  state.coins = state.player.coins || 0;
+  state.totalCoinsEarned = state.player.totalCoinsEarned || 0;
+  state.hearts = state.player.hearts !== undefined ? state.player.hearts : MAX_HEARTS;
+  state.lastHeartRegen = state.player.lastHeartRegen || Date.now();
+  state.tickets = state.player.tickets !== undefined ? state.player.tickets : MAX_TICKETS;
+  state.lastTicketRegen = state.player.lastTicketRegen || Date.now();
+  state.referral = state.player.referral || '';
+  state.referralCode = state.referral;
+  state.vipLevel = state.player.vipLevel || 0;
+  state.dailySpinDate = state.player.dailySpinDate || '';
+  state.dailyCheckinDate = state.player.dailyCheckinDate || '';
+  state.checkinStreak = state.player.checkinStreak || 0;
+  state.hammerCount = state.player.hammerCount !== undefined ? state.player.hammerCount : 1;
+  state.shuffleCount = state.player.shuffleCount !== undefined ? state.player.shuffleCount : 1;
+  state.missions = state.player.missions || {};
+  state.missionProgress = state.player.missionProgress || {};
+  state.dailyAdCount = state.player.dailyAdCount || 0;
+  state.dailyMultiplierCount = state.player.dailyMultiplierCount || 0;
+  state.lastReviveDate = state.player.lastReviveDate || '';
+  state.lastMysteryChest = state.player.lastMysteryChest || 0;
+  state.mysteryChestClaimed = state.player.mysteryChestClaimed || false;
+  state.lastWdDate = state.player.lastWdDate || '';
+  state.wdQueue = state.player.wdQueue || 0;
+  state.totalMatches = state.player.totalMatches || 0;
+  updateVipLevel();
+  processHeartRegen();
+  processTicketRegen();
+}
+
+/* ============================================================
+   10. AUTH ADMIN
+   ============================================================ */
+function loadAdminData() {
+  try {
+    const raw = localStorage.getItem(STORAGE.admin);
+    if (!raw) return { pending: [], done: [], sig: '' };
+    const data = JSON.parse(raw);
+    if (data.sig !== djb2Hash(JSON.stringify({ pending: data.pending, done: data.done }))) {
+      return { pending: [], done: [], sig: '' };
+    }
+    return data;
+  } catch (e) { return { pending: [], done: [], sig: '' }; }
+}
+
+function saveAdminData(data) {
+  try {
+    data.sig = djb2Hash(JSON.stringify({ pending: data.pending, done: data.done }));
+    localStorage.setItem(STORAGE.admin, JSON.stringify(data));
+  } catch (e) { /* ignore */ }
+}
+
+function parseWdCode(code) {
+  const parts = code.trim().split('|');
+  if (parts.length !== 8) return { ok: false, msg: 'Format salah: butuh 8 bagian' };
+  if (parts[0] !== 'CB') return { ok: false, msg: 'Prefix harus CB' };
+  return {
+    ok: true,
+    data: {
+      nickname: parts[1],
+      device6: parts[2],
+      amount: parseInt(parts[3], 10) || 0,
+      wallet: parts[4],
+      phone: parts[5],
+      referral: parts[6],
+      timestamp: parts[7],
+      raw: code.trim(),
+      status: 'PENDING',
+      parsedAt: Date.now(),
+    },
+  };
+}
+
+/* ============================================================
+   11. ADMIN DASHBOARD
+   ============================================================ */
+let adminData = { pending: [], done: [], sig: '' };
+let currentAdminTab = 'input';
+
+function renderAdminContent() {
+  if (!dom.adminContent) return;
+  const data = adminData;
+  let html = '';
+  if (currentAdminTab === 'input') {
+    html = `
+      <div style="margin-bottom:12px;">
+        <h3 style="font-size:14px;color:#06b6d4;margin-bottom:8px;">📥 Paste Kode WD</h3>
+        <textarea id="adminWdInput" rows="4" placeholder="CB|Nickname|dev_xxx|10000|DANA|0812xxxx|REF1234|m2k9x2" style="width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;font-family:monospace;font-size:12px;resize:vertical;"></textarea>
+        <button id="btnParseWd" class="btn btn-gold" style="margin-top:8px;">Parse & Simpan</button>
+      </div>
+      <div id="parseResult"></div>
+    `;
+  } else if (currentAdminTab === 'pending') {
+    if (!data.pending || data.pending.length === 0) {
+      html = '<p style="color:#64748b;text-align:center;padding:20px;">Tidak ada WD pending</p>';
+    } else {
+      html = data.pending.map((item, i) => `
+        <div class="admin-card">
+          <div class="code">${item.raw || ''}</div>
+          <div class="meta">
+            <strong>${item.nickname || '?'}</strong> · ${formatNumber(item.amount || 0)} koin · ${item.wallet || '?'} · ${item.phone || '?'}
+            <span class="badge pending">PENDING</span>
+          </div>
+          <div class="admin-actions">
+            <button class="pay" data-idx="${i}" data-action="pay">✅ Dibayar</button>
+            <button class="reject" data-idx="${i}" data-action="reject">❌ Tolak</button>
+          </div>
+        </div>
+      `).join('');
+    }
+  } else if (currentAdminTab === 'done') {
+    if (!data.done || data.done.length === 0) {
+      html = '<p style="color:#64748b;text-align:center;padding:20px;">Belum ada WD selesai</p>';
+    } else {
+      html = data.done.map((item) => `
+        <div class="admin-card">
+          <div class="code">${item.raw || ''}</div>
+          <div class="meta">
+            <strong>${item.nickname || '?'}</strong> · ${formatNumber(item.amount || 0)} koin · ${item.wallet || '?'}
+            <span class="badge ${item.status === 'PAID' ? 'paid' : 'rejected'}">${item.status}</span>
+            <span style="font-size:11px;color:#64748b;"> · ${timeAgo(item.parsedAt)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  } else if (currentAdminTab === 'stats') {
+    const totalPending = (data.pending || []).reduce((s, i) => s + (i.amount || 0), 0);
+    const totalPaid = (data.done || []).filter(i => i.status === 'PAID').reduce((s, i) => s + (i.amount || 0), 0);
+    const totalRejected = (data.done || []).filter(i => i.status === 'REJECTED').reduce((s, i) => s + (i.amount || 0), 0);
+    html = `
+      <div class="admin-card">
+        <div class="meta">⏳ Pending: <strong>${data.pending ? data.pending.length : 0}</strong> WD · ${formatNumber(totalPending)} koin</div>
+        <div class="meta">✅ Dibayar: <strong>${data.done ? data.done.filter(i=>i.status==='PAID').length : 0}</strong> WD · ${formatNumber(totalPaid)} koin</div>
+        <div class="meta">❌ Ditolak: <strong>${data.done ? data.done.filter(i=>i.status==='REJECTED').length : 0}</strong> WD · ${formatNumber(totalRejected)} koin</div>
+        <div class="meta">💰 Total koin beredar: <strong>${formatNumber(totalPaid + totalPending)}</strong></div>
+      </div>
+    `;
+  }
+  dom.adminContent.innerHTML = html;
+
+  // Bind events
+  if (currentAdminTab === 'input') {
+    const btn = document.getElementById('btnParseWd');
+    if (btn) {
+      btn.onclick = () => {
+        const ta = document.getElementById('adminWdInput');
+        if (!ta || !ta.value.trim()) { showToast('Masukkan kode WD', 'warn'); return; }
+        const parsed = parseWdCode(ta.value);
+        const res = document.getElementById('parseResult');
+        if (!parsed.ok) {
+          if (res) res.innerHTML = '<p style="color:#ef4444;">❌ ' + parsed.msg + '</p>';
+          return;
+        }
+        adminData.pending = adminData.pending || [];
+        adminData.pending.push(parsed.data);
+        saveAdminData(adminData);
+        if (res) res.innerHTML = '<p style="color:#22c55e;">✅ Kode tersimpan! Cek tab Pending.</p>';
+        ta.value = '';
+        showToast('✅ WD ditambahkan', 'success');
+        renderAdminContent();
+      };
+    }
+  }
+  if (currentAdminTab === 'pending') {
+    dom.adminContent.querySelectorAll('[data-action]').forEach(btn => {
+      btn.onclick = () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        const action = btn.dataset.action;
+        if (!adminData.pending || !adminData.pending[idx]) return;
+        const item = adminData.pending.splice(idx, 1)[0];
+        if (action === 'pay') {
+          item.status = 'PAID';
+          showToast('✅ WD ditandai dibayar', 'success');
+        } else {
+          item.status = 'REJECTED';
+          showToast('❌ WD ditolak', 'warn');
+        }
+        adminData.done = adminData.done || [];
+        adminData.done.push(item);
+        saveAdminData(adminData);
+        renderAdminContent();
+      };
+    });
+  }
+}
+
+function showAdminLogin() {
+  if (!dom.adminLogin || !dom.adminDashboard) return;
+  dom.adminLogin.style.display = 'flex';
+  dom.adminDashboard.style.display = 'none';
+}
+
+function showAdminDashboard() {
+  if (!dom.adminLogin || !dom.adminDashboard) return;
+  dom.adminLogin.style.display = 'none';
+  dom.adminDashboard.style.display = 'flex';
+  adminData = loadAdminData();
+  renderAdminContent();
+}
+
+function initAdminTabs() {
+  document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentAdminTab = tab.dataset.tab;
+      renderAdminContent();
+    };
+  });
+}
+
+function exportAdminJson() {
+  const data = adminData;
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cuanblok-admin-' + todayStr().replace(/-/g, '') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥 Export berhasil', 'success');
+}
+
+function importAdminJson(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.pending && data.done) {
+        adminData = data;
+        saveAdminData(adminData);
+        renderAdminContent();
+        showToast('📤 Import berhasil', 'success');
+      } else {
+        showToast('❌ Format JSON tidak valid', 'error');
+      }
+    } catch (err) {
+      showToast('❌ Gagal baca file', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ============================================================
+   12. PERSISTENCE PLAYER
+   ============================================================ */
+function initMissions() {
+  const today = todayStr();
+  if (state.player && state.player.missions && state.player.missions.date === today) {
+    state.missions = state.player.missions;
+    state.missionProgress = state.player.missionProgress || {};
+  } else {
+    state.missions = {
+      date: today,
+      playGame: false,
+      clear10: 0,
+      spin: false,
+      checkin: false,
+      collect1000: false,
+      claimed: {},
+    };
+    state.missionProgress = {
+      playGame: 0,
+      clear10: 0,
+      spin: 0,
+      checkin: 0,
+      collect1000: 0,
+    };
+    if (state.player) {
+      state.player.missions = state.missions;
+      state.player.missionProgress = state.missionProgress;
+    }
+  }
+}
+
+function updateVipLevel() {
+  let lvl = 0;
+  for (const t of VIP_TIERS) {
+    if (state.totalCoinsEarned >= t.min) lvl = t.level;
+  }
+  state.vipLevel = lvl;
+  if (dom.btnVip) {
+    dom.btnVip.textContent = '👑 VIP ' + lvl;
+  }
+}
+
+function addCoins(amount, reason) {
+  if (amount <= 0) return;
+  const bonus = 1 + (VIP_TIERS[state.vipLevel]?.bonus || 0);
+  const final = Math.floor(amount * bonus);
+  state.coins += final;
+  state.totalCoinsEarned += final;
+  if (state.player) {
+    state.player.coins = state.coins;
+    state.player.totalCoinsEarned = state.totalCoinsEarned;
+  }
+  updateVipLevel();
+  updateUI();
+  savePlayer();
+  if (reason) console.log('[Coin] +' + final + ' (' + reason + ')');
+}
+
+function spendCoins(amount) {
+  if (state.coins < amount) return false;
+  state.coins -= amount;
+  if (state.player) state.player.coins = state.coins;
+  updateUI();
+  savePlayer();
+  return true;
+}
+
+/* ============================================================
+   13. UI RENDER PLAYER
+   ============================================================ */
+function updateUI() {
+  if (dom.coinAmount) dom.coinAmount.textContent = formatNumber(state.coins);
+  if (dom.heartsDisplay) {
+    let h = '';
+    for (let i = 0; i < MAX_HEARTS; i++) {
+      h += i < state.hearts ? '❤️' : '<span class="empty">🖤</span>';
+    }
+    dom.heartsDisplay.innerHTML = h;
+  }
+  if (dom.ticketCount) dom.ticketCount.textContent = state.tickets;
+  if (dom.hammerCount) dom.hammerCount.textContent = state.hammerCount;
+  if (dom.shuffleCount) dom.shuffleCount.textContent = state.shuffleCount;
+  if (dom.btnBgm) dom.btnBgm.classList.toggle('active', state.bgmOn);
+  if (dom.btnSfx) dom.btnSfx.classList.toggle('active', state.sfxOn);
+}
+
 function renderBoard() {
   if (!dom.board) return;
   dom.board.innerHTML = '';
-  for (var r = 0; r < BOARD_SIZE; r++) {
-    for (var c = 0; c < BOARD_SIZE; c++) {
-      var cell = document.createElement('div');
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const cell = document.createElement('div');
       cell.className = 'cell';
-      cell.dataset.r = r; cell.dataset.c = c;
-      var data = state.board[r][c];
-      if (data) {
-        cell.style.background = data.color;
-        if (data.chest) cell.innerHTML = '<span class="chest-icon">🎁</span>';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      const val = state.board[r] ? state.board[r][c] : 0;
+      cell.style.background = COLORS[val % COLORS.length];
+      if (state.mysteryChestClaimed === false && state.lastMysteryChest === 0) {
+        // Place mystery chest on random cell
       }
-      cell.addEventListener('click', (function(row, col) {
-        return function() { onCellClick(row, col); };
-      })(r, c));
       dom.board.appendChild(cell);
     }
   }
-}
-function onCellClick(r, c) {
-  if (state.boardLocked || state.gameOver) return;
-  if (state.hammerMode) {
-    state.hammerMode = false;
-    if (state.player.hammer > 0) {
-      state.player.hammer--;
-      state.board[r][c] = null;
-      sfxPop(); vibrate(30);
-      renderBoard(); renderGameUI(); savePlayer();
-      showToast('🔨 Blok dihancurkan!');
-    }
-    return;
-  }
-  var data = state.board[r][c];
-  if (!data) return;
-  if (data.chest) { openMysteryChest(r, c); return; }
-  sfxClick();
-  var group = findGroup(r, c, data.color);
-  if (group.length >= 3) {
-    state.boardLocked = true;
-    clearGroup(group);
-  }
-}
-function findGroup(r, c, color) {
-  var visited = {};
-  var group = [];
-  var stack = [[r, c]];
-  while (stack.length > 0) {
-    var pos = stack.pop();
-    var key = pos[0] + ',' + pos[1];
-    if (visited[key]) continue;
-    visited[key] = true;
-    if (pos[0] < 0 || pos[0] >= BOARD_SIZE || pos[1] < 0 || pos[1] >= BOARD_SIZE) continue;
-    var cell = state.board[pos[0]][pos[1]];
-    if (!cell || cell.color !== color) continue;
-    group.push(pos);
-    stack.push([pos[0]-1, pos[1]]); stack.push([pos[0]+1, pos[1]]);
-    stack.push([pos[0], pos[1]-1]); stack.push([pos[0], pos[1]+1]);
-  }
-  return group;
-}
-function clearGroup(group) {
-  var count = group.length;
-  var baseReward = count * 10;
-  var vip = getVipLevel();
-  var bonus = Math.floor(baseReward * vip.bonus);
-  var totalReward = baseReward + bonus;
-  state.player.coins += totalReward;
-  state.player.totalCoins = (state.player.totalCoins || 0) + totalReward;
-  if (state.player.missions && !state.player.missions.collectCoins.claimed) {
-    state.player.missions.collectCoins.progress = Math.min(state.player.missions.collectCoins.target, state.player.missions.collectCoins.progress + totalReward);
-  }
-  if (state.player.missions && !state.player.missions.clearMatch.claimed) {
-    state.player.missions.clearMatch.progress = Math.min(state.player.missions.clearMatch.target, state.player.missions.clearMatch.progress + 1);
-  }
-  savePlayer();
-  sfxCoin(); vibrate(30);
-  showFloatingReward(group[0][0], group[0][1], '+' + totalReward);
-  group.forEach(function(pos) {
-    var cell = dom.board.querySelector('[data-r="' + pos[0] + '"][data-c="' + pos[1] + '"]');
-    if (cell) cell.classList.add('pop');
-  });
-  setTimeout(function() {
-    group.forEach(function(pos) { state.board[pos[0]][pos[1]] = null; });
-    applyGravity();
-    renderBoard();
-    renderGameUI();
-    state.boardLocked = false;
-    checkGameOver();
-  }, 320);
-}
-function applyGravity() {
-  for (var c = 0; c < BOARD_SIZE; c++) {
-    var writeRow = BOARD_SIZE - 1;
-    for (var r = BOARD_SIZE - 1; r >= 0; r--) {
-      if (state.board[r][c]) {
-        state.board[writeRow][c] = state.board[r][c];
-        if (writeRow !== r) state.board[r][c] = null;
-        writeRow--;
-      }
-    }
-    for (var r2 = writeRow; r2 >= 0; r2--) {
-      state.board[r2][c] = { color: COLORS[Math.floor(Math.random() * COLORS.length)], chest: false };
+  // Mystery chest
+  if (!state.mysteryChestClaimed && state.lastMysteryChest === 0) {
+    const chestR = Math.floor(Math.random() * BOARD_SIZE);
+    const chestC = Math.floor(Math.random() * BOARD_SIZE);
+    const idx = chestR * BOARD_SIZE + chestC;
+    const cell = dom.board.children[idx];
+    if (cell) {
+      cell.innerHTML = '<span class="chest-icon">🎁</span>';
+      cell.dataset.chest = '1';
     }
   }
 }
-function checkGameOver() {
-  if (!state.player) return;
-  var hasMove = false;
-  for (var r = 0; r < BOARD_SIZE && !hasMove; r++) {
-    for (var c = 0; c < BOARD_SIZE && !hasMove; c++) {
-      if (!state.board[r][c]) continue;
-      var g = findGroup(r, c, state.board[r][c].color);
-      if (g.length >= 3) hasMove = true;
-    }
-  }
-  if (!hasMove) {
-    state.player.hearts--;
-    savePlayer();
-    renderGameUI();
-    if (state.player.hearts <= 0) { showGameOver(); }
-    else { showToast('❤️ Tidak ada langkah! Hati -1'); initBoard(); }
-  }
-}
-function showFloatingReward(r, c, text) {
-  var cell = dom.board.querySelector('[data-r="' + r + '"][data-c="' + c + '"]');
+
+function updateCell(r, c) {
+  if (!dom.board) return;
+  const idx = r * BOARD_SIZE + c;
+  const cell = dom.board.children[idx];
   if (!cell) return;
-  var float = document.createElement('div');
-  float.textContent = text;
-  float.style.cssText = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:#ffd700; font-weight:900; font-size:16px; pointer-events:none; z-index:50; animation:floatReward 0.8s ease-out forwards;';
-  var wrap = cell.closest('.board-wrap');
-  if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(float); setTimeout(function(){ if (float.parentNode) float.parentNode.removeChild(float); }, 800); }
+  const val = state.board[r] ? state.board[r][c] : 0;
+  cell.style.background = COLORS[val % COLORS.length];
+  cell.innerHTML = '';
+  cell.dataset.chest = '';
 }
-function showGameOver() {
-  state.gameOver = true;
-  var adUsed = state.player.reviveAdUsedToday && state.player.lastAdDate === todayStr();
-  var cooldownRemain = Math.max(0, state.player.reviveCooldownUntil - Date.now());
-  var html = '<div class="gameover-icon">💔</div><div class="modal-title">Game Over!</div><div class="modal-desc">Hati kamu habis. Pilih cara revive:</div>';
-  if (!adUsed) html += '<button class="btn-modal primary" id="revive-ad" style="width:100%; margin-bottom:10px;">🎬 Tonton Iklan → +1 Hati</button>';
-  else html += '<div class="cooldown-text">🎬 Iklan revive sudah dipakai hari ini</div>';
-  if (cooldownRemain <= 0) html += '<button class="btn-modal secondary" id="revive-cooldown" style="width:100%; margin-bottom:10px;">⏳ Tunggu 60 detik → +1 Hati</button>';
-  else html += '<div class="cooldown-text">⏳ Cooldown revive: ' + Math.ceil(cooldownRemain/1000) + ' detik</div>';
-  html += '<button class="btn-modal secondary" id="gameover-close" style="width:100%;">Tutup</button>';
-  showModal(html, 'gameover');
-  var adBtn = document.getElementById('revive-ad');
-  if (adBtn) adBtn.addEventListener('click', function() {
-    showAdSim(function() {
-      state.player.hearts = 1;
-      state.player.reviveAdUsedToday = true;
-      state.player.lastAdDate = todayStr();
-      savePlayer(); state.gameOver = false; closeModal(); renderGameUI();
-      showToast('❤️ +1 Hati dari iklan!');
-      initBoard();
-    });
-  });
-  var cdBtn = document.getElementById('revive-cooldown');
-  if (cdBtn) cdBtn.addEventListener('click', function() {
-    state.player.reviveCooldownUntil = Date.now() + 60000;
-    savePlayer(); closeModal();
-    showToast('⏳ Tunggu 60 detik untuk revive...');
-    setTimeout(function() {
-      if (state.gameOver) {
-        state.player.hearts = 1; savePlayer(); state.gameOver = false;
-        renderGameUI(); showToast('❤️ +1 Hati dari cooldown!'); initBoard();
-      }
-    }, 60000);
-  });
-  var closeBtn = document.getElementById('gameover-close');
-  if (closeBtn) closeBtn.addEventListener('click', function() { closeModal(); });
+
+function updateBoardFromState() {
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      updateCell(r, c);
+    }
+  }
 }
 
 /* ============================================================
-   16. FITUR PLAYER
+   14. GAMEPLAY (SWIPE MATCH-3)
    ============================================================ */
-function showModal(html, type) {
-  if (!dom.modalOverlay || !dom.modalContent) return;
-  dom.modalContent.innerHTML = html;
-  dom.modalOverlay.classList.add('active');
-  dom.modalOverlay.dataset.type = type || '';
-}
-function closeModal() {
-  if (dom.modalOverlay) dom.modalOverlay.classList.remove('active');
-}
-function showAdSim(callback) {
-  if (!state.player || state.player.tickets <= 0) { showToast('❌ Tiket iklan habis!'); return; }
-  state.player.tickets--;
-  savePlayer(); renderGameUI();
-  var count = 5;
-  showModal('<div class="modal-title">🎬 Simulasi Iklan</div><div class="ad-countdown" id="ad-count">5</div><div class="ad-progress"><div class="ad-progress-inner" id="ad-bar"></div></div><div class="modal-desc mt-10">Tunggu sampai selesai...</div>', 'ad');
-  var bar = document.getElementById('ad-bar');
-  var cnt = document.getElementById('ad-count');
-  var interval = setInterval(function() {
-    count--;
-    if (cnt) cnt.textContent = count;
-    if (bar) bar.style.width = ((5 - count) / 5 * 100) + '%';
-    if (count <= 0) { clearInterval(interval); closeModal(); if (callback) callback(); }
-  }, 1000);
-}
-function openSpin() {
-  var today = todayStr();
-  if (state.player.lastSpinDate === today) { showToast('🎡 Spin sudah dilakukan hari ini!'); return; }
-  showModal('<div class="modal-title">🎡 Spin Harian</div><div class="modal-desc">Dapatkan 50-500 koin gratis!</div><div class="wheel" id="spin-wheel"></div><button class="btn-modal primary" style="width:100%;" id="spin-btn">Putar!</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>', 'spin');
-  var spinBtn = document.getElementById('spin-btn');
-  if (spinBtn) spinBtn.addEventListener('click', function() {
-    var wheel = document.getElementById('spin-wheel');
-    if (!wheel) return;
-    var reward = Math.floor(Math.random() * 451) + 50;
-    var rotation = 1440 + Math.random() * 360;
-    wheel.style.transform = 'rotate(' + rotation + 'deg)';
-    spinBtn.disabled = true;
-    state.player.lastSpinDate = today;
-    if (state.player.missions && !state.player.missions.spin.claimed) {
-      state.player.missions.spin.progress = Math.min(state.player.missions.spin.target, state.player.missions.spin.progress + 1);
+function generateBoard() {
+  state.board = [];
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    state.board[r] = [];
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      let color;
+      let tries = 0;
+      do {
+        color = Math.floor(Math.random() * COLORS.length);
+        tries++;
+      } while (tries < 20 && (
+        (c >= 2 && state.board[r][c-1] === color && state.board[r][c-2] === color) ||
+        (r >= 2 && state.board[r-1] && state.board[r-1][c] === color && state.board[r-2] && state.board[r-2][c] === color)
+      ));
+      state.board[r][c] = color;
     }
-    setTimeout(function() {
-      state.player.coins += reward;
-      state.player.totalCoins = (state.player.totalCoins || 0) + reward;
-      if (state.player.missions && !state.player.missions.collectCoins.claimed) {
-        state.player.missions.collectCoins.progress = Math.min(state.player.missions.collectCoins.target, state.player.missions.collectCoins.progress + reward);
+  }
+  // Ensure no matches at start
+  let hasMatch = true;
+  let iterations = 0;
+  while (hasMatch && iterations < 50) {
+    hasMatch = false;
+    iterations++;
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (c >= 2 && state.board[r][c] === state.board[r][c-1] && state.board[r][c] === state.board[r][c-2]) {
+          state.board[r][c] = Math.floor(Math.random() * COLORS.length);
+          hasMatch = true;
+        }
+        if (r >= 2 && state.board[r][c] === state.board[r-1][c] && state.board[r][c] === state.board[r-2][c]) {
+          state.board[r][c] = Math.floor(Math.random() * COLORS.length);
+          hasMatch = true;
+        }
       }
-      savePlayer(); renderGameUI(); sfxWin();
-      closeModal();
-      showToast('🎉 Kamu dapat ' + reward + ' koin!');
-    }, 4200);
-  });
-}
-function openCheckin() {
-  var today = todayStr();
-  var streak = state.player.checkinStreak || 0;
-  var canCheckin = state.player.lastCheckinDate !== today;
-  var rewards = [50, 75, 100, 150, 200, 300, 500];
-  var html = '<div class="modal-title">📅 Check-in Harian</div><div class="modal-desc">Streak: ' + streak + ' hari</div><div class="checkin-grid">';
-  for (var i = 0; i < 7; i++) {
-    var claimed = i < streak % 7 || (streak >= 7 && streak % 7 === 0 && i === 0);
-    var isToday = canCheckin && i === (streak % 7);
-    html += '<div class="checkin-day ' + (claimed ? 'claimed' : '') + ' ' + (isToday ? 'today' : '') + '"><span class="day-num">Hari ' + (i+1) + '</span><span class="day-reward">+' + rewards[i] + '</span></div>';
-  }
-  html += '</div>';
-  if (canCheckin) html += '<button class="btn-modal primary" style="width:100%;" id="checkin-btn">Klaim Hari ' + ((streak % 7) + 1) + '</button>';
-  else html += '<div class="text-center" style="color:#34d399; font-weight:700; margin:10px 0;">✅ Sudah check-in hari ini</div>';
-  html += '<button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>';
-  showModal(html, 'checkin');
-  var cBtn = document.getElementById('checkin-btn');
-  if (cBtn) cBtn.addEventListener('click', function() {
-    var reward = rewards[streak % 7];
-    state.player.coins += reward;
-    state.player.totalCoins = (state.player.totalCoins || 0) + reward;
-    state.player.checkinStreak = streak + 1;
-    state.player.lastCheckinDate = today;
-    if (state.player.missions && !state.player.missions.checkin.claimed) {
-      state.player.missions.checkin.progress = Math.min(state.player.missions.checkin.target, state.player.missions.checkin.progress + 1);
     }
-    savePlayer(); renderGameUI(); sfxWin();
-    closeModal();
-    showToast('📅 Check-in hari ' + ((streak % 7) + 1) + '! +' + reward + ' koin');
-  });
-}
-function openMissions() {
-  var m = state.player.missions;
-  var html = '<div class="modal-title">📋 Misi Harian</div><div class="modal-desc">Selesaikan misi untuk bonus koin!</div>';
-  var keys = ['playGame', 'clearMatch', 'spin', 'checkin', 'collectCoins'];
-  var names = { playGame: 'Main 1 game', clearMatch: 'Clear 10 match', spin: 'Spin 1x', checkin: 'Check-in', collectCoins: 'Kumpulin 1.000 koin' };
-  keys.forEach(function(k) {
-    var mis = m[k];
-    var pct = Math.min(100, Math.floor(mis.progress / mis.target * 100));
-    html += '<div class="mission-item"><div class="m-top"><span class="m-name">' + names[k] + '</span><span class="m-reward">+' + mis.reward + ' 💵</span></div><div class="progress-bar-outer"><div class="progress-bar-inner" style="width:' + pct + '%"></div></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;"><span style="font-size:11px; color:#aaa;">' + mis.progress + '/' + mis.target + '</span>';
-    if (mis.progress >= mis.target && !mis.claimed) html += '<button class="m-btn claim" data-mission="' + k + '">Klaim</button>';
-    else if (mis.claimed) html += '<button class="m-btn claimed">✅ Diklaim</button>';
-    html += '</div></div>';
-  });
-  html += '<button class="btn-modal secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Tutup</button>';
-  showModal(html, 'missions');
-  document.querySelectorAll('.m-btn.claim').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var k = this.getAttribute('data-mission');
-      if (!m[k] || m[k].claimed) return;
-      m[k].claimed = true;
-      state.player.coins += m[k].reward;
-      state.player.totalCoins = (state.player.totalCoins || 0) + m[k].reward;
-      savePlayer(); renderGameUI(); sfxCoin();
-      showToast('🎉 Misi selesai! +' + m[k].reward + ' koin');
-      closeModal(); openMissions();
-    });
-  });
-}
-function openRanking() {
-  var bots = BOT_NAMES.map(function(n) { return { name: n, score: Math.floor(Math.random() * 50000) + 5000 }; });
-  bots.push({ name: state.player.name, score: state.player.totalCoins || 0 });
-  bots.sort(function(a, b) { return b.score - a.score; });
-  var html = '<div class="modal-title">🏆 Leaderboard</div><div class="modal-desc">Top pemain hari ini</div>';
-  bots.slice(0, 10).forEach(function(p, i) {
-    var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-    var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
-    html += '<div class="lb-item"><span class="lb-rank ' + rankClass + '">' + medal + '</span><span class="lb-name">' + p.name + '</span><span class="lb-score">' + formatNumber(p.score) + '</span></div>';
-  });
-  html += '<button class="btn-modal secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Tutup</button>';
-  showModal(html, 'ranking');
-}
-function openWd() {
-  if (!state.player) return;
-  if (state.player.shadowbanned) { showToast('🚫 Akun kamu dibatasi WD selama 7 hari'); return; }
-  if (Date.now() < state.player.wdCooldownUntil) {
-    var remain = Math.ceil((state.player.wdCooldownUntil - Date.now()) / 60000);
-    showToast('⏳ WD berikutnya dalam ' + remain + ' menit (antrean)');
-    return;
   }
-  var coins = state.player.coins;
-  var canWd = coins >= MIN_WD;
-  var html = '<div class="modal-title">💰 Withdraw</div><div class="modal-desc">Minimal WD ' + formatNumber(MIN_WD) + ' koin\nSaldo: ' + formatNumber(coins) + ' koin\nKode referral: ' + state.player.referral + '</div>';
-  html += '<div class="wallet-select" id="wallet-select">';
-  html += '<div class="wallet-opt selected" data-wallet="DANA"><svg viewBox="0 0 70 30"><rect width="70" height="30" rx="6" fill="#118EEA"/><text x="35" y="20" text-anchor="middle" fill="#fff" font-size="14" font-weight="900" font-family="Segoe UI, sans-serif">DANA</text></svg><span style="font-size:10px; color:#ccc;">DANA</span></div>';
-  html += '<div class="wallet-opt" data-wallet="OVO"><svg viewBox="0 0 70 30"><rect width="70" height="30" rx="6" fill="#4C3494"/><text x="35" y="20" text-anchor="middle" fill="#fff" font-size="14" font-weight="900" font-family="Segoe UI, sans-serif">OVO</text></svg><span style="font-size:10px; color:#ccc;">OVO</span></div>';
-  html += '<div class="wallet-opt" data-wallet="GoPay"><svg viewBox="0 0 70 30"><rect width="70" height="30" rx="6" fill="#00AA13"/><text x="35" y="20" text-anchor="middle" fill="#fff" font-size="12" font-weight="900" font-family="Segoe UI, sans-serif">GoPay</text></svg><span style="font-size:10px; color:#ccc;">GoPay</span></div>';
-  html += '</div>';
-  html += '<input class="modal-input" type="tel" id="wd-phone" placeholder="Nomor HP (10-14 digit)" maxlength="14">';
-  html += '<div id="turnstile-wd-container"></div>';
-  html += '<div class="progress-bar-outer"><div class="progress-bar-inner" id="wd-progress" style="width:0%"></div></div>';
-  html += '<div class="btn-row"><button class="btn-modal primary" id="wd-submit" disabled>Ajukan WD</button><button class="btn-modal secondary" onclick="closeModal()">Batal</button></div>';
-  showModal(html, 'wd');
-  var selectedWallet = 'DANA';
-  document.querySelectorAll('.wallet-opt').forEach(function(el) {
-    el.addEventListener('click', function() {
-      document.querySelectorAll('.wallet-opt').forEach(function(e) { e.classList.remove('selected'); });
-      this.classList.add('selected');
-      selectedWallet = this.getAttribute('data-wallet');
-      state.selectedWallet = selectedWallet;
-      sfxClick();
-    });
-  });
-  resetTurnstile('turnstile-wd-container');
-  renderTurnstileWidget('turnstile-wd-container', function(token) {
-    state.turnstileWdToken = token;
-    updateWdButton();
-  });
-  var phoneInput = document.getElementById('wd-phone');
-  function updateWdButton() {
-    var phone = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
-    var validPhone = phone.length >= 10 && phone.length <= 14;
-    var progress = Math.min(100, Math.floor((coins / MIN_WD) * 100));
-    var bar = document.getElementById('wd-progress');
-    if (bar) bar.style.width = progress + '%';
-    var submitBtn = document.getElementById('wd-submit');
-    if (submitBtn) submitBtn.disabled = !(canWd && validPhone && (state.turnstileWdToken || state.turnstileWdBypassed));
-  }
-  if (phoneInput) phoneInput.addEventListener('input', updateWdButton);
-  updateWdButton();
-  var submitBtn = document.getElementById('wd-submit');
-  if (submitBtn) submitBtn.addEventListener('click', function() {
-    var phone = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
-    if (phone.length < 10 || phone.length > 14) { showToast('❌ Nomor HP tidak valid'); return; }
-    if (state.player.coins < MIN_WD) { showToast('❌ Saldo tidak cukup'); return; }
-    var amount = state.player.coins;
-    state.player.coins = 0;
-    state.player.wdCooldownUntil = Date.now() + 2 * 60 * 60 * 1000;
-    var ts = Date.now().toString(36);
-    var code = 'CB|' + state.player.name + '|' + state.deviceId.substring(0, 6) + '|' + amount + '|' + selectedWallet + '|' + phone + '|' + state.player.referral + '|' + ts;
-    try {
-      var pending = JSON.parse(localStorage.getItem(WD_PENDING_KEY) || '[]');
-      pending.push({ code: code, amount: amount, time: Date.now() });
-      localStorage.setItem(WD_PENDING_KEY, JSON.stringify(pending));
-    } catch(e) {}
-    savePlayer(); renderGameUI(); closeModal();
-    console.log('[WD] Kode dibuat:', code);
-    showModal('<div class="modal-title">✅ WD Diterima</div><div class="modal-desc">Salin kode di bawah dan kirim ke admin via IG/TikTok/WA. Admin proses 1x24 jam.</div><div class="wd-code-box" id="wd-code-box">' + code + '</div><button class="btn-modal primary" style="width:100%;" id="wd-copy-btn">📋 Copy Kode</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>', 'wd-done');
-    var copyBtn = document.getElementById('wd-copy-btn');
-    if (copyBtn) copyBtn.addEventListener('click', function() { copyToClipboard(code); });
-  });
-}
-function openMysteryChest(r, c) {
-  if (state.player.lastMysteryChestDate === todayStr()) { showToast('🎁 Chest sudah dibuka hari ini'); state.board[r][c].chest = false; renderBoard(); return; }
-  state.player.lastMysteryChestDate = todayStr();
-  var rewards = ['coin', 'ticket', 'hammer', 'shuffle'];
-  var pick = rewards[Math.floor(Math.random() * rewards.length)];
-  var msg = '';
-  if (pick === 'coin') { var amt = Math.floor(Math.random() * 500) + 100; state.player.coins += amt; msg = '💰 +' + amt + ' koin!'; }
-  else if (pick === 'ticket') { state.player.tickets = Math.min(state.player.maxTickets, state.player.tickets + 1); msg = '🎬 +1 tiket iklan!'; }
-  else if (pick === 'hammer') { state.player.hammer++; msg = '🔨 +1 Hammer!'; }
-  else { state.player.shuffle++; msg = '🔀 +1 Shuffle!'; }
-  state.board[r][c].chest = false;
-  savePlayer(); renderGameUI(); sfxWin();
-  showModal('<div class="modal-title">🎁 Mystery Chest</div><div class="modal-desc">Kamu mendapat:</div><div style="font-size:28px; text-align:center; margin:20px 0; color:#ffd700; font-weight:900;">' + msg + '</div><button class="btn-modal primary" style="width:100%;" onclick="closeModal()">OK</button>', 'chest');
   renderBoard();
 }
-function checkFlashSale() {
-  var now = Date.now();
-  if (state.flashSaleActive && now > state.flashSaleEnd) { state.flashSaleActive = false; }
-  if (!state.flashSaleActive && now - state.flashSaleLastAppear > 30 * 60 * 1000 && Math.random() < 0.3) {
-    state.flashSaleActive = true;
-    state.flashSaleEnd = now + 5 * 60 * 1000;
-    state.flashSaleLastAppear = now;
-    showFlashSale();
-  }
-}
-function showFlashSale() {
-  var html = '<div class="modal-title">⚡ FLASH SALE!</div><div class="flash-sale-box"><div class="flash-timer" id="flash-timer">05:00</div><div class="flash-price">Beli 5.000 koin cuma <strong>2.500 koin</strong>! <s>5.000</s></div></div><button class="btn-modal primary" style="width:100%;" id="flash-buy">Beli Sekarang</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>';
-  showModal(html, 'flash');
-  var timer = setInterval(function() {
-    var remain = Math.max(0, state.flashSaleEnd - Date.now());
-    var el = document.getElementById('flash-timer');
-    if (el) el.textContent = Math.floor(remain / 60000) + ':' + String(Math.floor((remain % 60000) / 1000)).padStart(2, '0');
-    if (remain <= 0) { clearInterval(timer); closeModal(); state.flashSaleActive = false; }
-  }, 1000);
-  var buyBtn = document.getElementById('flash-buy');
-  if (buyBtn) buyBtn.addEventListener('click', function() {
-    if (state.player.coins < 2500) { showToast('❌ Koin tidak cukup'); return; }
-    state.player.coins -= 2500;
-    state.player.coins += 5000;
-    state.player.totalCoins = (state.player.totalCoins || 0) + 5000;
-    savePlayer(); renderGameUI(); closeModal();
-    showToast('⚡ Flash sale berhasil! +5.000 koin');
-  });
-}
-function showTicker() {
-  var now = Date.now();
-  if (now - state.lastTickerTime < 30000) return;
-  state.lastTickerTime = now;
-  var name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-  var amt = [50000, 100000, 250000, 500000][Math.floor(Math.random() * 4)];
-  var masked = name.substring(0, 4) + '***';
-  if (dom.tickerText) dom.tickerText.textContent = masked + ' baru saja WD ' + formatNumber(amt) + ' koin!';
-  if (dom.ticker) {
-    dom.ticker.classList.add('show');
-    setTimeout(function() { dom.ticker.classList.remove('show'); }, 3000);
-  }
-}
 
-/* ============================================================
-   17. NAVIGATION
-   ============================================================ */
-function showScreen(name) {
-  state.screen = name;
-  if (dom.screenLogin) dom.screenLogin.classList.toggle('active', name === 'login');
-  if (dom.screenGame) dom.screenGame.classList.toggle('active', name === 'game');
-  if (dom.screenAdmin) dom.screenAdmin.classList.toggle('active', name === 'admin');
-}
-
-/* ============================================================
-   18. EVENT LISTENERS
-   ============================================================ */
-function setupEventListeners() {
-  // START BUTTON
-  if (dom.btnStart) {
-    dom.btnStart.addEventListener('click', function() {
-      initAudio(); sfxClick();
-      var html = '<div class="modal-title">🎮 Pilih Nama Player</div><div class="modal-desc">Masukkan nama kamu (3-16 karakter, huruf/angka/underscore):</div><input class="modal-input" id="name_input" maxlength="16" placeholder="Contoh: SultanCuan" autocomplete="off"><input class="hp-field" id="hp_field" tabindex="-1" autocomplete="off"><div class="error-msg" id="name_error"></div><div id="turnstile-container"></div><div class="btn-row"><button class="btn-modal primary" id="name-submit" disabled>Mulai Main</button><button class="btn-modal secondary" onclick="closeModal()">Batal</button></div>';
-      showModal(html, 'name');
-      var nameInput = document.getElementById('name_input');
-      var nameError = document.getElementById('name_error');
-      var submitBtn = document.getElementById('name-submit');
-      var hpField = document.getElementById('hp_field');
-      var formOpenTime = Date.now();
-      resetTurnstile('turnstile-container');
-      renderTurnstileWidget('turnstile-container', function(token) {
-        state.turnstileToken = token;
-        updateSubmit();
-      });
-      function updateSubmit() {
-        var name = nameInput ? nameInput.value.trim() : '';
-        var v = validateNickname(name);
-        if (nameError) { nameError.textContent = v.msg; nameError.className = 'error-msg ' + (v.ok && name ? 'ok' : v.ok ? '' : 'err'); }
-        if (nameInput) nameInput.className = 'modal-input ' + (name ? (v.ok ? 'ok' : 'error') : '');
-        var canSubmit = v.ok && (state.turnstileToken || state.turnstileBypassed) && name.length > 0;
-        if (submitBtn) submitBtn.disabled = !canSubmit;
+function findMatches() {
+  const matched = new Set();
+  // Horizontal
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    let c = 0;
+    while (c < BOARD_SIZE) {
+      const color = state.board[r][c];
+      let len = 1;
+      while (c + len < BOARD_SIZE && state.board[r][c + len] === color) len++;
+      if (len >= 3) {
+        for (let i = 0; i < len; i++) matched.add(r + ',' + (c + i));
       }
-      if (nameInput) nameInput.addEventListener('input', updateSubmit);
-      updateSubmit();
-      if (submitBtn) submitBtn.addEventListener('click', function() {
-        // Honeypot check
-        if (hpField && hpField.value.trim() !== '') {
-          state.honeypotTrips++;
-          showToast('🚫 Bot terdeteksi!');
-          if (state.honeypotTrips >= 3) { state.shadowbanned = true; showToast('🚫 Akun dibatasi 7 hari'); }
-          closeModal(); return;
-        }
-        // Time check
-        if (Date.now() - formOpenTime < 800) { showToast('⏳ Terlalu cepat, tunggu sebentar'); return; }
-        var name = nameInput ? nameInput.value.trim() : '';
-        var v = validateNickname(name);
-        if (!v.ok) { showToast('❌ ' + v.msg); return; }
-        if (!canCreateAccount()) { showToast('❌ Maks 3 akun per device per 24 jam'); return; }
-        initAudio(); sfxWin();
-        state.deviceId = getDeviceId();
-        console.log('[Device] ID:', state.deviceId);
-        saveDeviceAccount(name);
-        createPlayer(name);
+      c += len;
+    }
+  }
+  // Vertical
+  for (let c = 0; c < BOARD_SIZE; c++) {
+    let r = 0;
+    while (r < BOARD_SIZE) {
+      const color = state.board[r][c];
+      let len = 1;
+      while (r + len < BOARD_SIZE && state.board[r + len][c] === color) len++;
+      if (len >= 3) {
+        for (let i = 0; i < len; i++) matched.add((r + i) + ',' + c);
+      }
+      r += len;
+    }
+  }
+  return matched;
+}
+
+function hasMatch() {
+  return findMatches().size > 0;
+}
+
+function clearMatches() {
+  const matched = findMatches();
+  if (matched.size === 0) return 0;
+  const count = matched.size;
+  matched.forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    if (state.board[r]) state.board[r][c] = -1;
+  });
+  // Pop animation
+  matched.forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    const idx = r * BOARD_SIZE + c;
+    const cell = dom.board ? dom.board.children[idx] : null;
+    if (cell) cell.classList.add('pop');
+  });
+  return count;
+}
+
+function applyGravity() {
+  for (let c = 0; c < BOARD_SIZE; c++) {
+    let write = BOARD_SIZE - 1;
+    for (let r = BOARD_SIZE - 1; r >= 0; r--) {
+      if (state.board[r][c] !== -1) {
+        state.board[write][c] = state.board[r][c];
+        write--;
+      }
+    }
+    while (write >= 0) {
+      state.board[write][c] = Math.floor(Math.random() * COLORS.length);
+      write--;
+    }
+  }
+}
+
+function refillBoard() {
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (state.board[r][c] === -1) {
+        state.board[r][c] = Math.floor(Math.random() * COLORS.length);
+      }
+    }
+  }
+}
+
+function processMatches() {
+  let totalCleared = 0;
+  let iterations = 0;
+  while (hasMatch() && iterations < 20) {
+    iterations++;
+    const cleared = clearMatches();
+    totalCleared += cleared;
+    safeRun(() => sfxPop(), 'sfxPop');
+    vibrate(30);
+    applyGravity();
+    refillBoard();
+  }
+  if (totalCleared > 0) {
+    const coinPerBlock = 10;
+    const bonus = 1 + (VIP_TIERS[state.vipLevel]?.bonus || 0);
+    const coins = Math.floor(totalCleared * coinPerBlock * bonus);
+    addCoins(coins, 'match');
+    state.sessionMatches += totalCleared;
+    state.sessionCoins += coins;
+    state.totalMatches += totalCleared;
+    safeRun(() => sfxCoin(), 'sfxCoin');
+    console.log('[Match] ' + totalCleared + ' blok hancur, +' + coins + ' koin');
+    // Floating coin effect
+    showFloatingCoin('+' + formatNumber(coins));
+    // Update missions
+    state.missionProgress.clear10 = (state.missionProgress.clear10 || 0) + totalCleared;
+    if (state.missionProgress.clear10 >= 10 && !state.missions.claimed?.clear10) {
+      // Auto track, claim manually
+    }
+    updateBoardFromState();
+    savePlayer();
+  }
+  return totalCleared;
+}
+
+function showFloatingCoin(text) {
+  if (!dom.board) return;
+  const el = document.createElement('div');
+  el.className = 'float-coin';
+  el.textContent = text;
+  const rect = dom.board.getBoundingClientRect();
+  el.style.left = (rect.left + rect.width / 2 - 30) + 'px';
+  el.style.top = (rect.top + rect.height / 2 - 20) + 'px';
+  el.style.position = 'fixed';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function attemptSwap(r1, c1, r2, c2) {
+  if (r2 < 0 || r2 >= BOARD_SIZE || c2 < 0 || c2 >= BOARD_SIZE) {
+    console.log('[Swipe] (' + r1 + ',' + c1 + ') → (' + r2 + ',' + c2 + ') DI LUAR BOARD');
+    return false;
+  }
+  // Swap
+  const tmp = state.board[r1][c1];
+  state.board[r1][c1] = state.board[r2][c2];
+  state.board[r2][c2] = tmp;
+  console.log('[Swipe] (' + r1 + ',' + c1 + ') → (' + r2 + ',' + c2 + ')');
+  // Check match
+  if (hasMatch()) {
+    // Valid swap
+    updateBoardFromState();
+    safeRun(() => sfxClick(), 'sfxClick');
+    vibrate(30);
+    processMatches();
+    return true;
+  } else {
+    // Invalid swap — revert
+    const tmp2 = state.board[r1][c1];
+    state.board[r1][c1] = state.board[r2][c2];
+    state.board[r2][c2] = tmp2;
+    // Shake animation
+    const idx1 = r1 * BOARD_SIZE + c1;
+    const idx2 = r2 * BOARD_SIZE + c2;
+    const cell1 = dom.board ? dom.board.children[idx1] : null;
+    const cell2 = dom.board ? dom.board.children[idx2] : null;
+    if (cell1) cell1.classList.add('shake');
+    if (cell2) cell2.classList.add('shake');
+    setTimeout(() => {
+      if (cell1) cell1.classList.remove('shake');
+      if (cell2) cell2.classList.remove('shake');
+    }, 300);
+    // Lose heart
+    state.hearts = Math.max(0, state.hearts - 1);
+    if (state.hearts <= 0) {
+      showGameOver();
+    }
+    safeRun(() => sfxError(), 'sfxError');
+    vibrate(60);
+    console.log('[Swipe] (' + r1 + ',' + c1 + ') → (' + r2 + ',' + c2 + ') TIDAK MATCH, hati -1');
+    updateUI();
+    savePlayer();
+    return false;
+  }
+}
+
+/* ============================================================
+   15. FITUR PLAYER
+   ============================================================ */
+function processHeartRegen() {
+  const now = Date.now();
+  if (state.hearts >= MAX_HEARTS) {
+    state.lastHeartRegen = now;
+    return;
+  }
+  const elapsed = now - state.lastHeartRegen;
+  const regen = Math.floor(elapsed / HEART_REGEN_MS);
+  if (regen > 0) {
+    state.hearts = Math.min(MAX_HEARTS, state.hearts + regen);
+    state.lastHeartRegen = now;
+    showToast('❤️ Hati bertambah!', 'success');
+  }
+}
+
+function processTicketRegen() {
+  const now = Date.now();
+  if (state.tickets >= MAX_TICKETS) {
+    state.lastTicketRegen = now;
+    return;
+  }
+  const elapsed = now - state.lastTicketRegen;
+  const regen = Math.floor(elapsed / TICKET_REGEN_MS);
+  if (regen > 0) {
+    state.tickets = Math.min(MAX_TICKETS, state.tickets + regen);
+    state.lastTicketRegen = now;
+  }
+}
+
+function showGameOver() {
+  state.gameOverModal = true;
+  openModal(`
+    <h2>💔 GAME OVER</h2>
+    <p style="text-align:center;">Hati habis! Kamu bisa revive dengan:</p>
+    <button class="btn btn-gold" id="btnReviveAd">🎬 Tonton Iklan → +1 ❤️ (max 1x/hari)</button>
+    <button class="btn btn-outline" id="btnReviveWait">⏳ Tunggu 60 detik → +1 ❤️</button>
+    <button class="btn btn-outline" id="btnGameOverClose" style="margin-top:10px;">Tutup</button>
+  `);
+  const btnAd = document.getElementById('btnReviveAd');
+  const btnWait = document.getElementById('btnReviveWait');
+  const btnClose = document.getElementById('btnGameOverClose');
+  if (btnAd) {
+    btnAd.onclick = () => {
+      if (state.dailyAdCount >= 1) { showToast('⚠️ Max 1x/hari', 'warn'); return; }
+      state.dailyAdCount++;
+      simulateAd(() => {
+        state.hearts = Math.min(MAX_HEARTS, state.hearts + 1);
+        state.gameOverModal = false;
         closeModal();
-        showScreen('game');
-        initBoard();
-        renderGameUI();
-        showToast('🎉 Selamat datang, ' + name + '!');
-        if (state.player.missions && !state.player.missions.playGame.claimed) {
-          state.player.missions.playGame.progress = 1;
-        }
+        updateUI();
         savePlayer();
+        showToast('❤️ Hati pulih!', 'success');
       });
-    });
-  }
-
-  // BGM & SFX
-  if (dom.btnBgm) dom.btnBgm.addEventListener('click', function() {
-    initAudio(); state.bgmOn = !state.bgmOn; saveSettings();
-    this.textContent = state.bgmOn ? '🎵 ON' : '🎵 OFF';
-    showToast(state.bgmOn ? '🎵 BGM aktif' : '🎵 BGM mati');
-  });
-  if (dom.btnSfx) dom.btnSfx.addEventListener('click', function() {
-    initAudio(); state.sfxOn = !state.sfxOn; saveSettings();
-    this.textContent = state.sfxOn ? '🔊 ON' : '🔊 OFF';
-    sfxClick();
-    showToast(state.sfxOn ? '🔊 SFX aktif' : '🔊 SFX mati');
-  });
-
-  // POWERUPS
-  if (dom.btnHammer) dom.btnHammer.addEventListener('click', function() {
-    if (state.player.hammer <= 0) { showToast('❌ Hammer habis, beli dulu!'); return; }
-    state.hammerMode = !state.hammerMode;
-    showToast(state.hammerMode ? '🔨 Pilih blok yang ingin dihancurkan' : '🔨 Hammer dibatalkan');
-  });
-  if (dom.btnShuffle) dom.btnShuffle.addEventListener('click', function() {
-    if (state.player.shuffle <= 0) { showToast('❌ Shuffle habis, beli dulu!'); return; }
-    state.player.shuffle--;
-    savePlayer(); renderGameUI(); sfxPop();
-    initBoard();
-    showToast('🔀 Board diacak!');
-  });
-  if (dom.btnBuyPowerup) dom.btnBuyPowerup.addEventListener('click', function() {
-    if (state.player.coins < POWERUP_COST) { showToast('❌ Koin tidak cukup (butuh 500)'); return; }
-    state.player.coins -= POWERUP_COST;
-    state.player.hammer++;
-    state.player.shuffle++;
-    savePlayer(); renderGameUI(); sfxCoin();
-    showToast('💰 +1 Hammer & +1 Shuffle!');
-  });
-
-  // BOTTOM NAV
-  document.querySelectorAll('.nav-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var nav = this.getAttribute('data-nav');
-      document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
-      this.classList.add('active');
-      initAudio(); sfxClick();
-      if (nav === 'game') { /* already on game */ }
-      else if (nav === 'spin') openSpin();
-      else if (nav === 'checkin') openCheckin();
-      else if (nav === 'ranking') openRanking();
-      else if (nav === 'wd') openWd();
-      else if (nav === 'missions') openMissions();
-    });
-  });
-
-  // MODAL CLOSE ON OVERLAY
-  if (dom.modalOverlay) {
-    dom.modalOverlay.addEventListener('click', function(e) {
-      if (e.target === dom.modalOverlay) closeModal();
-    });
-  }
-
-  // ADMIN LOGIN
-  if (dom.adminLoginBtn) dom.adminLoginBtn.addEventListener('click', function() {
-    var pass = dom.adminPass ? dom.adminPass.value : '';
-    adminLogin(pass);
-  });
-  if (dom.adminPass) dom.adminPass.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { adminLogin(this.value); }
-  });
-  if (dom.adminLogout) dom.adminLogout.addEventListener('click', function() {
-    state.adminAuthed = false; renderAdmin(); showToast('🔐 Logout admin');
-  });
-  if (dom.adminExport) dom.adminExport.addEventListener('click', function() {
-    var data = loadAdminData();
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    var d = new Date();
-    a.download = 'cuanblok-admin-' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.json';
-    a.click(); URL.revokeObjectURL(a.href);
-    showToast('📥 Export berhasil');
-  });
-  if (dom.adminImportBtn) dom.adminImportBtn.addEventListener('click', function() { dom.adminImportFile.click(); });
-  if (dom.adminImportFile) dom.adminImportFile.addEventListener('change', function() {
-    var file = this.files[0]; if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        var data = JSON.parse(e.target.result);
-        if (data.pending && data.done) { saveAdminData(data); renderAdminBody(); showToast('📤 Import berhasil'); }
-        else showToast('❌ Format file tidak valid');
-      } catch(err) { showToast('❌ Gagal import: ' + err.message); }
     };
-    reader.readAsText(file);
-  });
-  document.querySelectorAll('.admin-tab').forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
-      this.classList.add('active');
-      state.adminTab = this.getAttribute('data-tab');
-      renderAdminBody();
-    });
-  });
+  }
+  if (btnWait) {
+    btnWait.onclick = () => {
+      showToast('⏳ Tunggu 60 detik...', 'info');
+      setTimeout(() => {
+        state.hearts = Math.min(MAX_HEARTS, state.hearts + 1);
+        state.gameOverModal = false;
+        closeModal();
+        updateUI();
+        savePlayer();
+        showToast('❤️ Hati pulih!', 'success');
+      }, 60000);
+    };
+  }
+  if (btnClose) {
+    btnClose.onclick = () => {
+      state.gameOverModal = false;
+      closeModal();
+    };
+  }
+}
 
-  // EXIT INTENT
-  document.addEventListener('mouseleave', function(e) {
-    if (e.clientY <= 0 && !state.exitIntentShown && state.screen === 'game') {
-      state.exitIntentShown = true;
-      showModal('<div class="modal-title">👋 Yakin mau keluar?</div><div class="modal-desc">Dapatkan +500 koin gratis jika tetap di sini!</div><button class="btn-modal primary" style="width:100%;" id="exit-stay">💵 Ambil 500 Koin</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Keluar</button>', 'exit');
-      var stayBtn = document.getElementById('exit-stay');
-      if (stayBtn) stayBtn.addEventListener('click', function() {
-        state.player.coins += 500;
-        state.player.totalCoins = (state.player.totalCoins || 0) + 500;
-        savePlayer(); renderGameUI(); closeModal();
-        showToast('💵 +500 koin!');
-      });
+function simulateAd(callback) {
+  let count = 5;
+  openModal(`
+    <h2>🎬 IKLAN</h2>
+    <div style="font-size:48px;text-align:center;font-weight:900;color:#ffd700;" id="adCountdown">${count}</div>
+    <div class="progress-bar"><div class="fill" id="adProgress" style="width:0%"></div></div>
+    <p style="text-align:center;font-size:12px;color:#888;">Iklan akan selesai dalam ${count} detik</p>
+  `);
+  const cd = document.getElementById('adCountdown');
+  const prog = document.getElementById('adProgress');
+  const interval = setInterval(() => {
+    count--;
+    if (cd) cd.textContent = count;
+    if (prog) prog.style.width = ((5 - count) / 5 * 100) + '%';
+    if (count <= 0) {
+      clearInterval(interval);
+      closeModal();
+      if (callback) callback();
+    }
+  }, 1000);
+}
+
+function showSpinModal() {
+  if (state.dailySpinDate === todayStr()) {
+    showToast('🎡 Spin sudah digunakan hari ini', 'warn');
+    return;
+  }
+  openModal(`
+    <h2>🎡 SPIN HARIAN</h2>
+    <div class="spin-wheel" id="spinWheel"></div>
+    <button class="btn btn-gold" id="btnDoSpin" style="margin-top:14px;">SPIN!</button>
+    <p style="text-align:center;font-size:11px;color:#888;">Hadiah: 50 - 500 koin</p>
+  `);
+  const btn = document.getElementById('btnDoSpin');
+  const wheel = document.getElementById('spinWheel');
+  if (btn) {
+    btn.onclick = () => {
+      if (state.dailySpinDate === todayStr()) return;
+      btn.disabled = true;
+      const deg = 720 + Math.floor(Math.random() * 360);
+      if (wheel) wheel.style.transform = 'rotate(' + deg + 'deg)';
+      safeRun(() => sfxWin(), 'sfxWin');
+      vibrate(50);
+      setTimeout(() => {
+        const reward = 50 + Math.floor(Math.random() * 451);
+        addCoins(reward, 'spin');
+        state.dailySpinDate = todayStr();
+        state.missionProgress.spin = 1;
+        savePlayer();
+        closeModal();
+        showToast('🎉 Dapat ' + formatNumber(reward) + ' koin!', 'success');
+      }, 3200);
+    };
+  }
+}
+
+function showCheckinModal() {
+  if (state.dailyCheckinDate === todayStr()) {
+    showToast('📅 Check-in sudah dilakukan hari ini', 'warn');
+    return;
+  }
+  const days = [50, 75, 100, 150, 200, 300, 500];
+  const streak = state.checkinStreak || 0;
+  const today = streak % 7;
+  let html = '<h2>📅 CHECK-IN 7 HARI</h2><div class="checkin-grid">';
+  for (let i = 0; i < 7; i++) {
+    const claimed = i < today;
+    const isToday = i === today;
+    html += `<div class="checkin-day ${claimed ? 'claimed' : ''} ${isToday ? 'today' : ''}">
+      <div style="font-size:16px;">${claimed ? '✅' : '🎁'}</div>
+      <div style="font-weight:700;">Hari ${i+1}</div>
+      <div style="font-size:10px;color:#ffd700;">${days[i]} koin</div>
+    </div>`;
+  }
+  html += '</div>';
+  html += `<button class="btn btn-gold" id="btnDoCheckin">CHECK-IN HARI INI (+${days[today]} koin)</button>`;
+  openModal(html);
+  const btn = document.getElementById('btnDoCheckin');
+  if (btn) {
+    btn.onclick = () => {
+      const reward = days[today];
+      addCoins(reward, 'checkin');
+      state.dailyCheckinDate = todayStr();
+      state.checkinStreak = (state.checkinStreak || 0) + 1;
+      state.missionProgress.checkin = 1;
+      savePlayer();
+      closeModal();
+      safeRun(() => sfxWin(), 'sfxWin');
+      showToast('✅ Check-in berhasil! +' + reward + ' koin', 'success');
+    };
+  }
+}
+
+function showRankingModal() {
+  const bots = [];
+  for (let i = 0; i < 8; i++) {
+    bots.push({
+      name: BOT_NAMES[i % BOT_NAMES.length] + (i + 1),
+      score: Math.floor(Math.random() * 500000) + 10000,
+    });
+  }
+  bots.sort((a, b) => b.score - a.score);
+  let html = '<h2>🏆 LEADERBOARD</h2>';
+  bots.forEach((b, i) => {
+    html += `<div class="lb-row">
+      <span class="rank">#${i+1}</span>
+      <span class="name">${b.name}</span>
+      <span class="score">${formatNumber(b.score)}</span>
+    </div>`;
+  });
+  html += `<div class="lb-row" style="border-top:2px solid #ffd700;margin-top:8px;">
+    <span class="rank">#${bots.length+1}</span>
+    <span class="name" style="color:#ffd700;">${state.player ? state.player.nickname : 'Kamu'}</span>
+    <span class="score" style="color:#ffd700;">${formatNumber(state.coins)}</span>
+  </div>`;
+  openModal(html);
+}
+
+function showMissionsModal() {
+  const missions = [
+    { key: 'playGame', label: 'Main 1 game', target: 1, reward: 100 },
+    { key: 'clear10', label: 'Clear 10 match', target: 10, reward: 200 },
+    { key: 'spin', label: 'Spin 1x', target: 1, reward: 50 },
+    { key: 'checkin', label: 'Check-in', target: 1, reward: 100 },
+    { key: 'collect1000', label: 'Kumpulin 1000 koin', target: 1000, reward: 300 },
+  ];
+  let html = '<h2>📋 MISI HARIAN</h2>';
+  missions.forEach(m => {
+    const progress = state.missionProgress[m.key] || 0;
+    const done = progress >= m.target;
+    const claimed = state.missions.claimed && state.missions.claimed[m.key];
+    const pct = Math.min(100, (progress / m.target) * 100);
+    html += `<div class="mission-item">
+      <div class="mission-title">${m.label} <span style="color:#ffd700;">+${m.reward} koin</span></div>
+      <div class="mission-progress"><div class="fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:#888;">${Math.min(progress, m.target)}/${m.target}</span>
+        <button class="mission-claim" data-key="${m.key}" ${!done || claimed ? 'disabled' : ''}>${claimed ? '✅ Diklaim' : 'Klaim'}</button>
+      </div>
+    </div>`;
+  });
+  openModal(html);
+  document.querySelectorAll('.mission-claim').forEach(btn => {
+    btn.onclick = () => {
+      const key = btn.dataset.key;
+      const m = missions.find(x => x.key === key);
+      if (!m) return;
+      if ((state.missionProgress[key] || 0) < m.target) return;
+      if (state.missions.claimed && state.missions.claimed[key]) return;
+      if (!state.missions.claimed) state.missions.claimed = {};
+      state.missions.claimed[key] = true;
+      addCoins(m.reward, 'mission');
+      savePlayer();
+      showToast('✅ Misi selesai! +' + m.reward + ' koin', 'success');
+      closeModal();
+    };
+  });
+}
+
+function showWdModal() {
+  if (state.wdDisabledUntil > Date.now()) {
+    showToast('🚫 WD dinonaktifkan sementara', 'error');
+    return;
+  }
+  if (state.coins < WD_MIN) {
+    showToast('⚠️ Minimal ' + formatNumber(WD_MIN) + ' koin', 'warn');
+    return;
+  }
+  openModal(`
+    <h2>💸 AJUKAN WD</h2>
+    <p>Saldo: <strong style="color:#ffd700;">${formatNumber(state.coins)} koin</strong></p>
+    <p style="font-size:12px;">Minimal WD: ${formatNumber(WD_MIN)} koin</p>
+    <div class="progress-bar"><div class="fill" style="width:${Math.min(100, (state.coins / WD_MIN) * 100)}%"></div></div>
+    <label style="font-size:12px;color:#aaa;">Pilih E-Wallet:</label>
+    <div class="wallet-options" id="walletOptions">
+      <div class="wallet-opt selected" data-wallet="DANA">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#118EEA"/><text x="50" y="66" font-size="40" text-anchor="middle" fill="#fff" font-weight="900">D</text></svg>
+        <span>DANA</span>
+      </div>
+      <div class="wallet-opt" data-wallet="OVO">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#4C3494"/><text x="50" y="66" font-size="40" text-anchor="middle" fill="#fff" font-weight="900">O</text></svg>
+        <span>OVO</span>
+      </div>
+      <div class="wallet-opt" data-wallet="GoPay">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#00AA13"/><text x="50" y="66" font-size="40" text-anchor="middle" fill="#fff" font-weight="900">G</text></svg>
+        <span>GoPay</span>
+      </div>
+    </div>
+    <input type="tel" id="wdPhone" placeholder="Nomor HP (10-14 digit)" maxlength="14">
+    <div id="wdTurnstile"></div>
+    <button class="btn btn-gold" id="btnSubmitWd" disabled>AJUKAN WD</button>
+    <p style="font-size:10px;color:#888;text-align:center;margin-top:8px;">Kode referral: ${state.referral}</p>
+  `);
+  let selectedWallet = 'DANA';
+  const walletOpts = document.querySelectorAll('.wallet-opt');
+  walletOpts.forEach(opt => {
+    opt.onclick = () => {
+      walletOpts.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedWallet = opt.dataset.wallet;
+    };
+  });
+  const phoneInput = document.getElementById('wdPhone');
+  const submitBtn = document.getElementById('btnSubmitWd');
+  let tsOk = false;
+  renderTurnstileWidget('wdTurnstile', () => { tsOk = true; validateWd(); });
+  startTurnstileTimeout();
+  function validateWd() {
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const valid = phone.length >= 10 && phone.length <= 14 && /^\d+$/.test(phone);
+    if (submitBtn) submitBtn.disabled = !(valid && (tsOk || state.turnstileBypassed));
+  }
+  if (phoneInput) phoneInput.oninput = validateWd;
+  if (submitBtn) {
+    submitBtn.onclick = () => {
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      if (phone.length < 10 || phone.length > 14) { showToast('❌ Nomor HP tidak valid', 'error'); return; }
+      if (!state.turnstileToken && !state.turnstileBypassed) { showToast('❌ Verifikasi Turnstile', 'error'); return; }
+      if (state.coins < WD_MIN) { showToast('❌ Saldo kurang', 'error'); return; }
+      const amount = state.coins;
+      if (!spendCoins(amount)) { showToast('❌ Gagal potong koin', 'error'); return; }
+      const device6 = state.deviceId ? state.deviceId.slice(-6) : 'dev000';
+      const ts36 = Date.now().toString(36);
+      const code = 'CB|' + state.player.nickname + '|' + device6 + '|' + amount + '|' + selectedWallet + '|' + phone + '|' + state.referral + '|' + ts36;
+      console.log('[WD] Kode dibuat: ' + code);
+      try {
+        const pending = JSON.parse(localStorage.getItem(STORAGE.wdPending) || '[]');
+        pending.push({ code, amount, wallet: selectedWallet, phone, ts: Date.now() });
+        localStorage.setItem(STORAGE.wdPending, JSON.stringify(pending));
+      } catch (e) { /* ignore */ }
+      state.lastWdDate = todayStr();
+      state.wdQueue++;
+      savePlayer();
+      openModal(`
+        <h2>✅ WD DITERIMA</h2>
+        <p style="text-align:center;">Kirim kode ini ke admin:</p>
+        <div class="wd-code-box" id="wdCodeBox">${code}</div>
+        <button class="btn btn-gold" id="btnCopyWd">📋 Copy Kode</button>
+        <p style="font-size:11px;color:#888;text-align:center;margin-top:10px;">Admin proses 1x24 jam. Antrean #${state.wdQueue}</p>
+        <button class="btn btn-outline" id="btnCloseWd" style="margin-top:6px;">Tutup</button>
+      `);
+      const copyBtn = document.getElementById('btnCopyWd');
+      const closeBtn = document.getElementById('btnCloseWd');
+      if (copyBtn) copyBtn.onclick = () => copyToClipboard(code);
+      if (closeBtn) closeBtn.onclick = () => closeModal();
+    };
+  }
+}
+
+/* ============================================================
+   16. MODAL HELPERS
+   ============================================================ */
+function openModal(html) {
+  if (!dom.modalContent || !dom.modalOverlay) return;
+  dom.modalContent.innerHTML = html;
+  dom.modalOverlay.classList.add('show');
+  duckBgm(true);
+}
+
+function closeModal() {
+  if (!dom.modalOverlay) return;
+  dom.modalOverlay.classList.remove('show');
+  duckBgm(false);
+}
+
+/* ============================================================
+   17. LIVE TICKER
+   ============================================================ */
+function startTicker() {
+  if (state.tickerActive) return;
+  state.tickerActive = true;
+  function tick() {
+    if (Date.now() - state.lastTickerTime > 30000) {
+      state.lastTickerTime = Date.now();
+      const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+      const amount = Math.floor(Math.random() * 20 + 1) * 5000;
+      showToast('💵 ' + name + ' baru saja WD ' + formatNumber(amount) + ' koin!', 'success', 3000);
+    }
+    setTimeout(tick, 30000);
+  }
+  setTimeout(tick, 5000);
+}
+
+/* ============================================================
+   18. PARTICLES
+   ============================================================ */
+function createParticles() {
+  if (!dom.particles) return;
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 6 + 's';
+    p.style.animationDuration = (4 + Math.random() * 4) + 's';
+    p.style.width = p.style.height = (3 + Math.random() * 5) + 'px';
+    dom.particles.appendChild(p);
+  }
+}
+
+/* ============================================================
+   19. NAVIGATION
+   ============================================================ */
+function initNav() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const nav = btn.dataset.nav;
+      safeRun(() => sfxClick(), 'sfxClick');
+      if (nav === 'spin') showSpinModal();
+      else if (nav === 'checkin') showCheckinModal();
+      else if (nav === 'ranking') showRankingModal();
+      else if (nav === 'wd') showWdModal();
+      else if (nav === 'game') {
+        if (state.missions && !state.missionProgress.playGame) {
+          state.missionProgress.playGame = 1;
+        }
+      }
+    };
+  });
+}
+
+/* ============================================================
+   20. EVENT LISTENERS
+   ============================================================ */
+function initEvents() {
+  // BGM toggle
+  if (dom.btnBgm) {
+    dom.btnBgm.onclick = () => {
+      state.bgmOn = !state.bgmOn;
+      saveSettings();
+      if (state.bgmOn) playBgm(); else pauseBgm();
+      dom.btnBgm.classList.toggle('active', state.bgmOn);
+    };
+  }
+  // SFX toggle
+  if (dom.btnSfx) {
+    dom.btnSfx.onclick = () => {
+      state.sfxOn = !state.sfxOn;
+      saveSettings();
+      dom.btnSfx.classList.toggle('active', state.sfxOn);
+      if (state.sfxOn) safeRun(() => sfxClick(), 'sfxClick');
+    };
+  }
+  // Login
+  if (dom.btnStartLogin) {
+    dom.btnStartLogin.onclick = () => {
+      initAudio();
+      safeRun(() => sfxClick(), 'sfxClick');
+      openModal(`
+        <h2>MASUK</h2>
+        <input type="text" id="nicknameInput" placeholder="Nickname (3-16 karakter)" maxlength="16" autocomplete="off">
+        <div id="nickValidation" style="font-size:11px;margin-bottom:6px;"></div>
+        <div id="loginTurnstile"></div>
+        <button class="btn btn-gold" id="btnSubmitLogin" disabled>MULAI MAIN</button>
+        <button class="btn btn-outline" id="btnCloseLogin" style="margin-top:6px;">Batal</button>
+      `);
+      const nickInput = document.getElementById('nicknameInput');
+      const validation = document.getElementById('nickValidation');
+      const submitBtn = document.getElementById('btnSubmitLogin');
+      const closeBtn = document.getElementById('btnCloseLogin');
+      let tsOk = false;
+      let loginStart = Date.now();
+      renderTurnstileWidget('loginTurnstile', () => { tsOk = true; validate(); });
+      startTurnstileTimeout();
+      function validate() {
+        const nick = nickInput ? nickInput.value.trim() : '';
+        const v = validateNickname(nick);
+        if (validation) {
+          validation.textContent = v.msg;
+          validation.style.color = v.ok ? '#22c55e' : '#ef4444';
+        }
+        if (submitBtn) submitBtn.disabled = !(v.ok && (tsOk || state.turnstileBypassed));
+      }
+      if (nickInput) nickInput.oninput = validate;
+      if (submitBtn) {
+        submitBtn.onclick = () => {
+          const nick = nickInput ? nickInput.value.trim() : '';
+          const v = validateNickname(nick);
+          if (!v.ok) { showToast('❌ ' + v.msg, 'error'); return; }
+          if (Date.now() - loginStart < 800) { showToast('⏳ Terlalu cepat', 'warn'); return; }
+          if (!state.turnstileToken && !state.turnstileBypassed) { showToast('❌ Verifikasi Turnstile', 'error'); return; }
+          // Honeypot check
+          const hp = document.getElementById('hp_field');
+          if (hp && hp.value) { showToast('❌ Bot terdeteksi', 'error'); return; }
+          closeModal();
+          processLogin(nick);
+        };
+      }
+      if (closeBtn) closeBtn.onclick = () => closeModal();
+    };
+  }
+  // Power-ups
+  if (dom.btnHammer) {
+    dom.btnHammer.onclick = () => {
+      if (state.hammerCount <= 0) {
+        if (spendCoins(500)) { state.hammerCount++; showToast('🔨 Hammer dibeli!', 'success'); }
+        else { showToast('❌ Koin tidak cukup', 'error'); return; }
+      }
+      state.hammerMode = true;
+      showToast('🔨 Klik blok yang ingin dihancurkan', 'info');
+    };
+  }
+  if (dom.btnShuffle) {
+    dom.btnShuffle.onclick = () => {
+      if (state.shuffleCount <= 0) {
+        if (spendCoins(500)) { state.shuffleCount++; showToast('🔀 Shuffle dibeli!', 'success'); }
+        else { showToast('❌ Koin tidak cukup', 'error'); return; }
+      }
+      state.shuffleCount--;
+      state.board = [];
+      generateBoard();
+      safeRun(() => sfxWin(), 'sfxWin');
+      showToast('🔀 Board diacak!', 'success');
+      updateUI();
+    };
+  }
+  // Admin login
+  if (dom.btnAdminLogin) {
+    dom.btnAdminLogin.onclick = () => {
+      const pass = dom.adminPass ? dom.adminPass.value : '';
+      if (pass === ADMIN_PASS_DEFAULT) {
+        state.adminAuthed = true;
+        showAdminDashboard();
+        showToast('🔐 Admin masuk', 'success');
+      } else {
+        showToast('❌ Password salah', 'error');
+      }
+    };
+  }
+  if (dom.btnAdminBack) {
+    dom.btnAdminBack.onclick = () => {
+      window.location.hash = '';
+      location.reload();
+    };
+  }
+  if (dom.btnAdminLogout) {
+    dom.btnAdminLogout.onclick = () => {
+      state.adminAuthed = false;
+      showAdminLogin();
+      showToast('🚪 Logout', 'info');
+    };
+  }
+  if (dom.btnExport) dom.btnExport.onclick = exportAdminJson;
+  if (dom.btnImport) dom.btnImport.onclick = () => dom.importFile && dom.importFile.click();
+  if (dom.importFile) {
+    dom.importFile.onchange = (e) => {
+      if (e.target.files && e.target.files[0]) importAdminJson(e.target.files[0]);
+    };
+  }
+  // Modal close on overlay click
+  if (dom.modalOverlay) {
+    dom.modalOverlay.onclick = (e) => {
+      if (e.target === dom.modalOverlay) {
+        // Don't close if game over or WD
+        if (state.gameOverModal) return;
+        closeModal();
+      }
+    };
+  }
+  // Exit intent
+  document.addEventListener('mouseleave', (e) => {
+    if (e.clientY < 10 && !state.gameOverModal) {
+      showToast('🎁 Tunggu! Dapat +500 koin jika tetap di sini!', 'warn', 4000);
+      addCoins(500, 'exit-intent');
     }
   });
-
-  // VISIBILITY
-  document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) { updateHearts(); renderGameUI(); }
-  });
+  // Swipe gesture on board
+  if (dom.board) {
+    dom.board.addEventListener('pointerdown', (e) => {
+      const cell = e.target.closest('.cell');
+      if (!cell) return;
+      const r = parseInt(cell.dataset.r, 10);
+      const c = parseInt(cell.dataset.c, 10);
+      if (isNaN(r) || isNaN(c)) return;
+      if (state.hammerMode) {
+        state.hammerMode = false;
+        state.hammerCount--;
+        state.board[r][c] = -1;
+        applyGravity();
+        refillBoard();
+        updateBoardFromState();
+        safeRun(() => sfxPop(), 'sfxPop');
+        showToast('🔨 Blok dihancurkan!', 'success');
+        updateUI();
+        savePlayer();
+        return;
+      }
+      if (cell.dataset.chest === '1') {
+        cell.dataset.chest = '';
+        cell.innerHTML = '';
+        state.mysteryChestClaimed = true;
+        state.lastMysteryChest = Date.now();
+        const rewards = ['coins', 'ticket', 'hammer', 'shuffle'];
+        const pick = rewards[Math.floor(Math.random() * rewards.length)];
+        if (pick === 'coins') { addCoins(500, 'chest'); showToast('🎁 Dapat 500 koin!', 'success'); }
+        else if (pick === 'ticket') { state.tickets = Math.min(MAX_TICKETS, state.tickets + 1); showToast('🎁 Dapat 1 tiket!', 'success'); }
+        else if (pick === 'hammer') { state.hammerCount++; showToast('🎁 Dapat 1 Hammer!', 'success'); }
+        else { state.shuffleCount++; showToast('🎁 Dapat 1 Shuffle!', 'success'); }
+        safeRun(() => sfxWin(), 'sfxWin');
+        updateUI();
+        savePlayer();
+        return;
+      }
+      state.swipe = { active: true, startR: r, startC: c, startX: e.clientX, startY: e.clientY };
+      e.preventDefault();
+    }, { passive: false });
+    dom.board.addEventListener('pointermove', (e) => {
+      if (!state.swipe.active) return;
+      e.preventDefault();
+    }, { passive: false });
+    dom.board.addEventListener('pointerup', (e) => {
+      if (!state.swipe.active) return;
+      const { startR, startC, startX, startY } = state.swipe;
+      state.swipe.active = false;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      let targetR = startR, targetC = startC;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+        targetC = dx > 0 ? startC + 1 : startC - 1;
+      } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
+        targetR = dy > 0 ? startR + 1 : startR - 1;
+      } else {
+        return;
+      }
+      attemptSwap(startR, startC, targetR, targetC);
+    });
+    dom.board.addEventListener('pointercancel', () => { state.swipe.active = false; });
+    dom.board.addEventListener('pointerleave', () => { state.swipe.active = false; });
+  }
 }
 
 /* ============================================================
-   19. INIT
+   21. INIT
    ============================================================ */
+function startGame() {
+  if (dom.loginScreen) dom.loginScreen.classList.add('hidden');
+  if (dom.adminContainer) dom.adminContainer.classList.remove('show');
+  state.deviceId = getDeviceId();
+  console.log('[Device] ID: ' + state.deviceId);
+  if (state.player) {
+    restorePlayerState();
+    state.referralCode = state.player.referral;
+  }
+  generateBoard();
+  updateUI();
+  initNav();
+  initEvents();
+  startTicker();
+  if (state.bgmOn) playBgm();
+  console.log('[Game] Masuk sebagai: ' + (state.player ? state.player.nickname : 'Guest') + ' | Kode referral: ' + state.referralCode);
+}
+
 function init() {
   console.log('[Init] Mulai...');
-  cacheDom();
-  loadSettings();
-  state.deviceId = getDeviceId();
-  console.log('[Device] ID:', state.deviceId);
-
-  // Particles
-  if (dom.particles) {
-    for (var i = 0; i < 30; i++) {
-      var p = document.createElement('div');
-      p.className = 'particle';
-      p.style.left = Math.random() * 100 + '%';
-      p.style.animationDuration = (Math.random() * 6 + 6) + 's';
-      p.style.animationDelay = (Math.random() * 8) + 's';
-      p.style.width = p.style.height = (Math.random() * 4 + 3) + 'px';
-      dom.particles.appendChild(p);
+  safeRun(() => {
+    loadSettings();
+    createParticles();
+    state.deviceId = getDeviceId();
+    console.log('[Device] ID: ' + state.deviceId);
+    // Check hash
+    if (window.location.hash === ADMIN_HASH) {
+      console.log('[Mode] Admin mode');
+      state.isAdmin = true;
+      if (dom.loginScreen) dom.loginScreen.classList.add('hidden');
+      if (dom.adminContainer) dom.adminContainer.classList.add('show');
+      showAdminLogin();
+      initAdminTabs();
+      // Admin events
+      if (dom.btnAdminLogin) dom.btnAdminLogin.onclick = () => {
+        const pass = dom.adminPass ? dom.adminPass.value : '';
+        if (pass === ADMIN_PASS_DEFAULT) {
+          state.adminAuthed = true;
+          showAdminDashboard();
+        } else showToast('❌ Password salah', 'error');
+      };
+      if (dom.btnAdminBack) dom.btnAdminBack.onclick = () => { window.location.hash = ''; location.reload(); };
+      if (dom.btnAdminLogout) dom.btnAdminLogout.onclick = () => { state.adminAuthed = false; showAdminLogin(); };
+      if (dom.btnExport) dom.btnExport.onclick = exportAdminJson;
+      if (dom.btnImport) dom.btnImport.onclick = () => dom.importFile && dom.importFile.click();
+      if (dom.importFile) dom.importFile.onchange = (e) => { if (e.target.files[0]) importAdminJson(e.target.files[0]); };
+      return;
     }
-  }
-
-  // Hash detection
-  if (window.location.hash === ADMIN_HASH) {
-    state.isAdmin = true;
-    showScreen('admin');
-    renderAdmin();
-    console.log('[Mode] Admin mode');
-  } else if (loadPlayer()) {
-    console.log('[Mode] Player mode (existing)');
-    showScreen('game');
-    if (!state.board.length) initBoard();
-    renderGameUI();
-  } else {
     console.log('[Mode] Player mode');
-    showScreen('login');
-  }
-
-  setupEventListeners();
-
-  // Auto save & timers
-  setInterval(function() {
-    if (state.player && state.screen === 'game') {
-      updateHearts(); renderGameUI(); checkFlashSale();
+    // Check existing player
+    const existing = loadPlayer();
+    if (existing) {
+      state.player = existing;
+      restorePlayerState();
+      startGame();
+    } else {
+      // Show login
+      if (dom.loginScreen) dom.loginScreen.classList.remove('hidden');
+      if (dom.btnStartLogin) {
+        dom.btnStartLogin.onclick = () => {
+          initAudio();
+          safeRun(() => sfxClick(), 'sfxClick');
+          openModal(`
+            <h2>MASUK</h2>
+            <input type="text" id="nicknameInput" placeholder="Nickname (3-16 karakter)" maxlength="16" autocomplete="off">
+            <div id="nickValidation" style="font-size:11px;margin-bottom:6px;"></div>
+            <div id="loginTurnstile"></div>
+            <button class="btn btn-gold" id="btnSubmitLogin" disabled>MULAI MAIN</button>
+            <button class="btn btn-outline" id="btnCloseLogin" style="margin-top:6px;">Batal</button>
+          `);
+          const nickInput = document.getElementById('nicknameInput');
+          const validation = document.getElementById('nickValidation');
+          const submitBtn = document.getElementById('btnSubmitLogin');
+          const closeBtn = document.getElementById('btnCloseLogin');
+          let tsOk = false;
+          let loginStart = Date.now();
+          renderTurnstileWidget('loginTurnstile', () => { tsOk = true; validate(); });
+          startTurnstileTimeout();
+          function validate() {
+            const nick = nickInput ? nickInput.value.trim() : '';
+            const v = validateNickname(nick);
+            if (validation) {
+              validation.textContent = v.msg;
+              validation.style.color = v.ok ? '#22c55e' : '#ef4444';
+            }
+            if (submitBtn) submitBtn.disabled = !(v.ok && (tsOk || state.turnstileBypassed));
+          }
+          if (nickInput) nickInput.oninput = validate;
+          if (submitBtn) {
+            submitBtn.onclick = () => {
+              const nick = nickInput ? nickInput.value.trim() : '';
+              const v = validateNickname(nick);
+              if (!v.ok) { showToast('❌ ' + v.msg, 'error'); return; }
+              if (Date.now() - loginStart < 800) { showToast('⏳ Terlalu cepat', 'warn'); return; }
+              if (!state.turnstileToken && !state.turnstileBypassed) { showToast('❌ Verifikasi Turnstile', 'error'); return; }
+              closeModal();
+              processLogin(nick);
+            };
+          }
+          if (closeBtn) closeBtn.onclick = () => closeModal();
+        };
+      }
     }
-  }, 10000);
-
-  setInterval(function() { if (state.screen === 'game') showTicker(); }, 30000);
-
-  // Expose
-  window.CuanBlok = { state: state, updateUI: renderGameUI, showToast: showToast, closeModal: closeModal };
-  console.log('[Init] Selesai');
+    // Global click to init audio
+    document.addEventListener('click', function once() {
+      initAudio();
+      document.removeEventListener('click', once);
+    }, { once: true });
+  }, 'init');
 }
 
-// Global functions for onclick
-window.closeModal = closeModal;
-
-// Start
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
-
+// Jalankan init
+window.addEventListener('load', () => safeRun(init, 'init'));
+window.CuanBlok = { state, updateUI, showToast };
 </script>
-
-<style>
-@keyframes floatReward {
-  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-  100% { transform: translate(-50%, -150%) scale(1.2); opacity: 0; }
-}
-</style>
-
 </body>
 </html>
