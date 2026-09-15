@@ -1,1679 +1,1743 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>CUAN BLOK · Puzzle Penghasil Uang</title>
-  <!-- Supabase JS (publishable key only, no secret) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    /* === RESET & GLOBAL === */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
-      background: #0a0a0a;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100dvh;
-      overflow: hidden;
-      color: #fff;
-      user-select: none;
-    }
-
-    /* === BACKGROUND GRADIENT & PARTIKEL === */
-    .bg-gradient {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 30% 10%, #2A0808 0%, #1A0000 40%, #0a0a0a 100%);
-      z-index: 0;
-    }
-
-    .particles {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-      overflow: hidden;
-    }
-
-    .particle {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      background: radial-gradient(circle, #FFD966, #b8860b);
-      border-radius: 50%;
-      filter: drop-shadow(0 0 6px #ffd700aa);
-      opacity: 0.5;
-      animation: floatUp linear infinite;
-    }
-
-    @keyframes floatUp {
-      0% { transform: translateY(100vh) scale(0.8); opacity: 0; }
-      15% { opacity: 0.8; }
-      85% { opacity: 0.6; }
-      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
-    }
-
-    /* === ARCADE CONTAINER === */
-    .arcade {
-      position: relative;
-      width: 100%;
-      max-width: 480px;
-      height: 100dvh;
-      max-height: 100dvh;
-      background: rgba(20, 8, 8, 0.72);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 215, 0, 0.35);
-      border-radius: 28px;
-      box-shadow: 0 0 60px rgba(255, 215, 0, 0.08), inset 0 0 60px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      z-index: 2;
-      margin: 0 auto;
-    }
-
-    /* === SCREENS === */
-    .screen {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      background: transparent;
-    }
-
-    .screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-      transform: scale(0.98);
-    }
-
-    /* === LOGIN SCREEN === */
-    #loginScreen {
-      justify-content: center;
-      align-items: center;
-      padding: 32px 24px;
-      text-align: center;
-      z-index: 10;
-    }
-
-    .logo-coin {
-      width: 110px;
-      height: 110px;
-      margin-bottom: 18px;
-      animation: spin 8s linear infinite;
-      filter: drop-shadow(0 0 20px #ffd70088);
-    }
-
-    @keyframes spin {
-      0% { transform: rotateY(0deg); }
-      100% { transform: rotateY(360deg); }
-    }
-
-    .game-title {
-      font-size: 2.1rem;
-      font-weight: 900;
-      background: linear-gradient(180deg, #FFE484, #FFB800, #b8860b);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      letter-spacing: 2px;
-      text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-      margin-bottom: 4px;
-      line-height: 1.1;
-    }
-
-    .game-sub {
-      font-size: 0.85rem;
-      color: #bbaa88;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      margin-bottom: 28px;
-    }
-
-    .btn-google {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: #fff;
-      color: #222;
-      border: none;
-      border-radius: 60px;
-      padding: 16px 28px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      transition: transform 0.2s, box-shadow 0.3s, background 0.2s;
-      width: 100%;
-      max-width: 320px;
-      animation: bounce 2.5s infinite;
-      position: relative;
-      z-index: 11;
-    }
-
-    .btn-google:active {
-      transform: scale(0.96);
-      background: #e8e8e8;
-    }
-
-    .btn-google:disabled {
-      opacity: 0.8;
-      background: #444;
-      color: #aaa;
-      animation: none;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-
-    .login-hint {
-      margin-top: 22px;
-      font-size: 0.75rem;
-      color: #887766;
-    }
-
-    /* === HEADER (in-game) === */
-    .game-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 14px 8px;
-      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
-      flex-wrap: wrap;
-      gap: 6px;
-      background: rgba(10, 0, 0, 0.4);
-      backdrop-filter: blur(6px);
-    }
-
-    .coin-display {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: #FFD966;
-      text-shadow: 0 0 12px #ffd70055;
-    }
-
-    .coin-display svg {
-      width: 26px;
-      height: 26px;
-    }
-
-    .hearts-display {
-      display: flex;
-      gap: 4px;
-      font-size: 1.2rem;
-      align-items: center;
-    }
-
-    .toggle-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .toggle-btn {
-      background: rgba(255, 215, 0, 0.1);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      color: #ffd966;
-      border-radius: 40px;
-      padding: 4px 10px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-      white-space: nowrap;
-    }
-
-    .toggle-btn.off {
-      background: rgba(80, 80, 80, 0.3);
-      border-color: #555;
-      color: #888;
-    }
-
-    .toggle-btn:active {
-      transform: scale(0.92);
-    }
-
-    /* === LIVE TICKER === */
-    .live-ticker {
-      padding: 6px 14px;
-      font-size: 0.72rem;
-      background: rgba(255, 215, 0, 0.08);
-      border-bottom: 1px solid rgba(255, 215, 0, 0.1);
-      color: #eedd99;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-height: 30px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: opacity 0.3s;
-    }
-
-    /* === GAME BOARD === */
-    .board-wrapper {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 6px 8px;
-      min-height: 0;
-    }
-
-    .board {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      width: 100%;
-      max-width: 420px;
-      aspect-ratio: 1/1;
-      background: rgba(0, 0, 0, 0.35);
-      border-radius: 20px;
-      padding: 8px;
-      border: 1px solid rgba(255, 215, 0, 0.15);
-      box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
-    }
-
-    .cell {
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
-      aspect-ratio: 1/1;
-      font-size: 1.6rem;
-      position: relative;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      will-change: transform;
-    }
-
-    .cell:active {
-      transform: scale(0.9);
-    }
-
-    .cell.selected {
-      box-shadow: 0 0 16px #ffd700, 0 0 30px #ffd70066;
-      border: 1px solid #ffd700;
-      z-index: 2;
-    }
-
-    .cell.pop {
-      animation: popClear 0.3s ease-out forwards;
-    }
-
-    @keyframes popClear {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.9; }
-      100% { transform: scale(0); opacity: 0; }
-    }
-
-    .floating-coin {
-      position: absolute;
-      font-weight: 800;
-      font-size: 0.9rem;
-      color: #FFD966;
-      text-shadow: 0 0 12px #ffd700;
-      pointer-events: none;
-      animation: floatCoin 1s ease-out forwards;
-      z-index: 50;
-    }
-
-    @keyframes floatCoin {
-      0% { opacity: 1; transform: translateY(0) scale(0.8); }
-      100% { opacity: 0; transform: translateY(-48px) scale(1.3); }
-    }
-
-    /* === BOTTOM NAV === */
-    .bottom-nav {
-      display: flex;
-      justify-content: space-around;
-      padding: 8px 6px 12px;
-      background: rgba(10, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      border-top: 1px solid rgba(255, 215, 0, 0.15);
-    }
-
-    .nav-btn {
-      background: none;
-      border: none;
-      color: #bbaa88;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      font-size: 0.6rem;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 4px 10px;
-      border-radius: 14px;
-      transition: 0.2s;
-      letter-spacing: 0.3px;
-    }
-
-    .nav-btn.active {
-      color: #FFD966;
-      background: rgba(255, 215, 0, 0.1);
-      text-shadow: 0 0 12px #ffd70055;
-    }
-
-    .nav-btn .icon {
-      font-size: 1.3rem;
-      line-height: 1;
-    }
-
-    /* === TOAST === */
-    .toast-container {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      pointer-events: none;
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .toast {
-      background: rgba(30, 20, 10, 0.95);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 215, 0, 0.4);
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 40px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.7);
-      animation: toastIn 0.3s ease-out;
-      text-align: center;
-      pointer-events: auto;
-      max-width: 100%;
-      word-break: break-word;
-    }
-
-    @keyframes toastIn {
-      0% { opacity: 0; transform: translateY(-16px) scale(0.94); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .toast.fade-out {
-      animation: toastOut 0.3s ease-in forwards;
-    }
-
-    @keyframes toastOut {
-      0% { opacity: 1; transform: translateY(0); }
-      100% { opacity: 0; transform: translateY(-20px); }
-    }
-
-    /* === MODAL === */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(6px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 5000;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-box {
-      background: linear-gradient(145deg, #1f0f0f, #0d0505);
-      border: 1px solid rgba(255, 215, 0, 0.4);
-      border-radius: 28px;
-      padding: 24px 20px;
-      max-width: 360px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-      transform: scale(0.9);
-      transition: transform 0.3s;
-    }
-
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
-    }
-
-    .modal-box h3 {
-      color: #FFD966;
-      font-size: 1.3rem;
-      margin-bottom: 12px;
-      font-weight: 800;
-    }
-
-    .modal-box p {
-      color: #ccbbaa;
-      font-size: 0.9rem;
-      margin-bottom: 18px;
-      line-height: 1.5;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      background: linear-gradient(180deg, #FFD966, #cc9900);
-      border: none;
-      border-radius: 40px;
-      padding: 12px 22px;
-      font-weight: 700;
-      color: #1a0a00;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: 0.2s;
-      box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
-      min-width: 100px;
-    }
-
-    .btn:active {
-      transform: scale(0.94);
-    }
-
-    .btn.secondary {
-      background: rgba(255, 255, 255, 0.08);
-      color: #ddccaa;
-      border: 1px solid rgba(255, 215, 0, 0.2);
-      box-shadow: none;
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      overflow: hidden;
-      margin: 12px 0;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #FFD966, #ffaa00);
-      width: 0%;
-      transition: width 0.1s linear;
-    }
-
-    /* === SPIN WHEEL (simple) === */
-    .spin-wheel {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      background: conic-gradient(#FFD966 0deg 60deg, #cc9900 60deg 120deg, #FFD966 120deg 180deg, #cc9900 180deg 240deg, #FFD966 240deg 300deg, #cc9900 300deg 360deg);
-      margin: 10px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3rem;
-      position: relative;
-      box-shadow: 0 0 40px #ffd70055;
-      transition: transform 2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    .spin-wheel::after {
-      content: '🎯';
-      position: absolute;
-      font-size: 2rem;
-    }
-
-    /* === RANKING LIST === */
-    .ranking-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 14px;
-    }
-
-    .rank-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background: rgba(255, 215, 0, 0.04);
-      border-radius: 14px;
-      margin-bottom: 6px;
-      font-size: 0.85rem;
-      border: 1px solid rgba(255, 215, 0, 0.08);
-      color: #eeddcc;
-    }
-
-    .rank-item .medal {
-      font-size: 1.1rem;
-    }
-
-    /* === UTILS === */
-    .text-gold { color: #FFD966; }
-    .text-sm { font-size: 0.75rem; }
-    .mt-2 { margin-top: 8px; }
-    .mb-2 { margin-bottom: 8px; }
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-center { justify-content: center; }
-    .gap-2 { gap: 8px; }
-    .p-2 { padding: 8px; }
-
-    .hidden { display: none !important; }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #ffd70055; border-radius: 20px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>CUAN BLOK: PUZZLE PENGHASIL UANG</title>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  background: linear-gradient(160deg, #2A0808 0%, #1A0000 40%, #0a0a0a 100%);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+#particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.particle {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle, #ffd700, #b8860b);
+  box-shadow: 0 0 8px #ffd700aa;
+  animation: floatUp linear infinite;
+  opacity: 0;
+}
+@keyframes floatUp {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 0.9; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+.arcade {
+  width: 100%; max-width: 480px; height: 100dvh;
+  display: flex; flex-direction: column;
+  position: relative; z-index: 2;
+  background: rgba(20, 5, 5, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-left: 1px solid rgba(255, 215, 0, 0.18);
+  border-right: 1px solid rgba(255, 215, 0, 0.18);
+  overflow: hidden;
+}
+.screen { display: none; flex-direction: column; height: 100%; width: 100%; }
+.screen.active { display: flex; }
+
+/* ===== LOGIN ===== */
+#screen-login { justify-content: center; align-items: center; padding: 24px; text-align: center; }
+.login-logo { width: 110px; height: 110px; margin-bottom: 18px; animation: spinCoin 3.5s linear infinite; }
+@keyframes spinCoin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+.login-title {
+  font-size: 42px; font-weight: 900; letter-spacing: 3px;
+  background: linear-gradient(180deg, #fff7cc, #ffd700 40%, #b8860b);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  margin-bottom: 8px; text-shadow: 0 0 30px rgba(255,215,0,0.3);
+}
+.login-sub { font-size: 12px; letter-spacing: 6px; color: #ffd700; opacity: 0.85; margin-bottom: 38px; font-weight: 600; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: #fff; color: #1a0000; border: none;
+  padding: 16px 42px; border-radius: 50px;
+  font-size: 19px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 8px 32px rgba(255,255,255,0.25), 0 0 0 2px #ffd70055;
+  animation: bounceBtn 1.8s ease-in-out infinite;
+  transition: transform 0.15s;
+}
+.btn-primary:active { transform: scale(0.95); }
+@keyframes bounceBtn {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.btn-primary svg { width: 28px; height: 28px; }
+.login-hint { margin-top: 30px; font-size: 12px; color: #aaa; letter-spacing: 0.5px; }
+
+/* ===== GAME HEADER ===== */
+.game-header {
+  padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 8px;
+  border-bottom: 1px solid rgba(255,215,0,0.12); flex-shrink: 0;
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.coin-display { display: flex; align-items: center; gap: 7px; font-size: 19px; font-weight: 800; color: #ffd700; }
+.coin-display svg { width: 26px; height: 26px; filter: drop-shadow(0 0 8px #ffd700aa); }
+.header-stats { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+.stat-pill {
+  background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 20px;
+  border: 1px solid rgba(255,215,0,0.15); display: flex; align-items: center; gap: 4px;
+  font-weight: 600;
+}
+.header-btns { display: flex; gap: 6px; }
+.icon-btn {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.18);
+  color: #fff; border-radius: 10px; padding: 6px 9px; font-size: 12px;
+  cursor: pointer; font-weight: 600; transition: background 0.2s;
+}
+.icon-btn:active { background: rgba(255,215,0,0.2); }
+.vip-badge { font-size: 11px; color: #ffd700; font-weight: 800; }
+.heart-row { display: flex; gap: 3px; font-size: 15px; }
+
+/* ===== TICKER ===== */
+.ticker {
+  height: 0; overflow: hidden; transition: height 0.4s;
+  background: rgba(255,215,0,0.08); border-bottom: 1px solid rgba(255,215,0,0.15);
+  display: flex; align-items: center; padding: 0 14px; font-size: 12px;
+  color: #ffe066; white-space: nowrap; flex-shrink: 0;
+}
+.ticker.show { height: 30px; }
+.ticker span { filter: drop-shadow(0 0 6px #ffd700); margin-right: 6px; }
+
+/* ===== BOARD ===== */
+.game-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow: hidden; }
+.board-wrap { position: relative; width: 100%; max-width: 400px; }
+#board {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+  background: rgba(0,0,0,0.35); padding: 6px; border-radius: 16px;
+  border: 1px solid rgba(255,215,0,0.15);
+}
+.cell {
+  aspect-ratio: 1; border-radius: 7px; cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.25s;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; user-select: none;
+}
+.cell:active { transform: scale(0.88); }
+.cell.pop { animation: popClear 0.3s ease-out forwards; }
+@keyframes popClear {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.cell.hammer-target { outline: 2px dashed #ffd700; outline-offset: -2px; }
+.cell .chest-icon { font-size: 22px; filter: drop-shadow(0 0 5px #ffd700); animation: chestPulse 1s infinite; }
+@keyframes chestPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+
+/* ===== POWERUPS ===== */
+.powerup-row { display: flex; gap: 10px; margin-top: 14px; }
+.powerup-btn {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.25);
+  color: #fff; border-radius: 14px; padding: 10px 16px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 600; min-width: 76px; transition: background 0.2s;
+}
+.powerup-btn:active { background: rgba(255,215,0,0.18); }
+.powerup-btn .pu-icon { font-size: 20px; }
+.powerup-btn .pu-count { color: #ffd700; font-weight: 800; }
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  display: flex; border-top: 1px solid rgba(255,215,0,0.12);
+  background: rgba(10,0,0,0.7); flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; background: none; border: none; color: #999;
+  padding: 10px 2px 12px; cursor: pointer; display: flex;
+  flex-direction: column; align-items: center; gap: 2px;
+  font-size: 10px; font-weight: 600; transition: color 0.2s;
+}
+.nav-btn .nav-icon { font-size: 19px; }
+.nav-btn.active { color: #ffd700; }
+.nav-btn:active { color: #ffd700; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.82);
+  backdrop-filter: blur(5px); z-index: 100;
+  display: none; justify-content: center; align-items: center; padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: linear-gradient(160deg, #1e1010, #0f0505);
+  border: 1px solid rgba(255,215,0,0.35); border-radius: 22px;
+  padding: 24px 20px; width: 100%; max-width: 400px;
+  max-height: 88dvh; overflow-y: auto; position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(255,215,0,0.08);
+  animation: modalIn 0.25s ease-out;
+}
+@keyframes modalIn { from { transform: scale(0.92) translateY(15px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+.modal-title { font-size: 21px; font-weight: 800; color: #ffd700; margin-bottom: 8px; text-align: center; }
+.modal-desc { font-size: 13px; color: #ccc; margin-bottom: 16px; text-align: center; line-height: 1.5; white-space: pre-line; }
+.modal-input {
+  width: 100%; padding: 13px 14px; border-radius: 12px;
+  border: 1px solid rgba(255,215,0,0.3); background: rgba(0,0,0,0.4);
+  color: #fff; font-size: 15px; margin-bottom: 10px; outline: none;
+  transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: #ffd700; }
+.modal-input.error { border-color: #ff4d4d; }
+.modal-input.ok { border-color: #34d399; }
+.error-msg { font-size: 12px; margin-bottom: 10px; min-height: 16px; font-weight: 600; }
+.error-msg.err { color: #ff6b6b; }
+.error-msg.ok { color: #34d399; }
+.btn-row { display: flex; gap: 10px; margin-top: 12px; }
+.btn-modal {
+  flex: 1; padding: 13px; border-radius: 12px; border: none;
+  font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+}
+.btn-modal:active { transform: scale(0.97); }
+.btn-modal.primary { background: linear-gradient(135deg, #ffd700, #ffb300); color: #1a0000; }
+.btn-modal.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-modal.secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.hp-field { position: absolute; left: -9999px; opacity: 0; height: 0; width: 0; }
+#turnstile-container, #turnstile-wd-container { min-height: 65px; display: flex; justify-content: center; margin-bottom: 8px; }
+
+/* ===== WD WALLET SELECT ===== */
+.wallet-select { display: flex; gap: 8px; margin-bottom: 14px; justify-content: center; }
+.wallet-opt {
+  border-radius: 12px; padding: 8px 6px; background: rgba(255,255,255,0.05);
+  border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;
+}
+.wallet-opt.selected { border-color: #ffd700; transform: scale(1.05); background: rgba(255,215,0,0.1); }
+.wallet-opt svg { width: 64px; height: 28px; }
+
+/* ===== WD CODE ===== */
+.wd-code-box {
+  background: #1a0a0a; border: 2px solid #ffd700; border-radius: 14px;
+  padding: 16px; margin: 14px 0; font-family: 'Courier New', monospace;
+  font-size: 13px; color: #ffd700; word-break: break-all; line-height: 1.6;
+  text-align: center; box-shadow: 0 0 20px rgba(255,215,0,0.15) inset;
+}
+.progress-bar-outer { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin: 10px 0; }
+.progress-bar-inner { height: 100%; background: linear-gradient(90deg, #ffd700, #ffb300); transition: width 0.4s; border-radius: 10px; }
+
+/* ===== TOAST ===== */
+#toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; gap: 8px; width: 90%; max-width: 400px; pointer-events: none; }
+.toast {
+  background: rgba(30,15,15,0.96); border: 1px solid rgba(255,215,0,0.4);
+  color: #fff; padding: 12px 16px; border-radius: 14px; font-size: 13px;
+  font-weight: 600; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+  animation: toastIn 0.3s ease-out; backdrop-filter: blur(10px);
+}
+@keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast.out { animation: toastOut 0.3s ease-in forwards; }
+@keyframes toastOut { to { transform: translateY(-20px); opacity: 0; } }
+
+/* ===== SPIN WHEEL ===== */
+.wheel {
+  width: 200px; height: 200px; border-radius: 50%; margin: 20px auto;
+  background: conic-gradient(#FF6B6B 0 60deg, #4ECDC4 60deg 120deg, #FFE66D 120deg 180deg, #A78BFA 180deg 240deg, #F472B6 240deg 300deg, #34D399 300deg 360deg);
+  border: 5px solid #ffd700; box-shadow: 0 0 30px rgba(255,215,0,0.4);
+  position: relative; transition: transform 4s cubic-bezier(0.17,0.67,0.12,0.99);
+}
+.wheel::after {
+  content: '▼'; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 24px; color: #ffd700; filter: drop-shadow(0 0 6px #ffd700);
+}
+
+/* ===== CHECKIN ===== */
+.checkin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
+.checkin-day {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 12px; padding: 10px 4px; text-align: center; font-size: 11px;
+  display: flex; flex-direction: column; gap: 3px; align-items: center;
+}
+.checkin-day.claimed { background: rgba(52,211,153,0.15); border-color: #34d399; }
+.checkin-day.today { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.3); }
+.checkin-day .day-num { font-weight: 800; color: #ffd700; }
+.checkin-day .day-reward { color: #ffe066; font-size: 10px; }
+
+/* ===== MISSION ===== */
+.mission-item {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.15);
+  border-radius: 12px; padding: 12px; margin-bottom: 10px;
+}
+.mission-item .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.mission-item .m-name { font-size: 13px; font-weight: 600; }
+.mission-item .m-reward { font-size: 12px; color: #ffd700; font-weight: 700; }
+.mission-item .m-btn { padding: 6px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
+.mission-item .m-btn.claim { background: #ffd700; color: #1a0000; }
+.mission-item .m-btn.claimed { background: rgba(255,255,255,0.15); color: #999; cursor: default; }
+
+/* ===== LEADERBOARD ===== */
+.lb-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 8px;
+  border: 1px solid rgba(255,215,0,0.1);
+}
+.lb-rank { font-size: 16px; font-weight: 800; width: 28px; text-align: center; }
+.lb-rank.gold { color: #ffd700; }
+.lb-rank.silver { color: #c0c0c0; }
+.lb-rank.bronze { color: #cd7f32; }
+.lb-name { flex: 1; font-size: 14px; font-weight: 600; }
+.lb-score { font-size: 13px; color: #ffd700; font-weight: 700; }
+
+/* ===== ADMIN ===== */
+#screen-admin { background: #0f172a; padding: 0; }
+.admin-header {
+  background: #1e293b; padding: 14px 16px; display: flex;
+  justify-content: space-between; align-items: center;
+  border-bottom: 2px solid #06b6d4; flex-wrap: wrap; gap: 8px;
+}
+.admin-header h1 { font-size: 16px; color: #06b6d4; font-weight: 800; letter-spacing: 1px; }
+.admin-header-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-btn {
+  background: #06b6d4; color: #0f172a; border: none; padding: 7px 12px;
+  border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background 0.2s;
+}
+.admin-btn:hover { background: #22d3ee; }
+.admin-btn.danger { background: #ef4444; color: #fff; }
+.admin-btn.secondary { background: #334155; color: #fff; }
+.admin-tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; }
+.admin-tab {
+  flex: 1; padding: 12px; background: none; border: none; color: #94a3b8;
+  font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.admin-tab.active { color: #06b6d4; border-bottom-color: #06b6d4; background: #0f172a; }
+.admin-body { flex: 1; overflow-y: auto; padding: 16px; }
+.admin-card {
+  background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+  padding: 14px; margin-bottom: 12px;
+}
+.admin-card textarea {
+  width: 100%; min-height: 100px; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; color: #e2e8f0; padding: 10px; font-family: monospace;
+  font-size: 12px; resize: vertical; outline: none;
+}
+.admin-card textarea:focus { border-color: #06b6d4; }
+.wd-item {
+  background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+  padding: 12px; margin-bottom: 10px; font-size: 12px;
+}
+.wd-item .wd-row { display: flex; justify-content: space-between; margin-bottom: 4px; color: #cbd5e1; }
+.wd-item .wd-code { font-family: monospace; font-size: 10px; color: #06b6d4; word-break: break-all; margin: 6px 0; background: #0f172a; padding: 6px; border-radius: 6px; }
+.wd-item .wd-actions { display: flex; gap: 8px; margin-top: 8px; }
+.wd-item .wd-actions button { flex: 1; padding: 7px; border: none; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+.badge.pending { background: #fbbf24; color: #0f172a; }
+.badge.done { background: #22c55e; color: #0f172a; }
+.badge.rejected { background: #ef4444; color: #fff; }
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; text-align: center; }
+.stat-card .stat-num { font-size: 26px; font-weight: 900; color: #06b6d4; }
+.stat-card .stat-label { font-size: 11px; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.admin-login-box { max-width: 340px; margin: auto; padding: 30px 20px; text-align: center; }
+.admin-login-box input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 15px; margin-bottom: 12px; outline: none; }
+.admin-login-box input:focus { border-color: #06b6d4; }
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+.filter-row input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 12px; }
+
+/* ===== GAME OVER ===== */
+.gameover-icon { font-size: 56px; text-align: center; margin-bottom: 10px; }
+.cooldown-text { font-size: 13px; color: #ffd700; text-align: center; margin: 10px 0; font-weight: 700; }
+
+/* ===== AD SIM ===== */
+.ad-countdown { font-size: 56px; font-weight: 900; color: #ffd700; text-align: center; margin: 20px 0; text-shadow: 0 0 30px rgba(255,215,0,0.5); }
+.ad-progress { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+.ad-progress-inner { height: 100%; background: linear-gradient(90deg, #ffd700, #ff8c00); width: 0%; transition: width 1s linear; }
+
+/* ===== FLASH SALE ===== */
+.flash-sale-box { background: linear-gradient(135deg, rgba(255,0,0,0.2), rgba(255,215,0,0.15)); border: 2px solid #ff4444; border-radius: 16px; padding: 18px; text-align: center; margin: 12px 0; }
+.flash-timer { font-size: 32px; font-weight: 900; color: #ff4444; font-family: monospace; }
+.flash-price { font-size: 18px; color: #ffd700; font-weight: 800; margin: 8px 0; }
+.flash-price s { color: #999; font-size: 14px; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 10px; }
+
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-10 { margin-top: 10px; }
+.mb-10 { margin-bottom: 10px; }
+</style>
 </head>
 <body>
-  <!-- BACKGROUND -->
-  <div class="bg-gradient"></div>
-  <div class="particles" id="particles"></div>
 
-  <!-- TOAST CONTAINER -->
-  <div class="toast-container" id="toastContainer"></div>
+<div id="particles"></div>
 
-  <!-- ARCADE CONTAINER -->
-  <div class="arcade" id="arcade">
+<div class="arcade">
 
-    <!-- ===== LOGIN SCREEN ===== -->
-    <div class="screen" id="loginScreen">
-      <svg class="logo-coin" viewBox="0 0 100 100" fill="none">
+  <!-- ===== LOGIN SCREEN ===== -->
+  <div id="screen-login" class="screen active">
+    <svg class="login-logo" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
+      <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
+    </svg>
+    <div class="login-title">CUAN BLOK</div>
+    <div class="login-sub">PUZZLE PENGHASIL UANG</div>
+    <button class="btn-primary" id="btn-start">
+      <svg viewBox="0 0 100 100" fill="none">
         <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
         <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
         <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
       </svg>
-      <div class="game-title">CUAN BLOK</div>
-      <div class="game-sub">PUZZLE PENGHASIL UANG</div>
-      <button class="btn-google" id="loginBtn">
-        <svg width="22" height="22" viewBox="0 0 48 48">
-          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
-          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.9 39.8 16.4 44 24 44z"/>
-          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.5-2.6 4.6-4.8 6l6.2 5.2C36.3 39.3 44 33.6 44 24c0-1.3-.1-2.7-.4-3.9z"/>
-        </svg>
-        <span id="loginBtnText">Login dengan Google</span>
-      </button>
-      <div class="login-hint">🔒 Login aman · mode demo tersedia</div>
-    </div>
+      Mulai Main
+    </button>
+    <div class="login-hint">🔒 Device-based login · anti-bot berlapis</div>
+  </div>
 
-    <!-- ===== GAME SCREEN ===== -->
-    <div class="screen hidden" id="gameScreen">
-      <!-- HEADER -->
-      <div class="game-header">
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <div class="header-top">
         <div class="coin-display">
           <svg viewBox="0 0 100 100" fill="none">
             <circle cx="50" cy="50" r="44" fill="rgb(252,198,45)" stroke="#b8860b" stroke-width="3"/>
-            <text x="50" y="68" font-size="48" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
+            <circle cx="50" cy="50" r="36" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="6 4"/>
+            <text x="50" y="66" font-size="42" text-anchor="middle" fill="rgb(69,86,60)" font-weight="900" font-family="Segoe UI, sans-serif">$</text>
           </svg>
-          <span id="coinAmount">0</span>
+          <span id="coin-amount">0</span>
         </div>
-        <div class="hearts-display" id="heartsDisplay">❤️❤️❤️</div>
-        <div class="toggle-group">
-          <button class="toggle-btn" id="bgmToggle">🎵 BGM</button>
-          <button class="toggle-btn" id="sfxToggle">🔊 SFX</button>
+        <div class="header-btns">
+          <button class="icon-btn" id="btn-bgm">🎵 ON</button>
+          <button class="icon-btn" id="btn-sfx">🔊 ON</button>
         </div>
       </div>
-
-      <!-- LIVE TICKER -->
-      <div class="live-ticker" id="liveTicker">💸 Memuat payout...</div>
-
-      <!-- BOARD -->
-      <div class="board-wrapper">
-        <div class="board" id="board"></div>
+      <div class="header-stats">
+        <div class="stat-pill heart-row" id="heart-display">❤️❤️❤️</div>
+        <div class="stat-pill" id="ticket-display">🎬 3</div>
+        <div class="stat-pill vip-badge" id="vip-display">👑 VIP 1</div>
       </div>
+      <div class="stat-pill" id="heart-timer" style="display:none; font-size:11px;"></div>
+    </div>
 
-      <!-- BOTTOM NAV -->
-      <div class="bottom-nav">
-        <button class="nav-btn active" data-nav="game">🎮<span>Game</span></button>
-        <button class="nav-btn" data-nav="spin">🎡<span>Spin</span></button>
-        <button class="nav-btn" data-nav="checkin">📅<span>Check-in</span></button>
-        <button class="nav-btn" data-nav="ranking">🏆<span>Ranking</span></button>
-        <button class="nav-btn" data-nav="wd">💰<span>WD</span></button>
+    <div class="ticker" id="ticker"><span>💵</span><span id="ticker-text"></span></div>
+
+    <div class="game-body">
+      <div class="board-wrap">
+        <div id="board"></div>
       </div>
+      <div class="powerup-row">
+        <button class="powerup-btn" id="btn-hammer">
+          <span class="pu-icon">🔨</span>
+          <span>Hammer</span>
+          <span class="pu-count" id="hammer-count">1</span>
+        </button>
+        <button class="powerup-btn" id="btn-shuffle">
+          <span class="pu-icon">🔀</span>
+          <span>Shuffle</span>
+          <span class="pu-count" id="shuffle-count">1</span>
+        </button>
+        <button class="powerup-btn" id="btn-buy-powerup">
+          <span class="pu-icon">💰</span>
+          <span>Beli</span>
+          <span class="pu-count">500</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn active" data-nav="game"><span class="nav-icon">🎮</span>Game</button>
+      <button class="nav-btn" data-nav="spin"><span class="nav-icon">🎡</span>Spin</button>
+      <button class="nav-btn" data-nav="checkin"><span class="nav-icon">📅</span>Check-in</button>
+      <button class="nav-btn" data-nav="ranking"><span class="nav-icon">🏆</span>Ranking</button>
+      <button class="nav-btn" data-nav="wd"><span class="nav-icon">💰</span>WD</button>
     </div>
   </div>
 
-  <!-- ===== MODAL OVERLAY (GLOBAL) ===== -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-box" id="modalBox">
-      <h3 id="modalTitle">Judul</h3>
-      <p id="modalDesc">Deskripsi</p>
-      <div class="progress-bar" id="modalProgressWrap" style="display:none;">
-        <div class="progress-fill" id="modalProgressFill"></div>
+  <!-- ===== ADMIN SCREEN ===== -->
+  <div id="screen-admin" class="screen">
+    <div id="admin-login-view" class="admin-login-box">
+      <h2 style="color:#06b6d4; margin-bottom:20px; font-size:20px;">🔐 ADMIN LOGIN</h2>
+      <input type="password" id="admin-pass" placeholder="Masukkan password admin">
+      <button class="admin-btn" style="width:100%; padding:13px; font-size:15px;" id="admin-login-btn">Login</button>
+    </div>
+    <div id="admin-dashboard-view" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+      <div class="admin-header">
+        <h1>🔐 ADMIN PANEL · CUAN BLOK</h1>
+        <div class="admin-header-btns">
+          <button class="admin-btn" id="admin-export">Export JSON</button>
+          <button class="admin-btn secondary" id="admin-import-btn">Import JSON</button>
+          <input type="file" id="admin-import-file" accept=".json" style="display:none;">
+          <button class="admin-btn danger" id="admin-logout">Logout</button>
+        </div>
       </div>
-      <div class="modal-actions" id="modalActions">
-        <button class="btn" id="modalConfirmBtn">OK</button>
-        <button class="btn secondary" id="modalCancelBtn">Tutup</button>
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="input">Input WD</button>
+        <button class="admin-tab" data-tab="pending">Pending</button>
+        <button class="admin-tab" data-tab="done">Selesai</button>
+        <button class="admin-tab" data-tab="stats">Statistik</button>
       </div>
+      <div class="admin-body" id="admin-body"></div>
     </div>
   </div>
 
-  <!-- ===== SCRIPT ===== -->
-  <script>
-    'use strict';
+</div>
 
-    // ============================================================
-    // [C] ANTI-ERROR GLOBAL
-    // ============================================================
-    window.addEventListener('error', (e) => {
-      console.error('[GLOBAL ERROR]', e.message, 'di', e.filename, ':', e.lineno);
+<!-- ===== MODAL CONTAINER ===== -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   1. GLOBAL ERROR HANDLER + SAFE RUN
+   ============================================================ */
+window.addEventListener('error', function(e) {
+  console.warn('[Error]', e.message || 'Unknown error');
+});
+window.addEventListener('unhandledrejection', function(e) {
+  console.warn('[Promise]', e.reason);
+});
+function safeRun(fn, name) {
+  try { return fn(); } catch (e) { console.warn('[safeRun:' + name + ']', e.message); }
+}
+
+/* ============================================================
+   2. KONSTANTA
+   ============================================================ */
+var TURNSTILE_SITEKEY = '0x4AAAAAAE2Fyk4QG8WKjJdg';
+var ADMIN_HASH = '#a7k9x2mz-admin';
+var ADMIN_PASSWORD_DEFAULT = 'cuan2025';
+var BOARD_SIZE = 7;
+var COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA', '#F472B6', '#34D399'];
+var MIN_WD = 10000;
+var POWERUP_COST = 500;
+var HEART_REGEN_MS = 30 * 60 * 1000;
+var TICKET_REGEN_MS = 30 * 60 * 1000;
+var VIP_TIERS = [
+  { level: 0, min: 0, bonus: 0, name: 'VIP 1' },
+  { level: 1, min: 10000, bonus: 0.1, name: 'VIP 1' },
+  { level: 2, min: 50000, bonus: 0.2, name: 'VIP 2' },
+  { level: 3, min: 100000, bonus: 0.3, name: 'VIP 3' },
+  { level: 4, min: 500000, bonus: 0.5, name: 'VIP 4' },
+  { level: 5, min: 1000000, bonus: 1.0, name: 'VIP 5' }
+];
+var BOT_NAMES = ['SultanCuan', 'RajaKoin', 'DewiFortune', 'KingPuzzle', 'MasterBlok', 'CuanMax', 'HokiTerus', 'BandarKoin', 'SultanMuda', 'RatuBlok'];
+
+/* ============================================================
+   3. SECURITY CONSTANTS
+   ============================================================ */
+var DEVICE_KEY = 'cuanblok_device_v1';
+var DEVICE_ACCOUNTS_KEY = 'cuanblok_device_v1_accounts';
+var PLAYER_KEY = 'cuanblok_player_v1';
+var WD_PENDING_KEY = 'cuanblok_wd_pending_v1';
+var ADMIN_KEY = 'cuanblok_admin_v1';
+var SETTINGS_KEY = 'cuanblok_settings_v1';
+
+/* ============================================================
+   4. STATE
+   ============================================================ */
+var state = {
+  screen: 'login',
+  isAdmin: false,
+  adminAuthed: false,
+  adminTab: 'input',
+  turnstileToken: null,
+  turnstileBypassed: false,
+  turnstileWdToken: null,
+  turnstileWdBypassed: false,
+  deviceId: null,
+  player: null,
+  board: [],
+  hearts: 3,
+  maxHearts: 3,
+  tickets: 3,
+  maxTickets: 3,
+  lastHeartRegen: Date.now(),
+  lastTicketRegen: Date.now(),
+  selectedWallet: 'DANA',
+  hammerMode: false,
+  boardLocked: false,
+  gameOver: false,
+  reviveCooldownUntil: 0,
+  reviveAdUsedToday: false,
+  wdCooldownUntil: 0,
+  shadowbanned: false,
+  honeypotTrips: 0,
+  lastSpinDate: '',
+  lastCheckinDate: '',
+  checkinStreak: 0,
+  dailyAdCount: 0,
+  lastAdDate: '',
+  lastMysteryChestDate: '',
+  flashSaleActive: false,
+  flashSaleEnd: 0,
+  flashSaleLastAppear: 0,
+  lastTickerTime: 0,
+  exitIntentShown: false,
+  audioCtx: null,
+  bgmOn: true,
+  sfxOn: true,
+  missions: {
+    playGame: { progress: 0, target: 1, reward: 100, claimed: false },
+    clearMatch: { progress: 0, target: 10, reward: 200, claimed: false },
+    spin: { progress: 0, target: 1, reward: 50, claimed: false },
+    checkin: { progress: 0, target: 1, reward: 100, claimed: false },
+    collectCoins: { progress: 0, target: 1000, reward: 300, claimed: false }
+  },
+  missionDate: '',
+  leaderboard: []
+};
+
+/* ============================================================
+   5. DOM REFS
+   ============================================================ */
+var dom = {};
+function cacheDom() {
+  dom.screenLogin = document.getElementById('screen-login');
+  dom.screenGame = document.getElementById('screen-game');
+  dom.screenAdmin = document.getElementById('screen-admin');
+  dom.btnStart = document.getElementById('btn-start');
+  dom.coinAmount = document.getElementById('coin-amount');
+  dom.heartDisplay = document.getElementById('heart-display');
+  dom.ticketDisplay = document.getElementById('ticket-display');
+  dom.vipDisplay = document.getElementById('vip-display');
+  dom.heartTimer = document.getElementById('heart-timer');
+  dom.ticker = document.getElementById('ticker');
+  dom.tickerText = document.getElementById('ticker-text');
+  dom.board = document.getElementById('board');
+  dom.btnHammer = document.getElementById('btn-hammer');
+  dom.btnShuffle = document.getElementById('btn-shuffle');
+  dom.btnBuyPowerup = document.getElementById('btn-buy-powerup');
+  dom.hammerCount = document.getElementById('hammer-count');
+  dom.shuffleCount = document.getElementById('shuffle-count');
+  dom.btnBgm = document.getElementById('btn-bgm');
+  dom.btnSfx = document.getElementById('btn-sfx');
+  dom.modalOverlay = document.getElementById('modal-overlay');
+  dom.modalContent = document.getElementById('modal-content');
+  dom.toastContainer = document.getElementById('toast-container');
+  dom.adminLoginView = document.getElementById('admin-login-view');
+  dom.adminDashboardView = document.getElementById('admin-dashboard-view');
+  dom.adminPass = document.getElementById('admin-pass');
+  dom.adminLoginBtn = document.getElementById('admin-login-btn');
+  dom.adminExport = document.getElementById('admin-export');
+  dom.adminImportBtn = document.getElementById('admin-import-btn');
+  dom.adminImportFile = document.getElementById('admin-import-file');
+  dom.adminLogout = document.getElementById('admin-logout');
+  dom.adminBody = document.getElementById('admin-body');
+  dom.particles = document.getElementById('particles');
+}
+
+/* ============================================================
+   6. UTILITAS
+   ============================================================ */
+function showToast(msg, duration) {
+  if (!dom.toastContainer) return;
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  dom.toastContainer.appendChild(t);
+  setTimeout(function() {
+    t.classList.add('out');
+    setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+  }, duration || 2800);
+}
+function vibrate(ms) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+function formatNumber(n) {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('📋 Kode berhasil disalin!');
+    }).catch(function() { fallbackCopy(text); });
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); showToast('📋 Kode berhasil disalin!'); } catch(e) { showToast('❌ Gagal menyalin'); }
+  document.body.removeChild(ta);
+}
+function djb2Hash(str) {
+  var hash = 5381;
+  for (var i = 0; i < str.length; i++) { hash = ((hash << 5) + hash) + str.charCodeAt(i); hash = hash & hash; }
+  return Math.abs(hash).toString(36);
+}
+function randomHex(len) { var s = ''; for (var i = 0; i < len; i++) s += Math.floor(Math.random() * 16).toString(16); return s; }
+function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function formatTime(ms) {
+  var s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
+  if (h > 0) return h + 'j ' + (m % 60) + 'm';
+  if (m > 0) return m + 'm ' + (s % 60) + 'd';
+  return s + 'd';
+}
+
+/* ============================================================
+   7. ANTI-BOT FUNCTIONS
+   ============================================================ */
+function getDeviceId() {
+  var ua = navigator.userAgent || '';
+  var lang = navigator.language || '';
+  var screenInfo = (screen.width || 0) + 'x' + (screen.height || 0);
+  var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  var hc = navigator.hardwareConcurrency || 0;
+  var plat = navigator.platform || '';
+  var dm = navigator.deviceMemory || 0;
+  var raw = ua + '|' + lang + '|' + screenInfo + '|' + tz + '|' + hc + '|' + plat + '|' + dm;
+  return 'dev_' + djb2Hash(raw).substring(0, 8);
+}
+function getDeviceAccounts() {
+  try { var d = localStorage.getItem(DEVICE_ACCOUNTS_KEY); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+}
+function saveDeviceAccount(nickname) {
+  var accounts = getDeviceAccounts();
+  accounts.push({ name: nickname, time: Date.now(), sig: djb2Hash(nickname + '|' + state.deviceId) });
+  var cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  accounts = accounts.filter(function(a) { return a.time > cutoff; });
+  localStorage.setItem(DEVICE_ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+function canCreateAccount() {
+  var accounts = getDeviceAccounts();
+  var cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  accounts = accounts.filter(function(a) { return a.time > cutoff; });
+  return accounts.length < 3;
+}
+function validateNickname(name) {
+  if (!name || name.length < 3) return { ok: false, msg: 'Minimal 3 karakter' };
+  if (name.length > 16) return { ok: false, msg: 'Maksimal 16 karakter' };
+  if (!/^[a-zA-Z0-9_]+$/.test(name)) return { ok: false, msg: 'Hanya huruf, angka, underscore' };
+  if (/^\d+$/.test(name)) return { ok: false, msg: 'Tidak boleh angka semua' };
+  if (/(.)\1{3,}/.test(name)) return { ok: false, msg: 'Terlalu banyak karakter berulang' };
+  if (/^bot/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
+  if (/^user\d+$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
+  if (/^test\d+$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
+  if (/^admin/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
+  if (/^null$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
+  if (/^guest\d+$/i.test(name)) return { ok: false, msg: 'Nama tidak diizinkan' };
+  return { ok: true, msg: 'Nama valid ✓' };
+}
+function generateReferral(name) {
+  var prefix = name.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4);
+  while (prefix.length < 4) prefix += 'X';
+  var suffix = '';
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (var i = 0; i < 4; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  return prefix + suffix;
+}
+
+/* ============================================================
+   8. TURNSTILE HELPERS
+   ============================================================ */
+var turnstileAttempts = 0;
+function renderTurnstileWidget(containerId, onSuccess) {
+  if (!window.turnstile) {
+    turnstileAttempts++;
+    if (turnstileAttempts > 25) {
+      state.turnstileBypassed = true;
+      if (onSuccess) onSuccess('bypass_' + randomHex(16));
+      showToast('⚠️ Turnstile timeout, lanjut dengan mode fallback', 3000);
+      return;
+    }
+    setTimeout(function() { renderTurnstileWidget(containerId, onSuccess); }, 200);
+    return;
+  }
+  var container = document.getElementById(containerId);
+  if (!container || container.dataset.rendered === '1') return;
+  container.dataset.rendered = '1';
+  try {
+    window.turnstile.render(container, {
+      sitekey: TURNSTILE_SITEKEY,
+      theme: 'dark',
+      callback: function(token) { console.log('[Turnstile] Token diterima'); if (onSuccess) onSuccess(token); },
+      'error-callback': function(err) { console.warn('[Turnstile]', err); },
+      'expired-callback': function() { console.warn('[Turnstile] expired'); }
     });
-    window.addEventListener('unhandledrejection', (e) => {
-      console.error('[UNHANDLED PROMISE]', e.reason);
+    console.log('[Turnstile] Widget rendered');
+  } catch (e) { console.warn('[Turnstile] Render gagal:', e.message); }
+}
+function resetTurnstile(containerId) {
+  var container = document.getElementById(containerId);
+  if (container) { container.dataset.rendered = '0'; container.innerHTML = ''; }
+}
+
+/* ============================================================
+   9. AUDIO
+   ============================================================ */
+function initAudio() {
+  if (state.audioCtx) return;
+  try { state.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.warn('[Audio] Gagal init'); }
+}
+function playTone(freq, duration, type) {
+  if (!state.sfxOn || !state.audioCtx) return;
+  try {
+    var osc = state.audioCtx.createOscillator();
+    var gain = state.audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.08, state.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(state.audioCtx.destination);
+    osc.start(); osc.stop(state.audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+function sfxPop() { playTone(520, 0.08, 'square'); }
+function sfxCoin() { playTone(880, 0.12, 'sine'); setTimeout(function(){ playTone(1200, 0.1, 'sine'); }, 60); }
+function sfxClick() { playTone(300, 0.05, 'triangle'); }
+function sfxWin() { playTone(660, 0.15, 'sine'); setTimeout(function(){ playTone(880, 0.15, 'sine'); }, 120); setTimeout(function(){ playTone(1100, 0.2, 'sine'); }, 240); }
+
+/* ============================================================
+   10. AUTH PLAYER
+   ============================================================ */
+function loadPlayer() {
+  try {
+    var d = localStorage.getItem(PLAYER_KEY);
+    if (d) { state.player = JSON.parse(d); return true; }
+  } catch(e) {}
+  return false;
+}
+function savePlayer() {
+  if (!state.player) return;
+  try { localStorage.setItem(PLAYER_KEY, JSON.stringify(state.player)); } catch(e) {}
+}
+function createPlayer(nickname) {
+  var referral = generateReferral(nickname);
+  state.player = {
+    name: nickname,
+    coins: 0,
+    totalCoins: 0,
+    referral: referral,
+    deviceId: state.deviceId,
+    hearts: 3,
+    maxHearts: 3,
+    tickets: 3,
+    maxTickets: 3,
+    lastHeartRegen: Date.now(),
+    lastTicketRegen: Date.now(),
+    hammer: 1,
+    shuffle: 1,
+    lastSpinDate: '',
+    lastCheckinDate: '',
+    checkinStreak: 0,
+    dailyAdCount: 0,
+    lastAdDate: '',
+    lastMysteryChestDate: '',
+    reviveCooldownUntil: 0,
+    reviveAdUsedToday: false,
+    wdCooldownUntil: 0,
+    shadowbanned: false,
+    honeypotTrips: 0,
+    missions: {
+      playGame: { progress: 0, target: 1, reward: 100, claimed: false },
+      clearMatch: { progress: 0, target: 10, reward: 200, claimed: false },
+      spin: { progress: 0, target: 1, reward: 50, claimed: false },
+      checkin: { progress: 0, target: 1, reward: 100, claimed: false },
+      collectCoins: { progress: 0, target: 1000, reward: 300, claimed: false }
+    },
+    missionDate: todayStr(),
+    createdAt: Date.now()
+  };
+  savePlayer();
+  console.log('[Login] Akun dibuat:', nickname);
+  console.log('[Game] Masuk sebagai:', nickname, '| Kode referral:', referral);
+  return state.player;
+}
+function updateHearts() {
+  if (!state.player) return;
+  var now = Date.now();
+  var elapsed = now - state.player.lastHeartRegen;
+  if (state.player.hearts < state.player.maxHearts) {
+    var regen = Math.floor(elapsed / HEART_REGEN_MS);
+    if (regen > 0) {
+      state.player.hearts = Math.min(state.player.maxHearts, state.player.hearts + regen);
+      state.player.lastHeartRegen = now;
+      savePlayer();
+    }
+  }
+  elapsed = now - state.player.lastTicketRegen;
+  if (state.player.tickets < state.player.maxTickets) {
+    var tregen = Math.floor(elapsed / TICKET_REGEN_MS);
+    if (tregen > 0) {
+      state.player.tickets = Math.min(state.player.maxTickets, state.player.tickets + tregen);
+      state.player.lastTicketRegen = now;
+      savePlayer();
+    }
+  }
+}
+function getVipLevel() {
+  if (!state.player) return VIP_TIERS[0];
+  var total = state.player.totalCoins || 0;
+  var tier = VIP_TIERS[0];
+  for (var i = 0; i < VIP_TIERS.length; i++) {
+    if (total >= VIP_TIERS[i].min) tier = VIP_TIERS[i];
+  }
+  return tier;
+}
+
+/* ============================================================
+   11. AUTH ADMIN
+   ============================================================ */
+function loadAdminData() {
+  try { var d = localStorage.getItem(ADMIN_KEY); if (d) return JSON.parse(d); } catch(e) {}
+  return { pending: [], done: [], sig: '' };
+}
+function saveAdminData(data) {
+  data.sig = djb2Hash(JSON.stringify(data.pending) + JSON.stringify(data.done));
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(data));
+}
+function adminLogin(password) {
+  if (password === ADMIN_PASSWORD_DEFAULT) {
+    state.adminAuthed = true;
+    showToast('✅ Login admin berhasil');
+    renderAdmin();
+    return true;
+  }
+  showToast('❌ Password salah');
+  return false;
+}
+
+/* ============================================================
+   12. ADMIN DASHBOARD
+   ============================================================ */
+function renderAdmin() {
+  if (!dom.adminLoginView || !dom.adminDashboardView) return;
+  if (!state.adminAuthed) {
+    dom.adminLoginView.classList.remove('hidden');
+    dom.adminDashboardView.classList.add('hidden');
+    return;
+  }
+  dom.adminLoginView.classList.add('hidden');
+  dom.adminDashboardView.classList.remove('hidden');
+  renderAdminBody();
+}
+function parseWdCode(code) {
+  var parts = code.trim().split('|');
+  if (parts.length !== 8) return null;
+  if (parts[0] !== 'CB') return null;
+  return {
+    prefix: parts[0], name: parts[1], device: parts[2], amount: parseInt(parts[3]) || 0,
+    wallet: parts[4], phone: parts[5], referral: parts[6], timestamp: parts[7],
+    raw: code.trim(), status: 'pending', parsedAt: Date.now()
+  };
+}
+function renderAdminBody() {
+  if (!dom.adminBody) return;
+  var data = loadAdminData();
+  var tab = state.adminTab;
+  if (tab === 'input') {
+    dom.adminBody.innerHTML = '<div class="admin-card"><h3 style="color:#06b6d4; margin-bottom:10px; font-size:14px;">📥 Input Kode WD dari Player</h3><textarea id="admin-wd-input" placeholder="Paste kode WD di sini...&#10;Contoh: CB|SultanCuan|dev_x9|10000|DANA|0812xxxx|SULT7X9K|m2k9x2"></textarea><button class="admin-btn" style="margin-top:10px; width:100%;" id="admin-parse-btn">Parse & Simpan</button></div>';
+    var parseBtn = document.getElementById('admin-parse-btn');
+    if (parseBtn) parseBtn.addEventListener('click', function() {
+      var ta = document.getElementById('admin-wd-input');
+      if (!ta || !ta.value.trim()) { showToast('❌ Masukkan kode WD'); return; }
+      var parsed = parseWdCode(ta.value);
+      if (!parsed) { showToast('❌ Format kode tidak valid'); return; }
+      data.pending.push(parsed);
+      saveAdminData(data);
+      showToast('✅ WD berhasil disimpan ke pending');
+      ta.value = '';
+      renderAdminBody();
     });
+  } else if (tab === 'pending') {
+    if (data.pending.length === 0) {
+      dom.adminBody.innerHTML = '<div class="admin-card text-center" style="color:#94a3b8;">Tidak ada WD pending</div>';
+      return;
+    }
+    var html = '';
+    data.pending.forEach(function(wd, i) {
+      html += '<div class="wd-item"><div class="wd-row"><span>👤 ' + wd.name + '</span><span class="badge pending">PENDING</span></div><div class="wd-row"><span>💰 ' + formatNumber(wd.amount) + ' koin</span><span>🏦 ' + wd.wallet + '</span></div><div class="wd-row"><span>📱 ' + wd.phone + '</span><span>🔗 ' + wd.referral + '</span></div><div class="wd-code">' + wd.raw + '</div><div class="wd-actions"><button class="admin-btn" data-idx="' + i + '" data-action="paid" style="background:#22c55e;">✅ Dibayar</button><button class="admin-btn danger" data-idx="' + i + '" data-action="reject">❌ Tolak</button></div></div>';
+    });
+    dom.adminBody.innerHTML = html;
+    dom.adminBody.querySelectorAll('button[data-action]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var idx = parseInt(this.getAttribute('data-idx'));
+        var action = this.getAttribute('data-action');
+        var wd = data.pending[idx];
+        if (!wd) return;
+        data.pending.splice(idx, 1);
+        if (action === 'paid') { wd.status = 'done'; wd.doneAt = Date.now(); data.done.push(wd); showToast('✅ WD ditandai dibayar'); }
+        else { wd.status = 'rejected'; wd.rejectedAt = Date.now(); data.done.push(wd); showToast('❌ WD ditolak'); }
+        saveAdminData(data); renderAdminBody();
+      });
+    });
+  } else if (tab === 'done') {
+    if (data.done.length === 0) {
+      dom.adminBody.innerHTML = '<div class="admin-card text-center" style="color:#94a3b8;">Belum ada WD selesai</div>';
+      return;
+    }
+    var dhtml = '<div class="filter-row"><input type="date" id="admin-filter-date"></div>';
+    data.done.forEach(function(wd) {
+      var badge = wd.status === 'done' ? '<span class="badge done">DIBAYAR</span>' : '<span class="badge rejected">DITOLAK</span>';
+      dhtml += '<div class="wd-item"><div class="wd-row"><span>👤 ' + wd.name + '</span>' + badge + '</div><div class="wd-row"><span>💰 ' + formatNumber(wd.amount) + ' koin</span><span>🏦 ' + wd.wallet + '</span></div><div class="wd-code">' + wd.raw + '</div></div>';
+    });
+    dom.adminBody.innerHTML = dhtml;
+  } else if (tab === 'stats') {
+    var totalPending = data.pending.reduce(function(s, w) { return s + w.amount; }, 0);
+    var totalDone = data.done.reduce(function(s, w) { return s + w.amount; }, 0);
+    var coinsCirculating = 0;
+    try { var p = JSON.parse(localStorage.getItem(PLAYER_KEY) || '{}'); coinsCirculating = p.coins || 0; } catch(e) {}
+    dom.adminBody.innerHTML = '<div class="stat-grid"><div class="stat-card"><div class="stat-num">' + data.pending.length + '</div><div class="stat-label">WD Pending</div></div><div class="stat-card"><div class="stat-num">' + data.done.length + '</div><div class="stat-label">WD Selesai</div></div><div class="stat-card"><div class="stat-num">' + formatNumber(totalPending) + '</div><div class="stat-label">Koin Pending</div></div><div class="stat-card"><div class="stat-num">' + formatNumber(totalDone) + '</div><div class="stat-label">Koin Dibayar</div></div><div class="stat-card"><div class="stat-num">' + formatNumber(coinsCirculating) + '</div><div class="stat-label">Koin Beredar</div></div></div>';
+  }
+}
 
-    const safeRun = (fn, name) => {
-      try { return fn(); } catch (e) { console.warn('[SafeRun:' + name + ']', e.message); }
-    };
+/* ============================================================
+   13. PERSISTENCE PLAYER
+   ============================================================ */
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bgmOn: state.bgmOn, sfxOn: state.sfxOn })); } catch(e) {}
+}
+function loadSettings() {
+  try {
+    var d = localStorage.getItem(SETTINGS_KEY);
+    if (d) { var s = JSON.parse(d); state.bgmOn = s.bgmOn !== false; state.sfxOn = s.sfxOn !== false; }
+  } catch(e) {}
+}
 
-    // ============================================================
-    // KONSTANTA
-    // ============================================================
-    const SUPABASE_URL = 'https://nyvddronarytemcensgg.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2cMa6V8qtI4Wv_RfcrWdCg_cPyfjMQA';
-    const GOOGLE_CLIENT_ID = '742746858580-1fo8lqnhv7lnf2qtkd72raf7po2arsf9.apps.googleusercontent.com';
+/* ============================================================
+   14. UI RENDER PLAYER
+   ============================================================ */
+function renderGameUI() {
+  if (!state.player) return;
+  updateHearts();
+  var vip = getVipLevel();
+  if (dom.coinAmount) dom.coinAmount.textContent = formatNumber(state.player.coins);
+  if (dom.heartDisplay) {
+    var h = '';
+    for (var i = 0; i < state.player.maxHearts; i++) h += i < state.player.hearts ? '❤️' : '🖤';
+    dom.heartDisplay.textContent = h;
+  }
+  if (dom.ticketDisplay) dom.ticketDisplay.textContent = '🎬 ' + state.player.tickets;
+  if (dom.vipDisplay) dom.vipDisplay.textContent = '👑 ' + vip.name;
+  if (dom.hammerCount) dom.hammerCount.textContent = state.player.hammer;
+  if (dom.shuffleCount) dom.shuffleCount.textContent = state.player.shuffle;
+  if (dom.btnBgm) dom.btnBgm.textContent = state.bgmOn ? '🎵 ON' : '🎵 OFF';
+  if (dom.btnSfx) dom.btnSfx.textContent = state.sfxOn ? '🔊 ON' : '🔊 OFF';
+  if (dom.heartTimer) {
+    if (state.player.hearts < state.player.maxHearts) {
+      var remain = HEART_REGEN_MS - (Date.now() - state.player.lastHeartRegen);
+      if (remain > 0) { dom.heartTimer.style.display = 'block'; dom.heartTimer.textContent = '⏳ Hati penuh dalam ' + formatTime(remain); }
+      else dom.heartTimer.style.display = 'none';
+    } else dom.heartTimer.style.display = 'none';
+  }
+}
 
-    const COLORS = [
-      '#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA', '#F472B6', '#34D399'
-    ];
+/* ============================================================
+   15. GAMEPLAY
+   ============================================================ */
+function initBoard() {
+  state.board = [];
+  for (var r = 0; r < BOARD_SIZE; r++) {
+    state.board[r] = [];
+    for (var c = 0; c < BOARD_SIZE; c++) {
+      state.board[r][c] = { color: COLORS[Math.floor(Math.random() * COLORS.length)], chest: false };
+    }
+  }
+  if (Math.random() < 0.15) {
+    var cr = Math.floor(Math.random() * BOARD_SIZE);
+    var cc = Math.floor(Math.random() * BOARD_SIZE);
+    state.board[cr][cc].chest = true;
+  }
+  renderBoard();
+}
+function renderBoard() {
+  if (!dom.board) return;
+  dom.board.innerHTML = '';
+  for (var r = 0; r < BOARD_SIZE; r++) {
+    for (var c = 0; c < BOARD_SIZE; c++) {
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r; cell.dataset.c = c;
+      var data = state.board[r][c];
+      if (data) {
+        cell.style.background = data.color;
+        if (data.chest) cell.innerHTML = '<span class="chest-icon">🎁</span>';
+      }
+      cell.addEventListener('click', (function(row, col) {
+        return function() { onCellClick(row, col); };
+      })(r, c));
+      dom.board.appendChild(cell);
+    }
+  }
+}
+function onCellClick(r, c) {
+  if (state.boardLocked || state.gameOver) return;
+  if (state.hammerMode) {
+    state.hammerMode = false;
+    if (state.player.hammer > 0) {
+      state.player.hammer--;
+      state.board[r][c] = null;
+      sfxPop(); vibrate(30);
+      renderBoard(); renderGameUI(); savePlayer();
+      showToast('🔨 Blok dihancurkan!');
+    }
+    return;
+  }
+  var data = state.board[r][c];
+  if (!data) return;
+  if (data.chest) { openMysteryChest(r, c); return; }
+  sfxClick();
+  var group = findGroup(r, c, data.color);
+  if (group.length >= 3) {
+    state.boardLocked = true;
+    clearGroup(group);
+  }
+}
+function findGroup(r, c, color) {
+  var visited = {};
+  var group = [];
+  var stack = [[r, c]];
+  while (stack.length > 0) {
+    var pos = stack.pop();
+    var key = pos[0] + ',' + pos[1];
+    if (visited[key]) continue;
+    visited[key] = true;
+    if (pos[0] < 0 || pos[0] >= BOARD_SIZE || pos[1] < 0 || pos[1] >= BOARD_SIZE) continue;
+    var cell = state.board[pos[0]][pos[1]];
+    if (!cell || cell.color !== color) continue;
+    group.push(pos);
+    stack.push([pos[0]-1, pos[1]]); stack.push([pos[0]+1, pos[1]]);
+    stack.push([pos[0], pos[1]-1]); stack.push([pos[0], pos[1]+1]);
+  }
+  return group;
+}
+function clearGroup(group) {
+  var count = group.length;
+  var baseReward = count * 10;
+  var vip = getVipLevel();
+  var bonus = Math.floor(baseReward * vip.bonus);
+  var totalReward = baseReward + bonus;
+  state.player.coins += totalReward;
+  state.player.totalCoins = (state.player.totalCoins || 0) + totalReward;
+  if (state.player.missions && !state.player.missions.collectCoins.claimed) {
+    state.player.missions.collectCoins.progress = Math.min(state.player.missions.collectCoins.target, state.player.missions.collectCoins.progress + totalReward);
+  }
+  if (state.player.missions && !state.player.missions.clearMatch.claimed) {
+    state.player.missions.clearMatch.progress = Math.min(state.player.missions.clearMatch.target, state.player.missions.clearMatch.progress + 1);
+  }
+  savePlayer();
+  sfxCoin(); vibrate(30);
+  showFloatingReward(group[0][0], group[0][1], '+' + totalReward);
+  group.forEach(function(pos) {
+    var cell = dom.board.querySelector('[data-r="' + pos[0] + '"][data-c="' + pos[1] + '"]');
+    if (cell) cell.classList.add('pop');
+  });
+  setTimeout(function() {
+    group.forEach(function(pos) { state.board[pos[0]][pos[1]] = null; });
+    applyGravity();
+    renderBoard();
+    renderGameUI();
+    state.boardLocked = false;
+    checkGameOver();
+  }, 320);
+}
+function applyGravity() {
+  for (var c = 0; c < BOARD_SIZE; c++) {
+    var writeRow = BOARD_SIZE - 1;
+    for (var r = BOARD_SIZE - 1; r >= 0; r--) {
+      if (state.board[r][c]) {
+        state.board[writeRow][c] = state.board[r][c];
+        if (writeRow !== r) state.board[r][c] = null;
+        writeRow--;
+      }
+    }
+    for (var r2 = writeRow; r2 >= 0; r2--) {
+      state.board[r2][c] = { color: COLORS[Math.floor(Math.random() * COLORS.length)], chest: false };
+    }
+  }
+}
+function checkGameOver() {
+  if (!state.player) return;
+  var hasMove = false;
+  for (var r = 0; r < BOARD_SIZE && !hasMove; r++) {
+    for (var c = 0; c < BOARD_SIZE && !hasMove; c++) {
+      if (!state.board[r][c]) continue;
+      var g = findGroup(r, c, state.board[r][c].color);
+      if (g.length >= 3) hasMove = true;
+    }
+  }
+  if (!hasMove) {
+    state.player.hearts--;
+    savePlayer();
+    renderGameUI();
+    if (state.player.hearts <= 0) { showGameOver(); }
+    else { showToast('❤️ Tidak ada langkah! Hati -1'); initBoard(); }
+  }
+}
+function showFloatingReward(r, c, text) {
+  var cell = dom.board.querySelector('[data-r="' + r + '"][data-c="' + c + '"]');
+  if (!cell) return;
+  var float = document.createElement('div');
+  float.textContent = text;
+  float.style.cssText = 'position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:#ffd700; font-weight:900; font-size:16px; pointer-events:none; z-index:50; animation:floatReward 0.8s ease-out forwards;';
+  var wrap = cell.closest('.board-wrap');
+  if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(float); setTimeout(function(){ if (float.parentNode) float.parentNode.removeChild(float); }, 800); }
+}
+function showGameOver() {
+  state.gameOver = true;
+  var adUsed = state.player.reviveAdUsedToday && state.player.lastAdDate === todayStr();
+  var cooldownRemain = Math.max(0, state.player.reviveCooldownUntil - Date.now());
+  var html = '<div class="gameover-icon">💔</div><div class="modal-title">Game Over!</div><div class="modal-desc">Hati kamu habis. Pilih cara revive:</div>';
+  if (!adUsed) html += '<button class="btn-modal primary" id="revive-ad" style="width:100%; margin-bottom:10px;">🎬 Tonton Iklan → +1 Hati</button>';
+  else html += '<div class="cooldown-text">🎬 Iklan revive sudah dipakai hari ini</div>';
+  if (cooldownRemain <= 0) html += '<button class="btn-modal secondary" id="revive-cooldown" style="width:100%; margin-bottom:10px;">⏳ Tunggu 60 detik → +1 Hati</button>';
+  else html += '<div class="cooldown-text">⏳ Cooldown revive: ' + Math.ceil(cooldownRemain/1000) + ' detik</div>';
+  html += '<button class="btn-modal secondary" id="gameover-close" style="width:100%;">Tutup</button>';
+  showModal(html, 'gameover');
+  var adBtn = document.getElementById('revive-ad');
+  if (adBtn) adBtn.addEventListener('click', function() {
+    showAdSim(function() {
+      state.player.hearts = 1;
+      state.player.reviveAdUsedToday = true;
+      state.player.lastAdDate = todayStr();
+      savePlayer(); state.gameOver = false; closeModal(); renderGameUI();
+      showToast('❤️ +1 Hati dari iklan!');
+      initBoard();
+    });
+  });
+  var cdBtn = document.getElementById('revive-cooldown');
+  if (cdBtn) cdBtn.addEventListener('click', function() {
+    state.player.reviveCooldownUntil = Date.now() + 60000;
+    savePlayer(); closeModal();
+    showToast('⏳ Tunggu 60 detik untuk revive...');
+    setTimeout(function() {
+      if (state.gameOver) {
+        state.player.hearts = 1; savePlayer(); state.gameOver = false;
+        renderGameUI(); showToast('❤️ +1 Hati dari cooldown!'); initBoard();
+      }
+    }, 60000);
+  });
+  var closeBtn = document.getElementById('gameover-close');
+  if (closeBtn) closeBtn.addEventListener('click', function() { closeModal(); });
+}
 
-    const BOT_NAMES = [
-      'CuanKing', 'SlotMaster', 'PuzzleHolic', 'DuitCepat', 'BlokEmas',
-      'RajaSpin', 'WDExpress', 'HokiStrike', 'KoinNaga', 'Jackpot77',
-      'SultanMuda', 'ChipMaster', 'CuanAbis', 'MaxwinGuy', 'PuzzlePro',
-      'GacorBanget', 'DanaLancar', 'OvoHunter', 'GoPayHero', 'SaldoNaik'
-    ];
-
-    // ============================================================
-    // [D] SUPABASE INIT — HANYA SEKALI, TRY/CATCH
-    // ============================================================
-    let supabase = null;
+/* ============================================================
+   16. FITUR PLAYER
+   ============================================================ */
+function showModal(html, type) {
+  if (!dom.modalOverlay || !dom.modalContent) return;
+  dom.modalContent.innerHTML = html;
+  dom.modalOverlay.classList.add('active');
+  dom.modalOverlay.dataset.type = type || '';
+}
+function closeModal() {
+  if (dom.modalOverlay) dom.modalOverlay.classList.remove('active');
+}
+function showAdSim(callback) {
+  if (!state.player || state.player.tickets <= 0) { showToast('❌ Tiket iklan habis!'); return; }
+  state.player.tickets--;
+  savePlayer(); renderGameUI();
+  var count = 5;
+  showModal('<div class="modal-title">🎬 Simulasi Iklan</div><div class="ad-countdown" id="ad-count">5</div><div class="ad-progress"><div class="ad-progress-inner" id="ad-bar"></div></div><div class="modal-desc mt-10">Tunggu sampai selesai...</div>', 'ad');
+  var bar = document.getElementById('ad-bar');
+  var cnt = document.getElementById('ad-count');
+  var interval = setInterval(function() {
+    count--;
+    if (cnt) cnt.textContent = count;
+    if (bar) bar.style.width = ((5 - count) / 5 * 100) + '%';
+    if (count <= 0) { clearInterval(interval); closeModal(); if (callback) callback(); }
+  }, 1000);
+}
+function openSpin() {
+  var today = todayStr();
+  if (state.player.lastSpinDate === today) { showToast('🎡 Spin sudah dilakukan hari ini!'); return; }
+  showModal('<div class="modal-title">🎡 Spin Harian</div><div class="modal-desc">Dapatkan 50-500 koin gratis!</div><div class="wheel" id="spin-wheel"></div><button class="btn-modal primary" style="width:100%;" id="spin-btn">Putar!</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>', 'spin');
+  var spinBtn = document.getElementById('spin-btn');
+  if (spinBtn) spinBtn.addEventListener('click', function() {
+    var wheel = document.getElementById('spin-wheel');
+    if (!wheel) return;
+    var reward = Math.floor(Math.random() * 451) + 50;
+    var rotation = 1440 + Math.random() * 360;
+    wheel.style.transform = 'rotate(' + rotation + 'deg)';
+    spinBtn.disabled = true;
+    state.player.lastSpinDate = today;
+    if (state.player.missions && !state.player.missions.spin.claimed) {
+      state.player.missions.spin.progress = Math.min(state.player.missions.spin.target, state.player.missions.spin.progress + 1);
+    }
+    setTimeout(function() {
+      state.player.coins += reward;
+      state.player.totalCoins = (state.player.totalCoins || 0) + reward;
+      if (state.player.missions && !state.player.missions.collectCoins.claimed) {
+        state.player.missions.collectCoins.progress = Math.min(state.player.missions.collectCoins.target, state.player.missions.collectCoins.progress + reward);
+      }
+      savePlayer(); renderGameUI(); sfxWin();
+      closeModal();
+      showToast('🎉 Kamu dapat ' + reward + ' koin!');
+    }, 4200);
+  });
+}
+function openCheckin() {
+  var today = todayStr();
+  var streak = state.player.checkinStreak || 0;
+  var canCheckin = state.player.lastCheckinDate !== today;
+  var rewards = [50, 75, 100, 150, 200, 300, 500];
+  var html = '<div class="modal-title">📅 Check-in Harian</div><div class="modal-desc">Streak: ' + streak + ' hari</div><div class="checkin-grid">';
+  for (var i = 0; i < 7; i++) {
+    var claimed = i < streak % 7 || (streak >= 7 && streak % 7 === 0 && i === 0);
+    var isToday = canCheckin && i === (streak % 7);
+    html += '<div class="checkin-day ' + (claimed ? 'claimed' : '') + ' ' + (isToday ? 'today' : '') + '"><span class="day-num">Hari ' + (i+1) + '</span><span class="day-reward">+' + rewards[i] + '</span></div>';
+  }
+  html += '</div>';
+  if (canCheckin) html += '<button class="btn-modal primary" style="width:100%;" id="checkin-btn">Klaim Hari ' + ((streak % 7) + 1) + '</button>';
+  else html += '<div class="text-center" style="color:#34d399; font-weight:700; margin:10px 0;">✅ Sudah check-in hari ini</div>';
+  html += '<button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>';
+  showModal(html, 'checkin');
+  var cBtn = document.getElementById('checkin-btn');
+  if (cBtn) cBtn.addEventListener('click', function() {
+    var reward = rewards[streak % 7];
+    state.player.coins += reward;
+    state.player.totalCoins = (state.player.totalCoins || 0) + reward;
+    state.player.checkinStreak = streak + 1;
+    state.player.lastCheckinDate = today;
+    if (state.player.missions && !state.player.missions.checkin.claimed) {
+      state.player.missions.checkin.progress = Math.min(state.player.missions.checkin.target, state.player.missions.checkin.progress + 1);
+    }
+    savePlayer(); renderGameUI(); sfxWin();
+    closeModal();
+    showToast('📅 Check-in hari ' + ((streak % 7) + 1) + '! +' + reward + ' koin');
+  });
+}
+function openMissions() {
+  var m = state.player.missions;
+  var html = '<div class="modal-title">📋 Misi Harian</div><div class="modal-desc">Selesaikan misi untuk bonus koin!</div>';
+  var keys = ['playGame', 'clearMatch', 'spin', 'checkin', 'collectCoins'];
+  var names = { playGame: 'Main 1 game', clearMatch: 'Clear 10 match', spin: 'Spin 1x', checkin: 'Check-in', collectCoins: 'Kumpulin 1.000 koin' };
+  keys.forEach(function(k) {
+    var mis = m[k];
+    var pct = Math.min(100, Math.floor(mis.progress / mis.target * 100));
+    html += '<div class="mission-item"><div class="m-top"><span class="m-name">' + names[k] + '</span><span class="m-reward">+' + mis.reward + ' 💵</span></div><div class="progress-bar-outer"><div class="progress-bar-inner" style="width:' + pct + '%"></div></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;"><span style="font-size:11px; color:#aaa;">' + mis.progress + '/' + mis.target + '</span>';
+    if (mis.progress >= mis.target && !mis.claimed) html += '<button class="m-btn claim" data-mission="' + k + '">Klaim</button>';
+    else if (mis.claimed) html += '<button class="m-btn claimed">✅ Diklaim</button>';
+    html += '</div></div>';
+  });
+  html += '<button class="btn-modal secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Tutup</button>';
+  showModal(html, 'missions');
+  document.querySelectorAll('.m-btn.claim').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var k = this.getAttribute('data-mission');
+      if (!m[k] || m[k].claimed) return;
+      m[k].claimed = true;
+      state.player.coins += m[k].reward;
+      state.player.totalCoins = (state.player.totalCoins || 0) + m[k].reward;
+      savePlayer(); renderGameUI(); sfxCoin();
+      showToast('🎉 Misi selesai! +' + m[k].reward + ' koin');
+      closeModal(); openMissions();
+    });
+  });
+}
+function openRanking() {
+  var bots = BOT_NAMES.map(function(n) { return { name: n, score: Math.floor(Math.random() * 50000) + 5000 }; });
+  bots.push({ name: state.player.name, score: state.player.totalCoins || 0 });
+  bots.sort(function(a, b) { return b.score - a.score; });
+  var html = '<div class="modal-title">🏆 Leaderboard</div><div class="modal-desc">Top pemain hari ini</div>';
+  bots.slice(0, 10).forEach(function(p, i) {
+    var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
+    html += '<div class="lb-item"><span class="lb-rank ' + rankClass + '">' + medal + '</span><span class="lb-name">' + p.name + '</span><span class="lb-score">' + formatNumber(p.score) + '</span></div>';
+  });
+  html += '<button class="btn-modal secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Tutup</button>';
+  showModal(html, 'ranking');
+}
+function openWd() {
+  if (!state.player) return;
+  if (state.player.shadowbanned) { showToast('🚫 Akun kamu dibatasi WD selama 7 hari'); return; }
+  if (Date.now() < state.player.wdCooldownUntil) {
+    var remain = Math.ceil((state.player.wdCooldownUntil - Date.now()) / 60000);
+    showToast('⏳ WD berikutnya dalam ' + remain + ' menit (antrean)');
+    return;
+  }
+  var coins = state.player.coins;
+  var canWd = coins >= MIN_WD;
+  var html = '<div class="modal-title">💰 Withdraw</div><div class="modal-desc">Minimal WD ' + formatNumber(MIN_WD) + ' koin\nSaldo: ' + formatNumber(coins) + ' koin\nKode referral: ' + state.player.referral + '</div>';
+  html += '<div class="wallet-select" id="wallet-select">';
+  html += '<div class="wallet-opt selected" data-wallet="DANA"><svg viewBox="0 0 70 30"><rect width="70" height="30" rx="6" fill="#118EEA"/><text x="35" y="20" text-anchor="middle" fill="#fff" font-size="14" font-weight="900" font-family="Segoe UI, sans-serif">DANA</text></svg><span style="font-size:10px; color:#ccc;">DANA</span></div>';
+  html += '<div class="wallet-opt" data-wallet="OVO"><svg viewBox="0 0 70 30"><rect width="70" height="30" rx="6" fill="#4C3494"/><text x="35" y="20" text-anchor="middle" fill="#fff" font-size="14" font-weight="900" font-family="Segoe UI, sans-serif">OVO</text></svg><span style="font-size:10px; color:#ccc;">OVO</span></div>';
+  html += '<div class="wallet-opt" data-wallet="GoPay"><svg viewBox="0 0 70 30"><rect width="70" height="30" rx="6" fill="#00AA13"/><text x="35" y="20" text-anchor="middle" fill="#fff" font-size="12" font-weight="900" font-family="Segoe UI, sans-serif">GoPay</text></svg><span style="font-size:10px; color:#ccc;">GoPay</span></div>';
+  html += '</div>';
+  html += '<input class="modal-input" type="tel" id="wd-phone" placeholder="Nomor HP (10-14 digit)" maxlength="14">';
+  html += '<div id="turnstile-wd-container"></div>';
+  html += '<div class="progress-bar-outer"><div class="progress-bar-inner" id="wd-progress" style="width:0%"></div></div>';
+  html += '<div class="btn-row"><button class="btn-modal primary" id="wd-submit" disabled>Ajukan WD</button><button class="btn-modal secondary" onclick="closeModal()">Batal</button></div>';
+  showModal(html, 'wd');
+  var selectedWallet = 'DANA';
+  document.querySelectorAll('.wallet-opt').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.querySelectorAll('.wallet-opt').forEach(function(e) { e.classList.remove('selected'); });
+      this.classList.add('selected');
+      selectedWallet = this.getAttribute('data-wallet');
+      state.selectedWallet = selectedWallet;
+      sfxClick();
+    });
+  });
+  resetTurnstile('turnstile-wd-container');
+  renderTurnstileWidget('turnstile-wd-container', function(token) {
+    state.turnstileWdToken = token;
+    updateWdButton();
+  });
+  var phoneInput = document.getElementById('wd-phone');
+  function updateWdButton() {
+    var phone = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+    var validPhone = phone.length >= 10 && phone.length <= 14;
+    var progress = Math.min(100, Math.floor((coins / MIN_WD) * 100));
+    var bar = document.getElementById('wd-progress');
+    if (bar) bar.style.width = progress + '%';
+    var submitBtn = document.getElementById('wd-submit');
+    if (submitBtn) submitBtn.disabled = !(canWd && validPhone && (state.turnstileWdToken || state.turnstileWdBypassed));
+  }
+  if (phoneInput) phoneInput.addEventListener('input', updateWdButton);
+  updateWdButton();
+  var submitBtn = document.getElementById('wd-submit');
+  if (submitBtn) submitBtn.addEventListener('click', function() {
+    var phone = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+    if (phone.length < 10 || phone.length > 14) { showToast('❌ Nomor HP tidak valid'); return; }
+    if (state.player.coins < MIN_WD) { showToast('❌ Saldo tidak cukup'); return; }
+    var amount = state.player.coins;
+    state.player.coins = 0;
+    state.player.wdCooldownUntil = Date.now() + 2 * 60 * 60 * 1000;
+    var ts = Date.now().toString(36);
+    var code = 'CB|' + state.player.name + '|' + state.deviceId.substring(0, 6) + '|' + amount + '|' + selectedWallet + '|' + phone + '|' + state.player.referral + '|' + ts;
     try {
-      if (window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-        console.log('[Supabase] Client berhasil dibuat');
-      } else {
-        console.warn('[Supabase] Library tidak dimuat, pakai Demo Mode');
-      }
-    } catch (e) {
-      console.warn('[Supabase] Init gagal:', e.message);
-    }
+      var pending = JSON.parse(localStorage.getItem(WD_PENDING_KEY) || '[]');
+      pending.push({ code: code, amount: amount, time: Date.now() });
+      localStorage.setItem(WD_PENDING_KEY, JSON.stringify(pending));
+    } catch(e) {}
+    savePlayer(); renderGameUI(); closeModal();
+    console.log('[WD] Kode dibuat:', code);
+    showModal('<div class="modal-title">✅ WD Diterima</div><div class="modal-desc">Salin kode di bawah dan kirim ke admin via IG/TikTok/WA. Admin proses 1x24 jam.</div><div class="wd-code-box" id="wd-code-box">' + code + '</div><button class="btn-modal primary" style="width:100%;" id="wd-copy-btn">📋 Copy Kode</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>', 'wd-done');
+    var copyBtn = document.getElementById('wd-copy-btn');
+    if (copyBtn) copyBtn.addEventListener('click', function() { copyToClipboard(code); });
+  });
+}
+function openMysteryChest(r, c) {
+  if (state.player.lastMysteryChestDate === todayStr()) { showToast('🎁 Chest sudah dibuka hari ini'); state.board[r][c].chest = false; renderBoard(); return; }
+  state.player.lastMysteryChestDate = todayStr();
+  var rewards = ['coin', 'ticket', 'hammer', 'shuffle'];
+  var pick = rewards[Math.floor(Math.random() * rewards.length)];
+  var msg = '';
+  if (pick === 'coin') { var amt = Math.floor(Math.random() * 500) + 100; state.player.coins += amt; msg = '💰 +' + amt + ' koin!'; }
+  else if (pick === 'ticket') { state.player.tickets = Math.min(state.player.maxTickets, state.player.tickets + 1); msg = '🎬 +1 tiket iklan!'; }
+  else if (pick === 'hammer') { state.player.hammer++; msg = '🔨 +1 Hammer!'; }
+  else { state.player.shuffle++; msg = '🔀 +1 Shuffle!'; }
+  state.board[r][c].chest = false;
+  savePlayer(); renderGameUI(); sfxWin();
+  showModal('<div class="modal-title">🎁 Mystery Chest</div><div class="modal-desc">Kamu mendapat:</div><div style="font-size:28px; text-align:center; margin:20px 0; color:#ffd700; font-weight:900;">' + msg + '</div><button class="btn-modal primary" style="width:100%;" onclick="closeModal()">OK</button>', 'chest');
+  renderBoard();
+}
+function checkFlashSale() {
+  var now = Date.now();
+  if (state.flashSaleActive && now > state.flashSaleEnd) { state.flashSaleActive = false; }
+  if (!state.flashSaleActive && now - state.flashSaleLastAppear > 30 * 60 * 1000 && Math.random() < 0.3) {
+    state.flashSaleActive = true;
+    state.flashSaleEnd = now + 5 * 60 * 1000;
+    state.flashSaleLastAppear = now;
+    showFlashSale();
+  }
+}
+function showFlashSale() {
+  var html = '<div class="modal-title">⚡ FLASH SALE!</div><div class="flash-sale-box"><div class="flash-timer" id="flash-timer">05:00</div><div class="flash-price">Beli 5.000 koin cuma <strong>2.500 koin</strong>! <s>5.000</s></div></div><button class="btn-modal primary" style="width:100%;" id="flash-buy">Beli Sekarang</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Tutup</button>';
+  showModal(html, 'flash');
+  var timer = setInterval(function() {
+    var remain = Math.max(0, state.flashSaleEnd - Date.now());
+    var el = document.getElementById('flash-timer');
+    if (el) el.textContent = Math.floor(remain / 60000) + ':' + String(Math.floor((remain % 60000) / 1000)).padStart(2, '0');
+    if (remain <= 0) { clearInterval(timer); closeModal(); state.flashSaleActive = false; }
+  }, 1000);
+  var buyBtn = document.getElementById('flash-buy');
+  if (buyBtn) buyBtn.addEventListener('click', function() {
+    if (state.player.coins < 2500) { showToast('❌ Koin tidak cukup'); return; }
+    state.player.coins -= 2500;
+    state.player.coins += 5000;
+    state.player.totalCoins = (state.player.totalCoins || 0) + 5000;
+    savePlayer(); renderGameUI(); closeModal();
+    showToast('⚡ Flash sale berhasil! +5.000 koin');
+  });
+}
+function showTicker() {
+  var now = Date.now();
+  if (now - state.lastTickerTime < 30000) return;
+  state.lastTickerTime = now;
+  var name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+  var amt = [50000, 100000, 250000, 500000][Math.floor(Math.random() * 4)];
+  var masked = name.substring(0, 4) + '***';
+  if (dom.tickerText) dom.tickerText.textContent = masked + ' baru saja WD ' + formatNumber(amt) + ' koin!';
+  if (dom.ticker) {
+    dom.ticker.classList.add('show');
+    setTimeout(function() { dom.ticker.classList.remove('show'); }, 3000);
+  }
+}
 
-    // ============================================================
-    // [5] STATE OBJECT — SEMUA VARIABEL GLOBAL
-    // ============================================================
-    const state = {
-      user: null,
-      coins: 0,
-      hearts: 3,
-      maxHearts: 3,
-      board: [],
-      selected: [],
-      boardSize: 7,
-      audioCtx: null,
-      sfxEnabled: true,
-      bgmEnabled: false,
-      bgmOsc: null,
-      bgmGain: null,
-      bgmInterval: null,
-      tickerInterval: null,
-      lastPayoutTime: 0,
-      spinAvailable: true,
-      checkinStreak: 0,
-      lastCheckin: null,
-      demoMode: false,
-      currentTab: 'game',
-      adTimer: null,
-      adProgress: 0,
-      adInterval: null,
-      loginTimeout: null,
-      gameOverCooldown: 0,
-      reviveUsed: false,
-      wdQueue: [],
-      mysteryChestOpened: false,
-      flashSaleActive: false,
-      vipTier: 0,
-      shadowban: false,
-      referrals: 0,
-      powerups: { hammer: 1, shuffle: 1 },
-      activePowerup: null,
-      inactivityPenalty: 0,
-      exitIntentShown: false,
-      leaderboard: [],
-    };
+/* ============================================================
+   17. NAVIGATION
+   ============================================================ */
+function showScreen(name) {
+  state.screen = name;
+  if (dom.screenLogin) dom.screenLogin.classList.toggle('active', name === 'login');
+  if (dom.screenGame) dom.screenGame.classList.toggle('active', name === 'game');
+  if (dom.screenAdmin) dom.screenAdmin.classList.toggle('active', name === 'admin');
+}
 
-    // ============================================================
-    // [6] DOM REFS
-    // ============================================================
-    const dom = {
-      loginScreen: document.getElementById('loginScreen'),
-      gameScreen: document.getElementById('gameScreen'),
-      loginBtn: document.getElementById('loginBtn'),
-      loginBtnText: document.getElementById('loginBtnText'),
-      board: document.getElementById('board'),
-      coinAmount: document.getElementById('coinAmount'),
-      heartsDisplay: document.getElementById('heartsDisplay'),
-      bgmToggle: document.getElementById('bgmToggle'),
-      sfxToggle: document.getElementById('sfxToggle'),
-      liveTicker: document.getElementById('liveTicker'),
-      modalOverlay: document.getElementById('modalOverlay'),
-      modalTitle: document.getElementById('modalTitle'),
-      modalDesc: document.getElementById('modalDesc'),
-      modalActions: document.getElementById('modalActions'),
-      modalConfirmBtn: document.getElementById('modalConfirmBtn'),
-      modalCancelBtn: document.getElementById('modalCancelBtn'),
-      modalProgressWrap: document.getElementById('modalProgressWrap'),
-      modalProgressFill: document.getElementById('modalProgressFill'),
-      particles: document.getElementById('particles'),
-      toastContainer: document.getElementById('toastContainer'),
-    };
-
-    // ============================================================
-    // [7] UTILITAS
-    // ============================================================
-    function showToast(msg, duration = 2800) {
-      if (!dom.toastContainer) return;
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.textContent = msg;
-      dom.toastContainer.appendChild(t);
-      setTimeout(() => {
-        t.classList.add('fade-out');
-        setTimeout(() => t.remove(), 300);
-      }, duration);
-    }
-
-    function vibrate(ms = 30) {
-      safeRun(() => { if (navigator.vibrate) navigator.vibrate(ms); }, 'vibrate');
-    }
-
-    function formatNumber(n) {
-      return n.toLocaleString('id-ID');
-    }
-
-    function $(sel, parent = document) { return parent.querySelector(sel); }
-    function $$(sel, parent = document) { return parent.querySelectorAll(sel); }
-
-    // ============================================================
-    // [8] AUDIO
-    // ============================================================
-    function initAudio() {
-      if (state.audioCtx) return;
-      try {
-        state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        console.log('[Audio] AudioContext dibuat');
-      } catch (e) {
-        console.warn('[Audio] Gagal:', e.message);
-      }
-    }
-
-    function playTone(freq, duration, type = 'sine', vol = 0.15) {
-      if (!state.audioCtx || !state.sfxEnabled) return;
-      try {
-        const osc = state.audioCtx.createOscillator();
-        const gain = state.audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(vol, state.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(state.audioCtx.destination);
-        osc.start();
-        osc.stop(state.audioCtx.currentTime + duration);
-      } catch (e) { /* silent */ }
-    }
-
-    function playSFX(name) {
-      if (!state.audioCtx || !state.sfxEnabled) return;
-      const map = {
-        pop: [520, 0.12, 'square', 0.1],
-        coin: [880, 0.15, 'sine', 0.12],
-        error: [180, 0.25, 'sawtooth', 0.08],
-        win: [660, 0.2, 'sine', 0.15],
-        click: [400, 0.06, 'sine', 0.06],
-        spin: [300, 0.3, 'triangle', 0.08],
-      };
-      const p = map[name] || map.click;
-      playTone(p[0], p[1], p[2], p[3]);
-    }
-
-    function startBGM() {
-      if (!state.audioCtx || !state.bgmEnabled || state.bgmOsc) return;
-      try {
-        const gain = state.audioCtx.createGain();
-        gain.gain.value = 0.04;
-        gain.connect(state.audioCtx.destination);
-        const notes = [262, 330, 392, 330, 262, 294, 330, 294];
-        let i = 0;
-        state.bgmInterval = setInterval(() => {
-          if (!state.bgmEnabled || !state.audioCtx) return;
-          const osc = state.audioCtx.createOscillator();
-          const g = state.audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.value = notes[i % notes.length];
-          g.gain.setValueAtTime(0.04, state.audioCtx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + 0.6);
-          osc.connect(g);
-          g.connect(state.audioCtx.destination);
-          osc.start();
-          osc.stop(state.audioCtx.currentTime + 0.6);
-          i++;
-        }, 620);
-        state.bgmGain = gain;
-      } catch (e) { console.warn('[BGM]', e.message); }
-    }
-
-    function stopBGM() {
-      if (state.bgmInterval) {
-        clearInterval(state.bgmInterval);
-        state.bgmInterval = null;
-      }
-      state.bgmOsc = null;
-    }
-
-    // ============================================================
-    // [9] AUTH
-    // ============================================================
-    function handleLogin() {
-      console.log('[Login] Tombol ditekan');
-      if (!dom.loginBtn) return;
-
-      // [A] Lapis 1 — Feedback instan
-      dom.loginBtn.disabled = true;
-      dom.loginBtnText.textContent = '⏳ Menghubungkan...';
-      dom.loginBtn.style.background = '#333';
-      dom.loginBtn.style.color = '#aaa';
-
-      // [G] Audio hanya di event listener user
-      initAudio();
-      playSFX('click');
-
-      // [A] Lapis 3 — fallback total
-      if (!supabase) {
-        console.warn('[Login] Supabase null → demoLogin');
-        setTimeout(demoLogin, 400);
-        return;
-      }
-
-      // [A] Lapis 2 — timeout 3 detik
-      if (state.loginTimeout) clearTimeout(state.loginTimeout);
-      state.loginTimeout = setTimeout(() => {
-        console.warn('[Login] Timeout 3s → demoLogin');
-        demoLogin();
-      }, 3000);
-
-      // Coba signInWithOAuth
-      (async () => {
-        try {
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo: window.location.origin + window.location.pathname,
-              queryParams: { prompt: 'select_account' },
-            },
-          });
-          if (error) throw error;
-          console.log('[Login] Redirect ke:', data?.url || 'google');
-          // Jangan clear timeout di sini — biarkan timeout jaga-jaga
-        } catch (err) {
-          console.warn('[Login] OAuth error:', err.message);
-          if (state.loginTimeout) { clearTimeout(state.loginTimeout); state.loginTimeout = null; }
-          showToast('⚠️ Login gagal, mode demo aktif');
-          setTimeout(demoLogin, 800);
-        }
-      })();
-    }
-
-    function demoLogin() {
-      if (state.loginTimeout) { clearTimeout(state.loginTimeout); state.loginTimeout = null; }
-      console.log('[Login] Demo Mode aktif');
-      state.user = { email: 'demo@cuanblok.com', name: 'Demo Player' };
-      state.demoMode = true;
-      showToast('✅ Demo Mode — login berhasil');
-      enterGame();
-    }
-
-    function enterGame() {
-      safeRun(() => {
-        if (dom.loginScreen) dom.loginScreen.classList.add('hidden');
-        if (dom.gameScreen) dom.gameScreen.classList.remove('hidden');
-        loadGameData();
-        updateUI();
-        renderBoard();
-        startLiveTicker();
-        startBGMIfEnabled();
-        console.log('[Game] Masuk game sebagai:', state.user?.email || 'unknown');
-      }, 'enterGame');
-    }
-
-    async function checkSession() {
-      try {
-        if (!supabase) return null;
-        const { data: { session } } = await supabase.auth.getSession();
-        return session;
-      } catch (e) {
-        console.warn('[Auth] Session check gagal:', e.message);
-        return null;
-      }
-    }
-
-    function handleOAuthCallback() {
-      const hash = window.location.hash || '';
-      const search = window.location.search || '';
-      const hasToken = hash.includes('access_token=') || search.includes('code=');
-      if (!hasToken) return false;
-
-      console.log('[OAuth] Callback terdeteksi');
-      setTimeout(async () => {
-        const session = await checkSession();
-        if (session && session.user) {
-          console.log('[OAuth] Session ditemukan:', session.user.email);
-          state.user = session.user;
-          enterGame();
-        }
-        history.replaceState(null, '', window.location.pathname);
-      }, 500);
-      return true;
-    }
-
-    // ============================================================
-    // [10] PERSISTENCE
-    // ============================================================
-    function saveGameData() {
-      safeRun(() => {
-        const data = {
-          coins: state.coins,
-          hearts: state.hearts,
-          checkinStreak: state.checkinStreak,
-          lastCheckin: state.lastCheckin,
-          spinAvailable: state.spinAvailable,
-          vipTier: state.vipTier,
-          referrals: state.referrals,
-          powerups: state.powerups,
-          mysteryChestOpened: state.mysteryChestOpened,
-        };
-        localStorage.setItem('cuanblok_v5', JSON.stringify(data));
-      }, 'saveGameData');
-    }
-
-    function loadGameData() {
-      safeRun(() => {
-        const raw = localStorage.getItem('cuanblok_v5');
-        if (raw) {
-          const d = JSON.parse(raw);
-          state.coins = d.coins ?? 0;
-          state.hearts = d.hearts ?? 3;
-          state.checkinStreak = d.checkinStreak ?? 0;
-          state.lastCheckin = d.lastCheckin ?? null;
-          state.spinAvailable = d.spinAvailable ?? true;
-          state.vipTier = d.vipTier ?? 0;
-          state.referrals = d.referrals ?? 0;
-          state.powerups = d.powerups ?? { hammer: 1, shuffle: 1 };
-          state.mysteryChestOpened = d.mysteryChestOpened ?? false;
-        }
-        // Set leaderboard bot
-        state.leaderboard = BOT_NAMES.map((n, i) => ({
-          name: n,
-          coins: Math.floor(Math.random() * 50000) + 5000,
-        })).sort((a, b) => b.coins - a.coins);
-      }, 'loadGameData');
-    }
-
-    // ============================================================
-    // [11] UI RENDER
-    // ============================================================
-    function updateUI() {
-      safeRun(() => {
-        if (dom.coinAmount) dom.coinAmount.textContent = formatNumber(state.coins);
-        renderHearts();
-        updateToggleUI();
-        saveGameData();
-      }, 'updateUI');
-    }
-
-    function renderHearts() {
-      if (!dom.heartsDisplay) return;
-      let h = '';
-      for (let i = 0; i < state.maxHearts; i++) {
-        h += i < state.hearts ? '❤️' : '🖤';
-      }
-      dom.heartsDisplay.textContent = h;
-    }
-
-    function updateToggleUI() {
-      if (dom.bgmToggle) {
-        dom.bgmToggle.classList.toggle('off', !state.bgmEnabled);
-        dom.bgmToggle.textContent = state.bgmEnabled ? '🎵 BGM ON' : '🎵 BGM OFF';
-      }
-      if (dom.sfxToggle) {
-        dom.sfxToggle.classList.toggle('off', !state.sfxEnabled);
-        dom.sfxToggle.textContent = state.sfxEnabled ? '🔊 SFX ON' : '🔊 SFX OFF';
-      }
-    }
-
-    function startBGMIfEnabled() {
-      if (state.bgmEnabled && state.audioCtx) startBGM();
-    }
-
-    // ============================================================
-    // [12] GAMEPLAY
-    // ============================================================
-    function generateBoard() {
-      state.board = [];
-      for (let r = 0; r < state.boardSize; r++) {
-        const row = [];
-        for (let c = 0; c < state.boardSize; c++) {
-          row.push(Math.floor(Math.random() * COLORS.length));
-        }
-        state.board.push(row);
-      }
-      // Pastikan tidak ada match instan di awal
-      let guard = 0;
-      while (findAllMatches().length > 0 && guard < 100) {
-        for (let r = 0; r < state.boardSize; r++) {
-          for (let c = 0; c < state.boardSize; c++) {
-            if (findAllMatches().some(m => m.r === r && m.c === c)) {
-              state.board[r][c] = Math.floor(Math.random() * COLORS.length);
-            }
-          }
-        }
-        guard++;
-      }
-    }
-
-    function renderBoard() {
-      if (!dom.board) return;
-      dom.board.innerHTML = '';
-      for (let r = 0; r < state.boardSize; r++) {
-        for (let c = 0; c < state.boardSize; c++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          const val = state.board[r]?.[c];
-          if (val !== undefined && val !== null) {
-            cell.style.background = COLORS[val];
-            cell.style.boxShadow = `inset 0 0 12px ${COLORS[val]}44`;
-          }
-          cell.dataset.r = r;
-          cell.dataset.c = c;
-          if (state.selected.some(s => s.r === r && s.c === c)) {
-            cell.classList.add('selected');
-          }
-          cell.addEventListener('click', () => handleCellClick(r, c));
-          dom.board.appendChild(cell);
-        }
-      }
-    }
-
-    function handleCellClick(r, c) {
-      if (state.hearts <= 0) {
-        showToast('❤️ Hati habis! Tunggu cooldown atau tonton iklan');
-        return;
-      }
-      const idx = state.selected.findIndex(s => s.r === r && s.c === c);
-      if (idx >= 0) {
-        state.selected.splice(idx, 1);
-      } else {
-        // Cek adjacency dengan selected terakhir
-        if (state.selected.length > 0) {
-          const last = state.selected[state.selected.length - 1];
-          const adj = Math.abs(last.r - r) + Math.abs(last.c - c) === 1;
-          if (!adj) {
-            // Reset jika tidak adjacent
-            state.selected = [];
-            state.selected.push({ r, c });
-          } else {
-            const valLast = state.board[last.r][last.c];
-            const valCur = state.board[r][c];
-            if (valLast !== valCur) {
-              state.selected = [];
-              state.selected.push({ r, c });
-            } else {
-              state.selected.push({ r, c });
-            }
-          }
-        } else {
-          state.selected.push({ r, c });
-        }
-      }
-
-      // Jika 3+ selected, clear
-      if (state.selected.length >= 3) {
-        clearSelected();
-      } else {
-        renderBoard();
-        vibrate(10);
-        playSFX('click');
-      }
-    }
-
-    function clearSelected() {
-      if (state.selected.length < 3) return;
-      const count = state.selected.length;
-      let earned = count * 10;
-      if (state.vipTier > 0) earned = Math.floor(earned * (1 + state.vipTier * 0.1));
-      state.coins += earned;
-      playSFX('coin');
-      vibrate(30);
-
-      // Floating coin effect
-      const first = state.selected[0];
-      const boardRect = dom.board?.getBoundingClientRect();
-      if (boardRect && dom.board) {
-        const cellSize = boardRect.width / state.boardSize;
-        const fx = boardRect.left + first.c * cellSize + cellSize / 2;
-        const fy = boardRect.top + first.r * cellSize + cellSize / 2;
-        const float = document.createElement('div');
-        float.className = 'floating-coin';
-        float.textContent = `+${earned}`;
-        float.style.position = 'fixed';
-        float.style.left = fx + 'px';
-        float.style.top = fy + 'px';
-        float.style.transform = 'translate(-50%,-50%)';
-        document.body.appendChild(float);
-        setTimeout(() => float.remove(), 1000);
-      }
-
-      // Animasi pop
-      state.selected.forEach(s => {
-        const cellEl = dom.board?.querySelector(`.cell[data-r="${s.r}"][data-c="${s.c}"]`);
-        if (cellEl) cellEl.classList.add('pop');
+/* ============================================================
+   18. EVENT LISTENERS
+   ============================================================ */
+function setupEventListeners() {
+  // START BUTTON
+  if (dom.btnStart) {
+    dom.btnStart.addEventListener('click', function() {
+      initAudio(); sfxClick();
+      var html = '<div class="modal-title">🎮 Pilih Nama Player</div><div class="modal-desc">Masukkan nama kamu (3-16 karakter, huruf/angka/underscore):</div><input class="modal-input" id="name_input" maxlength="16" placeholder="Contoh: SultanCuan" autocomplete="off"><input class="hp-field" id="hp_field" tabindex="-1" autocomplete="off"><div class="error-msg" id="name_error"></div><div id="turnstile-container"></div><div class="btn-row"><button class="btn-modal primary" id="name-submit" disabled>Mulai Main</button><button class="btn-modal secondary" onclick="closeModal()">Batal</button></div>';
+      showModal(html, 'name');
+      var nameInput = document.getElementById('name_input');
+      var nameError = document.getElementById('name_error');
+      var submitBtn = document.getElementById('name-submit');
+      var hpField = document.getElementById('hp_field');
+      var formOpenTime = Date.now();
+      resetTurnstile('turnstile-container');
+      renderTurnstileWidget('turnstile-container', function(token) {
+        state.turnstileToken = token;
+        updateSubmit();
       });
-
-      // Hapus dari board
-      state.selected.forEach(s => {
-        if (state.board[s.r] && state.board[s.r][s.c] !== null) {
-          state.board[s.r][s.c] = null;
+      function updateSubmit() {
+        var name = nameInput ? nameInput.value.trim() : '';
+        var v = validateNickname(name);
+        if (nameError) { nameError.textContent = v.msg; nameError.className = 'error-msg ' + (v.ok && name ? 'ok' : v.ok ? '' : 'err'); }
+        if (nameInput) nameInput.className = 'modal-input ' + (name ? (v.ok ? 'ok' : 'error') : '');
+        var canSubmit = v.ok && (state.turnstileToken || state.turnstileBypassed) && name.length > 0;
+        if (submitBtn) submitBtn.disabled = !canSubmit;
+      }
+      if (nameInput) nameInput.addEventListener('input', updateSubmit);
+      updateSubmit();
+      if (submitBtn) submitBtn.addEventListener('click', function() {
+        // Honeypot check
+        if (hpField && hpField.value.trim() !== '') {
+          state.honeypotTrips++;
+          showToast('🚫 Bot terdeteksi!');
+          if (state.honeypotTrips >= 3) { state.shadowbanned = true; showToast('🚫 Akun dibatasi 7 hari'); }
+          closeModal(); return;
         }
-      });
-
-      state.selected = [];
-
-      setTimeout(() => {
-        applyGravity();
-        refillBoard();
-        autoClearMatches();
-        renderBoard();
-        updateUI();
-      }, 320);
-    }
-
-    function applyGravity() {
-      for (let c = 0; c < state.boardSize; c++) {
-        let writeRow = state.boardSize - 1;
-        for (let r = state.boardSize - 1; r >= 0; r--) {
-          if (state.board[r][c] !== null && state.board[r][c] !== undefined) {
-            state.board[writeRow][c] = state.board[r][c];
-            writeRow--;
-          }
-        }
-        for (let r = writeRow; r >= 0; r--) {
-          state.board[r][c] = null;
-        }
-      }
-    }
-
-    function refillBoard() {
-      for (let r = 0; r < state.boardSize; r++) {
-        for (let c = 0; c < state.boardSize; c++) {
-          if (state.board[r][c] === null || state.board[r][c] === undefined) {
-            state.board[r][c] = Math.floor(Math.random() * COLORS.length);
-          }
-        }
-      }
-    }
-
-    function findAllMatches() {
-      const matches = [];
-      // Horizontal
-      for (let r = 0; r < state.boardSize; r++) {
-        for (let c = 0; c < state.boardSize - 2; c++) {
-          const v = state.board[r]?.[c];
-          if (v === null || v === undefined) continue;
-          if (state.board[r][c + 1] === v && state.board[r][c + 2] === v) {
-            matches.push({ r, c }, { r, c: c + 1 }, { r, c: c + 2 });
-          }
-        }
-      }
-      // Vertikal
-      for (let c = 0; c < state.boardSize; c++) {
-        for (let r = 0; r < state.boardSize - 2; r++) {
-          const v = state.board[r]?.[c];
-          if (v === null || v === undefined) continue;
-          if (state.board[r + 1]?.[c] === v && state.board[r + 2]?.[c] === v) {
-            matches.push({ r, c }, { r: r + 1, c }, { r: r + 2, c });
-          }
-        }
-      }
-      return matches;
-    }
-
-    function autoClearMatches() {
-      let guard = 0;
-      while (findAllMatches().length > 0 && guard < 30) {
-        const matches = findAllMatches();
-        const unique = [...new Map(matches.map(m => [`${m.r},${m.c}`, m])).values()];
-        unique.forEach(m => {
-          if (state.board[m.r] && state.board[m.r][m.c] !== null) {
-            state.board[m.r][m.c] = null;
-          }
-        });
-        applyGravity();
-        refillBoard();
-        guard++;
-      }
-    }
-
-    // ============================================================
-    // [13] FITUR
-    // ============================================================
-    function spinWheel() {
-      if (!state.spinAvailable) {
-        showToast('🎡 Spin sudah dipakai, kembali besok!');
-        return;
-      }
-      initAudio();
-      playSFX('spin');
-      state.spinAvailable = false;
-      const wheel = dom.modalBox?.querySelector('.spin-wheel');
-      if (wheel) {
-        wheel.style.transform = `rotate(${720 + Math.random() * 360}deg)`;
-      }
-      const prize = Math.floor(Math.random() * 500) + 50;
-      state.coins += prize;
-      updateUI();
-      showToast(`🎉 Kamu dapat ${formatNumber(prize)} koin!`);
-      saveGameData();
-      closeModal();
-    }
-
-    function claimCheckin() {
-      const today = new Date().toDateString();
-      if (state.lastCheckin === today) {
-        showToast('📅 Sudah check-in hari ini!');
-        return;
-      }
-      state.checkinStreak = (state.checkinStreak || 0) + 1;
-      state.lastCheckin = today;
-      const reward = 50 * Math.min(state.checkinStreak, 7);
-      state.coins += reward;
-      updateUI();
-      playSFX('win');
-      showToast(`✅ Check-in hari ${state.checkinStreak}! +${reward} koin`);
-      saveGameData();
-      closeModal();
-    }
-
-    function openChestModal() {
-      showModal({
-        title: '🎁 Mystery Chest',
-        desc: 'Buka chest untuk hadiah misterius!',
-        confirmText: 'Buka (50 koin)',
-        onConfirm: () => {
-          if (state.coins < 50) { showToast('Koin tidak cukup'); return; }
-          state.coins -= 50;
-          const prize = Math.floor(Math.random() * 300) + 100;
-          state.coins += prize;
-          updateUI();
-          showToast(`🎁 Dapat ${formatNumber(prize)} koin!`);
-          closeModal();
-        },
-        cancelText: 'Tutup',
-      });
-    }
-
-    function submitWD() {
-      showModal({
-        title: '💰 Withdraw',
-        desc: 'Minimal WD 10.000 koin. Saldo kamu: ' + formatNumber(state.coins) + ' koin',
-        confirmText: 'Ajukan WD',
-        onConfirm: () => {
-          if (state.coins < 10000) {
-            showToast('❌ Saldo tidak cukup');
-            return;
-          }
-          state.coins -= 10000;
-          state.wdQueue.push({ amount: 10000, time: Date.now() });
-          updateUI();
-          showToast('✅ WD diajukan! Proses 1x24 jam');
-          closeModal();
-        },
-        cancelText: 'Batal',
-      });
-    }
-
-    function useHammer() {
-      if (!state.powerups.hammer) { showToast('🔨 Hammer habis'); return; }
-      state.powerups.hammer--;
-      state.activePowerup = 'hammer';
-      showToast('🔨 Pilih blok untuk dihancurkan');
-      saveGameData();
-    }
-
-    function useShuffle() {
-      if (!state.powerups.shuffle) { showToast('🔄 Shuffle habis'); return; }
-      state.powerups.shuffle--;
-      generateBoard();
-      renderBoard();
-      showToast('🔄 Board di-shuffle!');
-      saveGameData();
-    }
-
-    function convertCoins() {
-      showToast('💱 Konversi koin ke saldo e-wallet segera hadir');
-    }
-
-    function showAd(callback) {
-      showModal({
-        title: '🎬 Iklan',
-        desc: 'Tonton iklan untuk klaim reward',
-        confirmText: 'Klaim Reward',
-        onConfirm: () => { closeModal(); if (callback) callback(); },
-        cancelText: 'Tutup',
-        showProgress: true,
-      });
-      // Progress bar 5 detik
-      let p = 0;
-      if (dom.modalProgressWrap) dom.modalProgressWrap.style.display = 'block';
-      if (state.adInterval) clearInterval(state.adInterval);
-      state.adInterval = setInterval(() => {
-        p += 2;
-        if (dom.modalProgressFill) dom.modalProgressFill.style.width = p + '%';
-        if (p >= 100) {
-          clearInterval(state.adInterval);
-          state.adInterval = null;
-        }
-      }, 100);
-    }
-
-    function reviveWithAd() {
-      if (state.reviveUsed) {
-        showToast('❤️ Revive sudah dipakai hari ini');
-        return;
-      }
-      showAd(() => {
-        state.hearts = Math.min(state.maxHearts, state.hearts + 1);
-        state.reviveUsed = true;
-        updateUI();
-        showToast('❤️ Nyawa pulih +1');
-      });
-    }
-
-    // ============================================================
-    // MODAL SYSTEM
-    // ============================================================
-    function showModal({ title, desc, confirmText, onConfirm, cancelText, onCancel, showProgress }) {
-      if (!dom.modalOverlay) return;
-      dom.modalTitle.textContent = title || 'Info';
-      dom.modalDesc.textContent = desc || '';
-      dom.modalConfirmBtn.textContent = confirmText || 'OK';
-      dom.modalCancelBtn.textContent = cancelText || 'Tutup';
-      dom.modalProgressWrap.style.display = showProgress ? 'block' : 'none';
-      dom.modalProgressFill.style.width = '0%';
-      dom.modalOverlay.classList.add('active');
-
-      dom.modalConfirmBtn.onclick = () => {
-        if (onConfirm) onConfirm();
-        else closeModal();
-      };
-      dom.modalCancelBtn.onclick = () => {
-        if (onCancel) onCancel();
+        // Time check
+        if (Date.now() - formOpenTime < 800) { showToast('⏳ Terlalu cepat, tunggu sebentar'); return; }
+        var name = nameInput ? nameInput.value.trim() : '';
+        var v = validateNickname(name);
+        if (!v.ok) { showToast('❌ ' + v.msg); return; }
+        if (!canCreateAccount()) { showToast('❌ Maks 3 akun per device per 24 jam'); return; }
+        initAudio(); sfxWin();
+        state.deviceId = getDeviceId();
+        console.log('[Device] ID:', state.deviceId);
+        saveDeviceAccount(name);
+        createPlayer(name);
         closeModal();
-      };
-    }
-
-    function closeModal() {
-      if (!dom.modalOverlay) return;
-      dom.modalOverlay.classList.remove('active');
-      if (state.adInterval) {
-        clearInterval(state.adInterval);
-        state.adInterval = null;
-      }
-      if (dom.modalProgressWrap) dom.modalProgressWrap.style.display = 'none';
-    }
-
-    // ============================================================
-    // LIVE TICKER
-    // ============================================================
-    function startLiveTicker() {
-      if (state.tickerInterval) clearInterval(state.tickerInterval);
-      state.tickerInterval = setInterval(() => {
-        const now = Date.now();
-        if (now - state.lastPayoutTime < 30000) return;
-        state.lastPayoutTime = now;
-        const names = ['Sultan', 'CuanKing', 'Hoki', 'Maxwin', 'Duit'];
-        const name = names[Math.floor(Math.random() * names.length)];
-        const amount = Math.floor(Math.random() * 500000) + 50000;
-        if (dom.liveTicker) {
-          dom.liveTicker.textContent = `💸 ${name}*** baru saja WD ${formatNumber(amount)} koin!`;
-          dom.liveTicker.style.opacity = '1';
-          setTimeout(() => { if (dom.liveTicker) dom.liveTicker.style.opacity = '0.6'; }, 3000);
+        showScreen('game');
+        initBoard();
+        renderGameUI();
+        showToast('🎉 Selamat datang, ' + name + '!');
+        if (state.player.missions && !state.player.missions.playGame.claimed) {
+          state.player.missions.playGame.progress = 1;
         }
-      }, 5000);
-    }
-
-    // ============================================================
-    // NAVIGATION
-    // ============================================================
-    function handleNav(tab) {
-      state.currentTab = tab;
-      document.querySelectorAll('.nav-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.nav === tab);
-      });
-      if (tab === 'spin') {
-        showModal({
-          title: '🎡 Spin Harian',
-          desc: 'Putar roda untuk hadiah!',
-          confirmText: 'Putar!',
-          onConfirm: spinWheel,
-          cancelText: 'Tutup',
-        });
-      } else if (tab === 'checkin') {
-        showModal({
-          title: '📅 Check-in 7 Hari',
-          desc: `Streak: ${state.checkinStreak}/7\n` + 'Hadiah makin besar tiap hari!',
-          confirmText: 'Check-in',
-          onConfirm: claimCheckin,
-          cancelText: 'Tutup',
-        });
-      } else if (tab === 'ranking') {
-        const list = state.leaderboard.slice(0, 10).map((u, i) =>
-          `${i + 1}. ${u.name} — ${formatNumber(u.coins)}`
-        ).join('\n');
-        showModal({
-          title: '🏆 Leaderboard',
-          desc: list || 'Belum ada data',
-          confirmText: 'Tutup',
-          cancelText: 'Tutup',
-        });
-      } else if (tab === 'wd') {
-        submitWD();
-      }
-    }
-
-    // ============================================================
-    // [14] EVENT LISTENERS — SEMUA DI PALING BAWAH
-    // ============================================================
-
-    // Login
-    if (dom.loginBtn) {
-      dom.loginBtn.addEventListener('click', () => {
-        handleLogin();
-      });
-    }
-
-    // Toggle BGM
-    if (dom.bgmToggle) {
-      dom.bgmToggle.addEventListener('click', () => {
-        initAudio();
-        state.bgmEnabled = !state.bgmEnabled;
-        updateToggleUI();
-        if (state.bgmEnabled) startBGM(); else stopBGM();
-        playSFX('click');
-        saveGameData();
-      });
-    }
-
-    // Toggle SFX
-    if (dom.sfxToggle) {
-      dom.sfxToggle.addEventListener('click', () => {
-        initAudio();
-        state.sfxEnabled = !state.sfxEnabled;
-        updateToggleUI();
-        playSFX('click');
-        saveGameData();
-      });
-    }
-
-    // Nav buttons
-    $$('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.nav;
-        if (tab) handleNav(tab);
+        savePlayer();
       });
     });
+  }
 
-    // Modal cancel
-    if (dom.modalCancelBtn) {
-      dom.modalCancelBtn.addEventListener('click', closeModal);
-    }
+  // BGM & SFX
+  if (dom.btnBgm) dom.btnBgm.addEventListener('click', function() {
+    initAudio(); state.bgmOn = !state.bgmOn; saveSettings();
+    this.textContent = state.bgmOn ? '🎵 ON' : '🎵 OFF';
+    showToast(state.bgmOn ? '🎵 BGM aktif' : '🎵 BGM mati');
+  });
+  if (dom.btnSfx) dom.btnSfx.addEventListener('click', function() {
+    initAudio(); state.sfxOn = !state.sfxOn; saveSettings();
+    this.textContent = state.sfxOn ? '🔊 ON' : '🔊 OFF';
+    sfxClick();
+    showToast(state.sfxOn ? '🔊 SFX aktif' : '🔊 SFX mati');
+  });
 
-    // Klik overlay untuk tutup
-    if (dom.modalOverlay) {
-      dom.modalOverlay.addEventListener('click', (e) => {
-        if (e.target === dom.modalOverlay) closeModal();
+  // POWERUPS
+  if (dom.btnHammer) dom.btnHammer.addEventListener('click', function() {
+    if (state.player.hammer <= 0) { showToast('❌ Hammer habis, beli dulu!'); return; }
+    state.hammerMode = !state.hammerMode;
+    showToast(state.hammerMode ? '🔨 Pilih blok yang ingin dihancurkan' : '🔨 Hammer dibatalkan');
+  });
+  if (dom.btnShuffle) dom.btnShuffle.addEventListener('click', function() {
+    if (state.player.shuffle <= 0) { showToast('❌ Shuffle habis, beli dulu!'); return; }
+    state.player.shuffle--;
+    savePlayer(); renderGameUI(); sfxPop();
+    initBoard();
+    showToast('🔀 Board diacak!');
+  });
+  if (dom.btnBuyPowerup) dom.btnBuyPowerup.addEventListener('click', function() {
+    if (state.player.coins < POWERUP_COST) { showToast('❌ Koin tidak cukup (butuh 500)'); return; }
+    state.player.coins -= POWERUP_COST;
+    state.player.hammer++;
+    state.player.shuffle++;
+    savePlayer(); renderGameUI(); sfxCoin();
+    showToast('💰 +1 Hammer & +1 Shuffle!');
+  });
+
+  // BOTTOM NAV
+  document.querySelectorAll('.nav-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var nav = this.getAttribute('data-nav');
+      document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      initAudio(); sfxClick();
+      if (nav === 'game') { /* already on game */ }
+      else if (nav === 'spin') openSpin();
+      else if (nav === 'checkin') openCheckin();
+      else if (nav === 'ranking') openRanking();
+      else if (nav === 'wd') openWd();
+      else if (nav === 'missions') openMissions();
+    });
+  });
+
+  // MODAL CLOSE ON OVERLAY
+  if (dom.modalOverlay) {
+    dom.modalOverlay.addEventListener('click', function(e) {
+      if (e.target === dom.modalOverlay) closeModal();
+    });
+  }
+
+  // ADMIN LOGIN
+  if (dom.adminLoginBtn) dom.adminLoginBtn.addEventListener('click', function() {
+    var pass = dom.adminPass ? dom.adminPass.value : '';
+    adminLogin(pass);
+  });
+  if (dom.adminPass) dom.adminPass.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { adminLogin(this.value); }
+  });
+  if (dom.adminLogout) dom.adminLogout.addEventListener('click', function() {
+    state.adminAuthed = false; renderAdmin(); showToast('🔐 Logout admin');
+  });
+  if (dom.adminExport) dom.adminExport.addEventListener('click', function() {
+    var data = loadAdminData();
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var d = new Date();
+    a.download = 'cuanblok-admin-' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast('📥 Export berhasil');
+  });
+  if (dom.adminImportBtn) dom.adminImportBtn.addEventListener('click', function() { dom.adminImportFile.click(); });
+  if (dom.adminImportFile) dom.adminImportFile.addEventListener('change', function() {
+    var file = this.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        if (data.pending && data.done) { saveAdminData(data); renderAdminBody(); showToast('📤 Import berhasil'); }
+        else showToast('❌ Format file tidak valid');
+      } catch(err) { showToast('❌ Gagal import: ' + err.message); }
+    };
+    reader.readAsText(file);
+  });
+  document.querySelectorAll('.admin-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+      state.adminTab = this.getAttribute('data-tab');
+      renderAdminBody();
+    });
+  });
+
+  // EXIT INTENT
+  document.addEventListener('mouseleave', function(e) {
+    if (e.clientY <= 0 && !state.exitIntentShown && state.screen === 'game') {
+      state.exitIntentShown = true;
+      showModal('<div class="modal-title">👋 Yakin mau keluar?</div><div class="modal-desc">Dapatkan +500 koin gratis jika tetap di sini!</div><button class="btn-modal primary" style="width:100%;" id="exit-stay">💵 Ambil 500 Koin</button><button class="btn-modal secondary" style="width:100%; margin-top:8px;" onclick="closeModal()">Keluar</button>', 'exit');
+      var stayBtn = document.getElementById('exit-stay');
+      if (stayBtn) stayBtn.addEventListener('click', function() {
+        state.player.coins += 500;
+        state.player.totalCoins = (state.player.totalCoins || 0) + 500;
+        savePlayer(); renderGameUI(); closeModal();
+        showToast('💵 +500 koin!');
       });
     }
+  });
 
-    // ============================================================
-    // PARTIKEL
-    // ============================================================
-    function createParticles() {
-      if (!dom.particles) return;
-      dom.particles.innerHTML = '';
-      for (let i = 0; i < 30; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.animationDuration = (Math.random() * 8 + 6) + 's';
-        p.style.animationDelay = (Math.random() * 10) + 's';
-        p.style.width = p.style.height = (Math.random() * 5 + 3) + 'px';
-        dom.particles.appendChild(p);
-      }
+  // VISIBILITY
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) { updateHearts(); renderGameUI(); }
+  });
+}
+
+/* ============================================================
+   19. INIT
+   ============================================================ */
+function init() {
+  console.log('[Init] Mulai...');
+  cacheDom();
+  loadSettings();
+  state.deviceId = getDeviceId();
+  console.log('[Device] ID:', state.deviceId);
+
+  // Particles
+  if (dom.particles) {
+    for (var i = 0; i < 30; i++) {
+      var p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (Math.random() * 6 + 6) + 's';
+      p.style.animationDelay = (Math.random() * 8) + 's';
+      p.style.width = p.style.height = (Math.random() * 4 + 3) + 'px';
+      dom.particles.appendChild(p);
     }
+  }
 
-    // ============================================================
-    // [H] INIT — TIDAK BOLEH NGE-HANG
-    // ============================================================
-    async function init() {
-      console.log('[Init] Mulai...');
-      createParticles();
-      updateToggleUI();
-      loadGameData();
-      updateUI();
+  // Hash detection
+  if (window.location.hash === ADMIN_HASH) {
+    state.isAdmin = true;
+    showScreen('admin');
+    renderAdmin();
+    console.log('[Mode] Admin mode');
+  } else if (loadPlayer()) {
+    console.log('[Mode] Player mode (existing)');
+    showScreen('game');
+    if (!state.board.length) initBoard();
+    renderGameUI();
+  } else {
+    console.log('[Mode] Player mode');
+    showScreen('login');
+  }
 
-      // Cek OAuth callback di URL
-      if (handleOAuthCallback()) {
-        console.log('[Init] Menunggu callback OAuth...');
-        return;
-      }
+  setupEventListeners();
 
-      // Cek session dengan timeout 2 detik
-      const sessionCheck = (async () => {
-        try {
-          if (!supabase) return null;
-          const { data: { session } } = await supabase.auth.getSession();
-          return session;
-        } catch (e) {
-          console.warn('[Init] Session check gagal:', e.message);
-          return null;
-        }
-      })();
-
-      const timeout = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 2000));
-      const result = await Promise.race([sessionCheck, timeout]);
-
-      if (result === 'TIMEOUT') {
-        console.warn('[Init] Session check timeout → lanjut login screen');
-      } else if (result && result.user) {
-        console.log('[Init] Session aktif:', result.user.email);
-        state.user = result.user;
-        enterGame();
-        history.replaceState(null, '', window.location.pathname);
-        return;
-      }
-
-      console.log('[Init] Siap di login screen');
+  // Auto save & timers
+  setInterval(function() {
+    if (state.player && state.screen === 'game') {
+      updateHearts(); renderGameUI(); checkFlashSale();
     }
+  }, 10000);
 
-    // Auth state change listener
-    if (supabase) {
-      safeRun(() => {
-        supabase.auth.onAuthStateChange((event, session) => {
-          console.log('[Auth] Event:', event);
-          if (event === 'SIGNED_IN' && session?.user) {
-            state.user = session.user;
-            enterGame();
-          } else if (event === 'SIGNED_OUT') {
-            state.user = null;
-            if (dom.gameScreen) dom.gameScreen.classList.add('hidden');
-            if (dom.loginScreen) dom.loginScreen.classList.remove('hidden');
-          } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-            state.user = session.user;
-          }
-        });
-      }, 'onAuthStateChange');
-    }
+  setInterval(function() { if (state.screen === 'game') showTicker(); }, 30000);
 
-    // ============================================================
-    // [16] EXPOSE DEBUG
-    // ============================================================
-    window.CuanBlok = {
-      state,
-      updateUI,
-      showToast,
-      demoLogin,
-      enterGame,
-    };
+  // Expose
+  window.CuanBlok = { state: state, updateUI: renderGameUI, showToast: showToast, closeModal: closeModal };
+  console.log('[Init] Selesai');
+}
 
-    // Panggil init
-    init().catch(e => console.warn('[Init] Gagal:', e.message));
+// Global functions for onclick
+window.closeModal = closeModal;
 
-    // Prevent context menu on long press
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
+// Start
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
-    console.log('[CuanBlok] siap. Gunakan window.CuanBlok untuk debug.');
-  </script>
+</script>
+
+<style>
+@keyframes floatReward {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -150%) scale(1.2); opacity: 0; }
+}
+</style>
+
 </body>
 </html>
